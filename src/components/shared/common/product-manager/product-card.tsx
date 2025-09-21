@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React from "react";
@@ -165,7 +166,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onEdit,
   onDelete,
   onView,
-  viewMode,
+
 }) => {
   const statusVariant = statusVariantMap[product.status] ?? "outline";
   const typeEmoji = typeEmojiMap[product.type] ?? "📦";

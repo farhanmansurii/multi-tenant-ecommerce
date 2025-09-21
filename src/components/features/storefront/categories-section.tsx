@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
@@ -80,17 +81,12 @@ export function CategoriesSection({
                   </div>
                 </div>
 
-                {/* Category Name */}
                 <h3 className="font-semibold text-gray-900 text-sm group-hover:text-primary transition-colors">
                   {category.name}
                 </h3>
 
-                {/* Product Count Badge (if available) */}
-                {(category as any).productCount && (
-                  <Badge variant="secondary" className="mt-2 text-xs">
-                    {(category as any).productCount} products
-                  </Badge>
-                )}
+
+
               </CardContent>
             </Card>
           ))}

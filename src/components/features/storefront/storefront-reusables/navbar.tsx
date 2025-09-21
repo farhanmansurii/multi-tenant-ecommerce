@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 import Link from "next/link";
-import { LogoIcon } from "@/components/logo";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
@@ -50,7 +49,7 @@ export const StoreFrontHeader = ({ storeData }: { storeData: StoreData }) => {
                 aria-label="home"
                 className="flex items-center space-x-2"
               >
-                <img src={storeData.logo || "/placeholder-logo.png"} className="w-12 bg-white rounded-lg h-12"/>
+                <img src={storeData.logo || "/placeholder-logo.png"} alt={storeData.name || "Store logo"} className="w-12 bg-white rounded-lg h-12"/>
               </Link>
 
               <button
