@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Store, Plus, Loader2 } from "lucide-react";
+import { Store, Plus } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import StoreCard from "@/components/features/dashboard/store-card";
 import { StoreData } from "@/lib/types/store";
 import { fetchStores } from "@/lib/services/store-api";
+import { Loader } from "@/components/shared/common/loader";
 
 export default function DashboardPage() {
   const { isAuthenticated, user, isPending } = useSessionContext();
@@ -42,14 +43,7 @@ export default function DashboardPage() {
     : null;
 
   if (isPending) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading dashboard..." className="min-h-screen" />;
   }
 
   if (!isAuthenticated) {
@@ -85,18 +79,18 @@ export default function DashboardPage() {
       breadcrumbs={[{ label: "Home", href: "/" }, { label: "Dashboard" }]}
       headerActions={
         storeLimit && (
-          <Card className="p-3 min-w-[200px]">
-            <div className="flex items-center justify-between ">
+          <div className="p-4 min-w-[220px] rounded-xl border shadow-sm">
+            <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium">Store Usage</span>
               <span className="text-sm text-muted-foreground">
                 {storeLimit.count}/{storeLimit.limit}
               </span>
             </div>
             <Progress
-              className="p-0"
+              className="h-2"
               value={(storeLimit.count / storeLimit.limit) * 100}
             />
-          </Card>
+          </div>
         )
       }
     >

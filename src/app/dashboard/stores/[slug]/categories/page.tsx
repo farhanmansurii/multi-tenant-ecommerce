@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SingleImageUpload } from "@/components/ui/single-image-upload";
+import { Loader } from "@/components/shared/common/loader";
 import {
   Dialog,
   DialogContent,
@@ -112,14 +113,7 @@ export default function StoreCategoriesPage({
   };
 
   if (isPending || paramsLoading || storeLoading || categoriesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading categories...</p>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading categories..." className="min-h-screen" />;
   }
 
   if (!isAuthenticated) {

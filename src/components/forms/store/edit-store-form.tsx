@@ -24,9 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Loader } from "@/components/shared/common/loader";
 import {
   Save,
-  Loader2,
   CheckCircle,
   ArrowLeft,
   ArrowRight,
@@ -41,8 +41,6 @@ import {
   Shield,
   Star,
   Eye,
-  ChevronUp,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { storeSchema } from "@/lib/validations/store";
@@ -631,7 +629,7 @@ function BasicStoreForm({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader size={16} text="" className="mr-2" />
                     Creating...
                   </>
                 ) : (
@@ -1597,7 +1595,7 @@ function AdvancedStoreForm({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader size={16} text="" className="mr-2" />
                     Saving Store...
                   </>
                 ) : (

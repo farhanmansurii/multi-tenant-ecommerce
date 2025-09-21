@@ -4,7 +4,6 @@ import React, { Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Loader2,
   AlertTriangle,
   ShoppingBag,
   TagsIcon,
@@ -28,6 +27,7 @@ import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProductStats, fetchStore } from "@/lib/services/store-api";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
+import { Loader } from "@/components/shared/common/loader";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;
@@ -65,14 +65,7 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
 
   // Loading states
   if (isPending || paramsLoading || storeLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading store dashboard...</p>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading store dashboard..." className="min-h-screen" />;
   }
 
   // Authentication guard
@@ -202,7 +195,7 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
           </CardHeader>
           <CardContent>
             {productsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader size={20} text="" className="h-12" />
             ) : (
               <p className="text-3xl font-semibold text-foreground">
                 {productCount}

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertTriangle, Trash2, StoreIcon } from "lucide-react";
+import { AlertTriangle, Trash2, StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRequireAuth } from "@/lib/session-context";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DualStoreForm from "@/components/forms/store/edit-store-form";
+import { Loader } from "@/components/shared/common/loader";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { StoreData, StoreFormPayload } from "@/lib/types/store";
 
@@ -194,14 +195,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
   };
 
   if (isPending || paramsLoading || loading) {
-    return (
-      <div className="min-h-screen  flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="">Loading store...</p>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading store..." className="min-h-screen" />;
   }
 
   if (!isAuthenticated) {
@@ -300,7 +294,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
           >
             {isDeleting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader size={16} text="" className="mr-2" />
                 Deleting Store...
               </>
             ) : (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
@@ -9,6 +8,7 @@ import ProductCard, { ProductTable } from "./product-manager/product-card";
 import ProductEmptyState from "./product-manager/product-empty-state";
 import ProductToolbar from "./product-manager/product-toolbar";
 import { ProductData, ProductViewMode } from "./product-manager/types";
+import { Loader } from "@/components/shared/common/loader";
 
 interface ProductManagerProps {
   storeSlug: string;
@@ -42,12 +42,7 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
   }, [products, onProductsChange]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2 text-muted-foreground">Loading products...</span>
-      </div>
-    );
+    return <Loader text="Loading products..." className="py-8" />;
   }
 
   if (isError) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Package } from "lucide-react";
+import { Package } from "lucide-react";
 
 import {
   Card,
@@ -13,6 +13,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { HeroSection } from "./hero-section";
 import { fetchCategories } from "@/lib/services/category-api";
+import { Loader } from "@/components/shared/common/loader";
 
 interface StorefrontViewProps {
   slug: string;
@@ -81,14 +82,7 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
   const error = storeError;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span>Loading storefront...</span>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading storefront..." className="min-h-screen" />;
   }
 
   if (error || !store) {

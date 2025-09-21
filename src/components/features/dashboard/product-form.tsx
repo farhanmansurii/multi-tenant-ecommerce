@@ -176,6 +176,12 @@ export default function ProductForm({
       icon={Package2Icon}
       headerActions={
         <div className="flex items-center gap-3">
+          {!isCreateMode && (
+            <DangerZone
+              onDelete={handleDelete}
+              isDeleting={deleteMutation.isPending}
+            />
+          )}
           <Button
             type="button"
             variant="outline"
@@ -201,69 +207,57 @@ export default function ProductForm({
         </div>
       }
     >
-      <Card>
-        <CardContent className="p-6">
-          <form
-            id="product-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-8"
-          >
-            <section className="space-y-6">
-              <ImageUploadSection
-                uploadedFiles={uploadedFiles}
-                setUploadedFiles={setUploadedFiles}
+      <form
+        id="product-form"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
+        <section className="space-y-6">
+          <ImageUploadSection
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
+          />
+        </section>
+        <BasicInformationSection form={form} storeSlug={storeSlug} />
+        <ProductDetailsSection form={form} storeSlug={storeSlug} />
+        <section className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <SwitchField
+              name="requiresShipping"
+              label="Requires Shipping"
+              description="Enable for physical goods that ship."
+              control={form.control}
+            />
+            <SwitchField
+              name="taxable"
+              label="Taxable"
+              description="Collect sales tax on this product."
+              control={form.control}
+            />
+            <SwitchField
+              name="trackQuantity"
+              label="Track Quantity"
+              description="Automatically adjust stock as orders close."
+              control={form.control}
+            />
+            <SwitchField
+              name="allowBackorder"
+              label="Allow Backorders"
+              description="Accept orders when inventory hits zero."
+              control={form.control}
+            />
+            <div className="md:col-span-2">
+              <SwitchField
+                name="featured"
+                label="Feature this product"
+                description="Highlight in featured sections and landing pages."
+                control={form.control}
               />
-            </section>
-            <BasicInformationSection form={form} storeSlug={storeSlug} />
-            <ProductDetailsSection form={form} storeSlug={storeSlug} />
-            <section className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <SwitchField
-                  name="requiresShipping"
-                  label="Requires Shipping"
-                  description="Enable for physical goods that ship."
-                  control={form.control}
-                />
-                <SwitchField
-                  name="taxable"
-                  label="Taxable"
-                  description="Collect sales tax on this product."
-                  control={form.control}
-                />
-                <SwitchField
-                  name="trackQuantity"
-                  label="Track Quantity"
-                  description="Automatically adjust stock as orders close."
-                  control={form.control}
-                />
-                <SwitchField
-                  name="allowBackorder"
-                  label="Allow Backorders"
-                  description="Accept orders when inventory hits zero."
-                  control={form.control}
-                />
-                <div className="md:col-span-2">
-                  <SwitchField
-                    name="featured"
-                    label="Feature this product"
-                    description="Highlight in featured sections and landing pages."
-                    control={form.control}
-                  />
-                </div>
-              </div>
-            </section>
-            <CategoriesAndTagsSection form={form} storeSlug={storeSlug} />
-          </form>
-        </CardContent>
-      </Card>
-
-
-      {!isCreateMode && (
-        <DangerZone
-          onDelete={handleDelete}
-          isDeleting={deleteMutation.isPending}
-        />
-      )}
+            </div>
+          </div>
+        </section>
+        <CategoriesAndTagsSection form={form} storeSlug={storeSlug} />
+      </form>
     </DashboardLayout>
   );
 }
