@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { ReactNode } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
+import { DashboardFooter } from './dashboard-footer';
 
 type Breadcrumb = {
   label: string;
@@ -94,10 +95,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-6 w-full  min-h-full">
           {children}
         </div>
       </div>
+      <DashboardFooter />
     </div>
   );
 };
