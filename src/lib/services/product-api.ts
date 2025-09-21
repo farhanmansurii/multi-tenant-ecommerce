@@ -74,3 +74,12 @@ export const deleteProduct = async (
     throw new Error(errorData?.error || "Failed to delete product");
   }
 };
+
+export async function fetchProducts(slug: string): Promise<ProductData[]> {
+  const res = await fetch(`/api/stores/${slug}/products`);
+  if (!res.ok) return [];
+  const payload = await res.json();
+  return Array.isArray(payload.products)
+    ? (payload.products as ProductData[])
+    : [];
+}

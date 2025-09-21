@@ -52,6 +52,7 @@ import {
 } from "@tanstack/react-query";
 import { fetchStore } from "@/lib/services/store-api";
 
+
 interface StoreCategoriesPageProps {
   params: Promise<{ slug: string }>;
 }

@@ -1,4 +1,4 @@
-import { StoreData } from "../types/store";
+import { StoreData, StoreFormPayload } from "../types/store";
 
 interface ProductsResponse {
   count: number;
@@ -25,6 +25,22 @@ export const fetchStore = async (slug: string): Promise<StoreData> => {
   const data = await response.json();
   return data.store;
 };
+
+export async function updateStore(slug: string, data: StoreFormPayload): Promise<StoreData> {
+  const response = await fetch(`/api/stores/${slug}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || "Failed to update store");
+  }
+
+  const result = await response.json();
+  return result.store;
+}
 
 export async function fetchProductStats(slug: string): Promise<number> {
   const res = await fetch(`/api/stores/${slug}/products`);

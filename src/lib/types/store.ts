@@ -1,5 +1,7 @@
 
 export interface StoreData {
+  upiId: string;
+  codEnabled: boolean;
   productCount: number;
   id: string;
   ownerId: string;
@@ -13,8 +15,7 @@ export interface StoreData {
   businessType: 'individual' | 'business' | 'nonprofit';
   businessName: string;
   taxId?: string | null;
-  addressLine1?: string | null;
-  address?: string | null;
+  addressLine1: string;
   city: string;
   state: string;
   zipCode: string;
@@ -65,6 +66,8 @@ export interface StoreFormPayload {
   timezone: string;
   language: string;
   paymentMethods: string[];
+  upiId?: string;
+  codEnabled: boolean;
   stripeAccountId?: string;
   paypalEmail?: string;
   shippingEnabled: boolean;

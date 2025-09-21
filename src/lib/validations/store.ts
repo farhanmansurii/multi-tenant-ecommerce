@@ -18,19 +18,22 @@ export const storeSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
 	phone: z.string().optional(),
 	website: z.string().url("Please enter a valid website URL").optional().or(z.literal("")),
-	businessType: z.enum(["individual", "business", "nonprofit"]),
-	businessName: z
-		.string()
-		.min(2, "Business name must be at least 2 characters")
-		.max(100, "Business name must be less than 100 characters"),
-	taxId: z.string().optional(),
-	address: z.string().min(5, "Address must be at least 5 characters"),
-	city: z.string().min(2, "City must be at least 2 characters"),
-	state: z.string().min(2, "State must be at least 2 characters"),
-	zipCode: z.string().min(5, "ZIP code must be at least 5 characters"),
-	country: z.string().min(2, "Country must be at least 2 characters"),
+	address: z.string().min(5, "Address must be at least 5 characters").optional(),
+	city: z.string().min(2, "City must be at least 2 characters").optional(),
+	state: z.string().min(2, "State must be at least 2 characters").optional(),
+	zipCode: z.string().min(5, "ZIP code must be at least 5 characters").optional(),
+	country: z.string().min(2, "Country must be at least 2 characters").optional(),
 	logo: z.string().optional(),
 	favicon: z.string().optional(),
+	heroImages: z
+		.array(
+			z.object({
+				url: z.string(),
+				name: z.string(),
+				size: z.number(),
+			}),
+		)
+		.optional(),
 	primaryColor: z
 		.string()
 		.regex(/^#[0-9A-F]{6}$/i, "Please enter a valid hex color code"),
@@ -42,6 +45,8 @@ export const storeSchema = z.object({
 	timezone: z.string().min(1, "Please select a timezone"),
 	language: z.string().min(2, "Please select a language"),
 	paymentMethods: z.array(z.string()).min(1, "Please select at least one payment method"),
+	upiId: z.string().optional(),
+	codEnabled: z.boolean(),
 	stripeAccountId: z.string().optional(),
 	paypalEmail: z.string().email("Please enter a valid PayPal email").optional(),
 	shippingEnabled: z.boolean(),
@@ -58,9 +63,6 @@ export const storeSchema = z.object({
 	termsOfService: z.string().min(10, "Terms of service must be at least 10 characters"),
 	privacyPolicy: z.string().min(10, "Privacy policy must be at least 10 characters"),
 	refundPolicy: z.string().min(10, "Refund policy must be at least 10 characters"),
-	status: z.enum(["draft", "active", "suspended"]),
-	featured: z.boolean(),
 });
 
 export type StoreFormData = z.infer<typeof storeSchema>;
-
