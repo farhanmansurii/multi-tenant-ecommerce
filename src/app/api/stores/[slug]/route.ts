@@ -219,9 +219,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         contactEmail: parsed.email,
         contactPhone: parsed.phone || null,
         website: parsed.website || null,
-        businessType: parsed.businessType,
-        businessName: parsed.businessName,
-        taxId: parsed.taxId || null,
         addressLine1: parsed.address,
         city: parsed.city,
         state: parsed.state,
@@ -244,8 +241,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         termsOfService: parsed.termsOfService,
         privacyPolicy: parsed.privacyPolicy,
         refundPolicy: parsed.refundPolicy,
-        status: parsed.status,
-        featured: parsed.featured,
         updatedAt: new Date(),
       })
       .where(eq(stores.id, store.id));

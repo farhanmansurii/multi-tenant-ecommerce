@@ -20,13 +20,11 @@ import {
 } from "@/components/ui/table";
 import { ProductData, ProductViewMode } from "./types";
 import {
-  DollarSign,
   Edit,
   Eye,
   Hash,
   MoreHorizontal,
   Package,
-  Package2,
   Trash2,
 } from "lucide-react";
 
