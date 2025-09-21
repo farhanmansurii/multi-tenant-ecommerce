@@ -2,6 +2,7 @@
 import React, { ReactNode } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { DashboardFooter } from './dashboard-footer';
+import { DashboardNavbar } from './dashboard-navbar';
 
 type Breadcrumb = {
   label: string;
@@ -31,6 +32,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-background">
+      <DashboardNavbar />
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {(title || desc || image || icon || headerActions || bottomActions || breadcrumbs) && (
           <div className="space-y-4">
