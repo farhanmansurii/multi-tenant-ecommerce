@@ -1,12 +1,13 @@
 "use client";
 
-import GoogleSignInButton from '@/components/reusables/google-login';
+
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/lib/session-context';
 import { redirect, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { GoogleSignInButton } from '@/components';
 
 export default function Home() {
 	const { isAuthenticated, isPending } = useAuth();
@@ -23,7 +24,7 @@ export default function Home() {
 
 	return (
 		<div className="min-h-screen ">
-			<nav className="bg-white shadow">
+			<nav className=" shadow">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="flex justify-between h-16">
 						<div className="flex items-center">
@@ -46,14 +47,6 @@ export default function Home() {
 
 			<main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 				<div className="px-4 py-6 sm:px-0">
-					{showLoginPrompt && (
-						<Alert className="mb-6">
-							<AlertDescription>
-								Please sign in to access the dashboard.
-							</AlertDescription>
-						</Alert>
-					)}
-
 					<div className="text-center">
 						<h2 className="text-3xl font-bold text-gray-900">Welcome to Multi-Tenant Ecommerce</h2>
 						<p className="mt-4 text-lg ">

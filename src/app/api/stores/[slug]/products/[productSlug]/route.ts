@@ -103,6 +103,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       featured: payload.featured !== undefined ? Boolean(payload.featured) : currentProduct.featured,
       categories: Array.isArray(payload.categories) ? payload.categories : currentProduct.categories,
       tags: Array.isArray(payload.tags) ? payload.tags : currentProduct.tags,
+      images: Array.isArray(payload.images) ? payload.images : currentProduct.images,
       updatedAt: new Date(),
     };
 

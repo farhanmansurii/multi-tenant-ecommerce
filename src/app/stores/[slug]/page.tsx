@@ -1,4 +1,5 @@
-import StorefrontView from '@/components/storefront/storefront-view';
+import { StorefrontView } from "@/components";
+
 
 interface StorefrontPageProps {
   params: { slug: string };

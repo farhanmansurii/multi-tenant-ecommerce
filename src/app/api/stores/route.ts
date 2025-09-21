@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { eq, count } from "drizzle-orm";
+import { eq, count, sql, inArray } from "drizzle-orm";
 
 import { requireAuthOrNull } from "@/lib/session-helpers";
 import { db } from "@/lib/db";
-import { stores } from "@/lib/db/schema";
+import { stores, products } from "@/lib/db/schema";
 import { storeSchema } from "@/lib/validations/store";
 
 const MAX_STORES_PER_USER = 3;
@@ -109,13 +109,33 @@ export async function GET() {
 	}
 
 	try {
+		// Get stores
 		const userStores = await db
 			.select()
 			.from(stores)
 			.where(eq(stores.ownerId, session.user.id));
 
+		const storeIds = userStores.map(store => store.id);
+		const productCounts = storeIds.length > 0 ? await db
+			.select({
+				storeId: products.storeId,
+				count: sql<number>`COUNT(*)::int`.as('count')
+			})
+			.from(products)
+			.where(inArray(products.storeId, storeIds))
+			.groupBy(products.storeId) : [];
+
+		const productCountMap = new Map(
+			productCounts.map(pc => [pc.storeId, pc.count])
+		);
+
+		const storesWithCounts = userStores.map(store => ({
+			...store,
+			productCount: productCountMap.get(store.id) || 0
+		}));
+
 		return NextResponse.json({
-			stores: userStores,
+			stores: storesWithCounts,
 			count: userStores.length,
 			limit: MAX_STORES_PER_USER,
 			canCreateMore: userStores.length < MAX_STORES_PER_USER

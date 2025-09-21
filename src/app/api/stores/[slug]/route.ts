@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
@@ -36,11 +36,24 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     const storeData = store[0];
 
+    // Get product count for this store
+    const [productCountResult] = await db
+      .select({
+        count: sql<number>`COUNT(*)::int`.as('count')
+      })
+      .from(products)
+      .where(eq(products.storeId, storeData.id));
+
+    const storeDataWithCount = {
+      ...storeData,
+      productCount: productCountResult?.count || 0
+    };
+
     // Return the store data as JSON
     return NextResponse.json({
       success: true,
-      store: storeData,
-      url: `sellmystuff.com/${storeData.slug}`,
+      store: storeDataWithCount,
+      url: `sellmystuff.com/${storeDataWithCount.slug}`,
       timestamp: new Date().toISOString()
     });
 

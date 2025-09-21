@@ -1,4 +1,4 @@
-import StoreCreate from '@/components/dashboard/stores/store-create';
+import { StoreCreate } from "@/components";
 
 export default function StoreCreatePage() {
   return <StoreCreate />;
