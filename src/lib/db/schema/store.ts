@@ -61,5 +61,5 @@ export const stores = pgTable("stores", {
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Relations removed - auth system removed
+
 
