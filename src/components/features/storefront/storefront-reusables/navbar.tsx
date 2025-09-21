@@ -16,7 +16,6 @@ const menuItems = [
 ];
 
 export const StoreFrontHeader = ({ storeData }: { storeData: StoreData }) => {
-  console.log(storeData)
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -51,7 +50,7 @@ export const StoreFrontHeader = ({ storeData }: { storeData: StoreData }) => {
                 aria-label="home"
                 className="flex items-center space-x-2"
               >
-                <img src={storeData.logo} className="w-12 bg-white rounded-lg h-12"/>
+                <img src={storeData.logo || "/placeholder-logo.png"} className="w-12 bg-white rounded-lg h-12"/>
               </Link>
 
               <button

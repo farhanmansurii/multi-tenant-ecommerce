@@ -31,9 +31,7 @@ async function fetchProducts(storeSlug: string): Promise<ProductData[]> {
   const res = await fetch(`/api/stores/${storeSlug}/products`);
   if (!res.ok) throw new Error("Failed to fetch products");
   const data: { products?: ProductData[] } = await res.json();
-  console.log('Fetched products data:', data);
   const products = Array.isArray(data.products) ? data.products : [];
-  console.log('Processed products:', products);
   return products;
 }
 
@@ -119,7 +117,9 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
             )
           }
           onDelete={handleDeleteProduct}
-          onView={(p: ProductData) => console.log("View product:", p)}
+          onView={(p: ProductData) => {
+            // Navigate to product detail page
+          }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -141,7 +141,9 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
                   )
                 }
                 onDelete={handleDeleteProduct}
-                onView={(cur: ProductData) => console.log("View product:", cur)}
+                onView={(cur: ProductData) => {
+                  // Navigate to product detail page
+                }}
               />
             );
           })}

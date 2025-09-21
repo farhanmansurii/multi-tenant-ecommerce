@@ -94,7 +94,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         try {
           const deleteResult = await deleteUploadThingFiles(imagesToDelete);
           if (deleteResult.success) {
-            console.log(`Deleted ${deleteResult.deletedCount} old product images from UploadThing`);
           } else {
             console.error("Failed to delete some old product images:", deleteResult.errors);
           }
@@ -178,7 +177,6 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         const deleteResult = await deleteUploadThingFiles(imageUrls);
 
         if (deleteResult.success) {
-          console.log(`Deleted ${deleteResult.deletedCount} product images from UploadThing`);
         } else {
           console.error("Failed to delete some product images:", deleteResult.errors);
         }

@@ -133,7 +133,6 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       try {
         const deleteResult = await deleteUploadThingFiles(filesToDelete);
         if (deleteResult.success) {
-          console.log(`Deleted ${deleteResult.deletedCount} files from UploadThing for store: ${store.slug}`);
         } else {
           console.error("Failed to delete some files:", deleteResult.errors);
         }
@@ -201,7 +200,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       try {
         const deleteResult = await deleteUploadThingFiles(filesToDelete);
         if (deleteResult.success) {
-          console.log(`Deleted ${deleteResult.deletedCount} old store files from UploadThing`);
         } else {
           console.error("Failed to delete some old store files:", deleteResult.errors);
         }

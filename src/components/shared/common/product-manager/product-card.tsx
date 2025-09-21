@@ -169,7 +169,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onView,
   viewMode,
 }) => {
-  console.log("(log) ~ ProductCard ~ product:", product);
   const statusVariant = statusVariantMap[product.status] ?? "outline";
   const typeEmoji = typeEmojiMap[product.type] ?? "📦";
 

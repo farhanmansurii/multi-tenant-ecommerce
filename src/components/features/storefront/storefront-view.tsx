@@ -55,33 +55,27 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 
   // Event handlers
   const handleSearch = (query: string) => {
-    console.log("Search query:", query);
     // Implement search functionality
   };
 
   const handleCartClick = () => {
-    console.log("Cart clicked");
     // Implement cart functionality
   };
 
   const handleAccountClick = () => {
-    console.log("Account clicked");
     // Implement account functionality
   };
 
   const handleProductClick = (productId: string) => {
-    console.log("Product clicked:", productId);
     // Navigate to product detail page
   };
 
   const handleAddToCart = (productId: string) => {
-    console.log("Add to cart:", productId);
     setCartItemCount((prev) => prev + 1);
     // Implement add to cart functionality
   };
 
   const handleAddToWishlist = (productId: string) => {
-    console.log("Add to wishlist:", productId);
     // Implement add to wishlist functionality
   };
 

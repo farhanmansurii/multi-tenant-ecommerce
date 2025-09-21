@@ -146,7 +146,6 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
 
   if (!store) return null;
 
-  console.log(store.name);
 
   return (
     <DashboardLayout

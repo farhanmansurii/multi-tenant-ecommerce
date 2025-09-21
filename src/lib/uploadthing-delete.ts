@@ -30,7 +30,6 @@ export async function deleteUploadThingFile(fileUrl: string): Promise<boolean> {
     const result = await utapi.deleteFiles([fileKey]);
 
     if (result.success) {
-      console.log(`Successfully deleted file: ${fileKey}`);
       return true;
     } else {
       console.error(`Failed to delete file: ${fileKey}`);
@@ -100,7 +99,6 @@ export async function deleteUploadThingFiles(fileUrls: string[]): Promise<{
 
     if (deleteResult.success) {
       results.deletedCount = fileKeys.length;
-      console.log(`Successfully deleted ${fileKeys.length} files from UploadThing`);
     } else {
       results.success = false;
       results.errors.push(`UploadThing deletion failed`);

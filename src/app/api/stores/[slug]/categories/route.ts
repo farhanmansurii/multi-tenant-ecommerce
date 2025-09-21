@@ -178,7 +178,6 @@ export async function PUT(
     if (existingCategory.image && existingCategory.image !== image) {
       try {
         await deleteUploadThingFile(existingCategory.image);
-        console.log(`Deleted old category image: ${existingCategory.image}`);
       } catch (error) {
         console.error("Failed to delete old category image from UploadThing:", error);
         // Continue with update even if old image deletion fails
@@ -251,7 +250,6 @@ export async function DELETE(
     if (existingCategory.image) {
       try {
         await deleteUploadThingFile(existingCategory.image);
-        console.log(`Deleted category image: ${existingCategory.image}`);
       } catch (error) {
         console.error("Failed to delete category image from UploadThing:", error);
         // Continue with category deletion even if image deletion fails
