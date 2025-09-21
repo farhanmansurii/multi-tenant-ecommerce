@@ -7,15 +7,10 @@ import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
-  Bell,
-  Settings,
   User,
   LogOut,
-  Store,
-  Package,
   BarChart3,
   HelpCircle,
-  Icon,
   PiIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { useSessionContext } from "@/lib/session-context";
 import { signOut } from "@/lib/auth-client";
 import { Avatar } from "@/components/ui/avatar";

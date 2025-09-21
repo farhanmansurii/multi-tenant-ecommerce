@@ -70,3 +70,43 @@ export const createTag = async (
   const result = await response.json();
   return result.tag;
 };
+
+export const updateCategory = async (
+  storeSlug: string,
+  categoryId: string,
+  data: {
+    name: string;
+    description?: string;
+    image?: string;
+    color?: string;
+    sortOrder?: number;
+  }
+): Promise<Category> => {
+  const response = await fetch(`/api/stores/${storeSlug}/categories`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: categoryId, ...data }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || "Failed to update category");
+  }
+
+  const result = await response.json();
+  return result.category;
+};
+
+export const deleteCategory = async (
+  storeSlug: string,
+  categoryId: string
+): Promise<void> => {
+  const response = await fetch(`/api/stores/${storeSlug}/categories?id=${categoryId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || "Failed to delete category");
+  }
+};
