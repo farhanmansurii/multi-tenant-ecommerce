@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { categories, stores } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
+import { deleteUploadThingFile } from "@/lib/uploadthing-delete";
 
 // GET /api/stores/[slug]/categories - Get all categories for a store
 export async function GET(
@@ -173,6 +174,17 @@ export async function PUT(
       );
     }
 
+    // Delete old image from UploadThing if it's being replaced or removed
+    if (existingCategory.image && existingCategory.image !== image) {
+      try {
+        await deleteUploadThingFile(existingCategory.image);
+        console.log(`Deleted old category image: ${existingCategory.image}`);
+      } catch (error) {
+        console.error("Failed to delete old category image from UploadThing:", error);
+        // Continue with update even if old image deletion fails
+      }
+    }
+
     // Update the category
     const updatedCategory = await db
       .update(categories)
@@ -233,6 +245,17 @@ export async function DELETE(
 
     if (!existingCategory) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    // Delete the category image from UploadThing if it exists
+    if (existingCategory.image) {
+      try {
+        await deleteUploadThingFile(existingCategory.image);
+        console.log(`Deleted category image: ${existingCategory.image}`);
+      } catch (error) {
+        console.error("Failed to delete category image from UploadThing:", error);
+        // Continue with category deletion even if image deletion fails
+      }
     }
 
     // Soft delete the category by setting isActive to false

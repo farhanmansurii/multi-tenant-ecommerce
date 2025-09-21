@@ -4,6 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, stores } from "@/lib/db/schema";
 import { requireAuthOrNull } from "@/lib/session-helpers";
+import { deleteUploadThingFiles } from "@/lib/uploadthing-delete";
+import { ProductImage } from "@/lib/db/schema/product";
 
 interface RouteParams {
   params: Promise<{
@@ -79,6 +81,30 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     const payload = await request.json();
 
+    // Handle image changes - delete old images that are no longer in the new images
+    const newImages = Array.isArray(payload.images) ? payload.images : currentProduct.images;
+    const oldImages = currentProduct.images as ProductImage[] || [];
+
+    if (oldImages.length > 0 && newImages.length > 0) {
+      const oldImageUrls = oldImages.map(img => img.url);
+      const newImageUrls = (newImages as ProductImage[]).map(img => img.url);
+      const imagesToDelete = oldImageUrls.filter(url => !newImageUrls.includes(url));
+
+      if (imagesToDelete.length > 0) {
+        try {
+          const deleteResult = await deleteUploadThingFiles(imagesToDelete);
+          if (deleteResult.success) {
+            console.log(`Deleted ${deleteResult.deletedCount} old product images from UploadThing`);
+          } else {
+            console.error("Failed to delete some old product images:", deleteResult.errors);
+          }
+        } catch (error) {
+          console.error("Failed to delete old product images from UploadThing:", error);
+          // Continue with update even if old image deletion fails
+        }
+      }
+    }
+
     const updateData = {
       name: payload.name ?? currentProduct.name,
       slug: payload.slug ?? currentProduct.slug,
@@ -103,7 +129,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       featured: payload.featured !== undefined ? Boolean(payload.featured) : currentProduct.featured,
       categories: Array.isArray(payload.categories) ? payload.categories : currentProduct.categories,
       tags: Array.isArray(payload.tags) ? payload.tags : currentProduct.tags,
-      images: Array.isArray(payload.images) ? payload.images : currentProduct.images,
+      images: newImages,
       updatedAt: new Date(),
     };
 
@@ -143,6 +169,23 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const product = await getProductBySlug(store.id, productSlug);
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Delete product images from UploadThing if they exist
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      try {
+        const imageUrls = (product.images as ProductImage[]).map(img => img.url);
+        const deleteResult = await deleteUploadThingFiles(imageUrls);
+
+        if (deleteResult.success) {
+          console.log(`Deleted ${deleteResult.deletedCount} product images from UploadThing`);
+        } else {
+          console.error("Failed to delete some product images:", deleteResult.errors);
+        }
+      } catch (error) {
+        console.error("Failed to delete product images from UploadThing:", error);
+        // Continue with product deletion even if image deletion fails
+      }
     }
 
     await db

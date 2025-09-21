@@ -3,9 +3,10 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
-import { products, stores } from "@/lib/db/schema";
+import { products, stores, categories } from "@/lib/db/schema";
 import { requireAuthOrNull } from "@/lib/session-helpers";
 import { storeSchema } from "@/lib/validations/store";
+import { deleteUploadThingFiles } from "@/lib/uploadthing-delete";
 
 interface RouteParams {
   params: Promise<{
@@ -95,8 +96,56 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Get all products and categories to collect their images
+    const storeProducts = await db
+      .select({ images: products.images })
+      .from(products)
+      .where(eq(products.storeId, store.id));
+
+    const storeCategories = await db
+      .select({ image: categories.image })
+      .from(categories)
+      .where(eq(categories.storeId, store.id));
+
+    // Collect all file URLs to delete
+    const filesToDelete: string[] = [];
+
+    // Add store logo and favicon
+    if (store.logo) filesToDelete.push(store.logo);
+    if (store.favicon) filesToDelete.push(store.favicon);
+
+    // Add category images
+    storeCategories.forEach(category => {
+      if (category.image) filesToDelete.push(category.image);
+    });
+
+    // Add product images
+    storeProducts.forEach(product => {
+      if (product.images && Array.isArray(product.images)) {
+        product.images.forEach((img: { url?: string }) => {
+          if (img.url) filesToDelete.push(img.url);
+        });
+      }
+    });
+
+    // Delete all files from UploadThing
+    if (filesToDelete.length > 0) {
+      try {
+        const deleteResult = await deleteUploadThingFiles(filesToDelete);
+        if (deleteResult.success) {
+          console.log(`Deleted ${deleteResult.deletedCount} files from UploadThing for store: ${store.slug}`);
+        } else {
+          console.error("Failed to delete some files:", deleteResult.errors);
+        }
+      } catch (error) {
+        console.error("Failed to delete files from UploadThing:", error);
+        // Continue with store deletion even if file deletion fails
+      }
+    }
+
     await db.transaction(async (tx) => {
       await tx.delete(products).where(eq(products.storeId, store.id));
+      await tx.delete(categories).where(eq(categories.storeId, store.id));
       await tx.delete(stores).where(eq(stores.id, store.id));
     });
 
@@ -135,6 +184,32 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     const payload = await request.json();
     const parsed = storeSchema.parse(payload);
+
+    // Handle logo and favicon changes - delete old files if they're being replaced
+    const filesToDelete: string[] = [];
+
+    if (store.logo && store.logo !== parsed.logo) {
+      filesToDelete.push(store.logo);
+    }
+
+    if (store.favicon && store.favicon !== parsed.favicon) {
+      filesToDelete.push(store.favicon);
+    }
+
+    // Delete old files from UploadThing
+    if (filesToDelete.length > 0) {
+      try {
+        const deleteResult = await deleteUploadThingFiles(filesToDelete);
+        if (deleteResult.success) {
+          console.log(`Deleted ${deleteResult.deletedCount} old store files from UploadThing`);
+        } else {
+          console.error("Failed to delete some old store files:", deleteResult.errors);
+        }
+      } catch (error) {
+        console.error("Failed to delete old store files from UploadThing:", error);
+        // Continue with update even if old file deletion fails
+      }
+    }
 
     await db
       .update(stores)
