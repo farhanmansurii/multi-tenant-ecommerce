@@ -1,0 +1,36 @@
+'use client';
+
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+
+import { fetchCategories } from '@/lib/services/category-api';
+import type { Category } from '@/lib/db/schema/category';
+
+export const categoriesQueryKey = (storeSlug: string | null | undefined) => [
+	'categories',
+	storeSlug ?? '',
+];
+
+type UseCategoriesOptions = Omit<
+	UseQueryOptions<Category[], Error>,
+	'queryKey' | 'queryFn' | 'enabled'
+>;
+
+export function useCategories(
+	storeSlug: string | null | undefined,
+	options?: UseCategoriesOptions
+) {
+	const enabled = Boolean(storeSlug);
+
+	return useQuery({
+		queryKey: categoriesQueryKey(storeSlug),
+		queryFn: () => {
+			if (!storeSlug) {
+				throw new Error('Missing store slug for category query');
+			}
+
+			return fetchCategories(storeSlug);
+		},
+		enabled,
+		...options,
+	});
+}

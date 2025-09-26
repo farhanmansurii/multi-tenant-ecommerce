@@ -1,13 +1,12 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Facebook, Instagram, Linkedin, Send, Twitter } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import { StoreData } from "@/lib/types/store";
 import { ModeToggle } from "@/components/shared/common/theme-toggle";
 import StoreFrontContainer from "./container";

@@ -1,5 +1,6 @@
 
 export interface StoreData {
+  address: string;
   upiId: string;
   codEnabled: boolean;
   productCount: number;
