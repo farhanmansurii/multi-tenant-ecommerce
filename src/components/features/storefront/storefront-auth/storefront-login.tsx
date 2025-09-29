@@ -10,11 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import StoreFrontContainer from '@/components/features/storefront/storefront-reusables/container';
 import { StoreFrontHeader } from '@/components/features/storefront/storefront-reusables/navbar';
 import StoreFrontFooter from '@/components/features/storefront/storefront-reusables/footer';
-import type { StoreData } from '@/lib/types/store';
-import { signIn } from '@/lib/auth-client';
+
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
-import { useSessionContext } from '@/lib/session-context';
+
 import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
+import { useSessionContext } from '@/lib/session';
+import { StoreData } from '@/lib/domains/stores';
+import { signIn } from '@/lib/auth/client';
 
 interface StorefrontLoginProps {
 	store: StoreData;

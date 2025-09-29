@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 
 import StorefrontProductView from '@/components/features/storefront/product-detail-view';
 import { generateBaseMetadata, generateProductMetadata } from '@/lib/metadata';
-import type { ProductData } from '@/lib/types/product';
-import type { StoreData } from '@/lib/types/store';
-import { fetchStoreAndProduct } from '@/lib/services/product-api';
+import { StoreData } from '@/lib/domains/stores';
+import { ProductData } from '@/lib/domains/products';
+import { fetchStoreAndProduct } from '@/lib/domains/products/service';
+
 
 interface RouteParams {
 	slug: string;

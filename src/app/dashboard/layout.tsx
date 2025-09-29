@@ -1,6 +1,7 @@
 "use client";
 import { Loader } from "@/components/shared/common/loader";
-import { useRequireAuth } from "@/lib/session-context";
+import { useRequireAuth } from "@/lib/session";
+
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
 

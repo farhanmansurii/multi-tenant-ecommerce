@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSessionContext } from '@/lib/session-context';
+import { useSessionContext } from '@/lib/session';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 
 interface StoreJoinerProps {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { useRequireAuth } from "@/lib/session-context";
+
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +19,11 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader } from "@/components/shared/common/loader";
 import { StoreData, StoreFormPayload } from "@/lib/domains/stores/types";
-import { fetchStore, updateStore } from "@/lib/services/store-api";
+
 import EditStoreForm from "@/components/forms/store/edit-store-form";
+import { fetchStore } from "@/lib/domains/stores/service";
+import { updateStore } from "@/lib/domains/stores/service";
+import { useRequireAuth } from "@/lib/session";
 
 interface StoreSettingsProps {
   params: Promise<{ slug: string }>;

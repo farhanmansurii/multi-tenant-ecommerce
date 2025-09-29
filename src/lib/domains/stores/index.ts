@@ -1,4 +1,4 @@
 export * as storeHelpers from "./helpers";
-export * as storeServices from "./services";
+export * as storeServices from "./service";
 export * from "./types";
-export * from "./validations";
+export * from "./validation"

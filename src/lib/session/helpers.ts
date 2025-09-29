@@ -1,11 +1,12 @@
-import { redirect } from "next/navigation";
-import { auth } from "./auth";
+"use server";
+
 import { headers } from "next/headers";
 import { cache } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "../auth/server";
 
 // Cache the session for the duration of the request
 const getServerSession = cache(async () => {
-  "use server";
   try {
     const session = await auth.api.getSession({
       headers: await headers(),

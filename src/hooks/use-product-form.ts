@@ -7,23 +7,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
-import { useRequireAuth } from "@/lib/session-context";
+
 import { UploadedFile } from "@/lib/domains/products/types";
 import {
   productFormSchema,
   ProductFormValues,
 } from "@/lib/validations/product-form";
-import {
-  parseNumberOrUndefined,
-  formatProductFormData,
-} from "@/lib/utils/product-formatters";
-import {
-  fetchProduct,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "@/lib/services/product-api";
-import { fetchStore } from "@/lib/services/store-api";
+import { fetchStore } from "@/lib/domains/stores/service";
+import { createProduct, deleteProduct, fetchProduct, updateProduct } from "@/lib/domains/products/service";
+import { formatProductFormData, parseNumberOrUndefined } from "@/lib/domains/products/formatters";
+import { useRequireAuth } from "@/lib/session";
+
+
+
 interface UseProductFormProps {
   mode: "create" | "edit";
   storeSlug: string;
@@ -145,9 +141,19 @@ export const useProductForm = ({
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: ProductFormValues) =>
-      createProduct(storeSlug, formatProductFormData(data, uploadedFiles)),
+    mutationFn: (data: ProductFormValues) => {
+      const formattedData = formatProductFormData(data, uploadedFiles)
+      // Fix: shortDescription must be string | undefined, not null
+      const { shortDescription, ...rest } = formattedData
+      return createProduct(storeSlug, {
+        ...rest,
+        shortDescription: shortDescription ?? undefined
+      })
+    },
     onSuccess: () => {
+      toast.success('Product created successfully')
+      queryClient.invalidateQueries({ queryKey: ['store', storeSlug] })
+      router.push(`/dashboard/stores/${storeSlug}`)
       toast.success("Product created successfully");
       queryClient.invalidateQueries({ queryKey: ["store", storeSlug] });
       router.push(`/dashboard/stores/${storeSlug}`);

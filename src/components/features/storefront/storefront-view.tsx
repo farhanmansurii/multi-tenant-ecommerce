@@ -5,17 +5,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import { Loader } from '@/components/shared/common/loader';
-import { fetchProducts } from '@/lib/services/product-api';
+
 import { StoreFrontHeader } from './storefront-reusables/navbar';
 import StoreFrontFooter from './storefront-reusables/footer';
-import { fetchStore } from '@/lib/services/store-api';
+
 import ProductGrid from './storefront-reusables/products/product-grid';
 import StoreFrontContainer from './storefront-reusables/container';
 import { useCategories } from '@/hooks/use-categories';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
-import type { ProductData } from '@/lib/types/product';
+
 import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
 import { toast } from 'sonner';
+import { fetchStore } from '@/lib/domains/stores/service';
+import { fetchProducts } from '@/lib/domains/products/service';
+import { ProductData } from '@/lib/domains/products';
 
 interface StorefrontViewProps {
 	slug: string;
@@ -86,8 +89,8 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 	const filteredProducts = useMemo(() => {
 		if (!selectedCategoryId) return products;
 
-		return products.filter((product) =>
-			product.categories?.some((category) => category === selectedCategoryId)
+		return products.filter((product:ProductData) =>
+			product.categories?.some((category:string) => category === selectedCategoryId)
 		);
 	}, [products, selectedCategoryId]);
 

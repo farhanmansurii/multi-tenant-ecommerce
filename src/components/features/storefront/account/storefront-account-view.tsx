@@ -23,12 +23,13 @@ import { Input } from '@/components/ui/input';
 import StoreFrontContainer from '@/components/features/storefront/storefront-reusables/container';
 import { StoreFrontHeader } from '@/components/features/storefront/storefront-reusables/navbar';
 import StoreFrontFooter from '@/components/features/storefront/storefront-reusables/footer';
-import type { StoreData } from '@/lib/types/store';
-import { useSessionContext } from '@/lib/session-context';
-import { signOut } from '@/lib/auth-client';
+
 import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
 import { formatPrice } from '@/lib/utils/price';
 import type { StorefrontAddress } from '@/lib/state/storefront/types';
+import { StoreData } from '@/lib/domains/stores';
+import { useSessionContext } from '@/lib/session';
+import { signOut } from '@/lib/auth/client';
 
 interface StorefrontAccountViewProps {
 	store: StoreData;

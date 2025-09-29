@@ -22,10 +22,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSessionContext } from "@/lib/session-context";
-import { signOut } from "@/lib/auth-client";
+
 import { Avatar } from "@/components/ui/avatar";
 import { undefined } from "zod";
+import { useSessionContext } from "@/lib/session";
+import { signOut } from "@/lib/auth/client";
 
 const navigationItems = [
   {

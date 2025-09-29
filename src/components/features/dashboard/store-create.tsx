@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { useRequireAuth } from '@/lib/session-context';
+import { useRequireAuth } from '@/lib/session';
 
 import { StoreFormData } from '@/lib/validations/store';
 import DualStoreForm from '@/components/forms/store/edit-store-form';

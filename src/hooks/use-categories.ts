@@ -1,9 +1,10 @@
 'use client';
 
+import { Category } from '@/lib/db/schema';
+import { fetchCategories } from '@/lib/services/category';
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 
-import { fetchCategories } from '@/lib/services/category-api';
-import type { Category } from '@/lib/db/schema/category';
+
 
 export const categoriesQueryKey = (storeSlug: string | null | undefined) => [
 	'categories',

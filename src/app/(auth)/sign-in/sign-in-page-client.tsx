@@ -1,11 +1,12 @@
 'use client'
 
-import { signIn } from '@/lib/auth-client'
+
 import { Eye, EyeOff, LogInIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { signIn } from '@/lib/auth/client'
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
   <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">

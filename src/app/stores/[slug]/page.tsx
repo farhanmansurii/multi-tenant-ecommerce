@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { StorefrontView } from '@/components';
 import { generateStoreMetadata } from '@/lib/metadata';
-import { fetchStore } from '@/lib/services/store-api';
+import { fetchStore } from '@/lib/domains/stores/service';
+
 
 interface StorefrontPageProps {
 	params: { slug: string };

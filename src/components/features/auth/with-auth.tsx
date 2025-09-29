@@ -1,6 +1,6 @@
 "use client";
 
-import { useRequireAuth } from '@/lib/session-context';
+import { useRequireAuth } from '@/lib/session';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 

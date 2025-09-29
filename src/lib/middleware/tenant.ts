@@ -1,3 +1,4 @@
+import "server-only";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { stores } from "@/lib/db/schema";

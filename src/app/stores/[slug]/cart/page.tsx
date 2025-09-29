@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation';
 import CartView from '@/components/features/storefront/cart/cart-view';
 import StoreFrontFooter from '@/components/features/storefront/storefront-reusables/footer';
 import { StoreFrontHeader } from '@/components/features/storefront/storefront-reusables/navbar';
-import { fetchStore } from '@/lib/services/store-api';
+import { fetchStore } from '@/lib/domains/stores/service';
+
 
 type CartPageProps = {
 	params: { slug: string };

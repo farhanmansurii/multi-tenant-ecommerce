@@ -38,9 +38,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { useRequireAuth } from "@/lib/session-context";
+
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
-import { fetchCategories, createCategory, updateCategory, deleteCategory } from "@/lib/services/category-api";
+
 import { Category } from "@/lib/db/schema";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
@@ -50,7 +50,10 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { fetchStore } from "@/lib/services/store-api";
+import { useRequireAuth } from "@/lib/session";
+import { fetchStore } from "@/lib/domains/stores/service";
+import { createCategory, deleteCategory, fetchCategories, updateCategory } from "@/lib/services/category";
+
 
 
 interface StoreCategoriesPageProps {

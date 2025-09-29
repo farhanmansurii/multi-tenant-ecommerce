@@ -1,7 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
-import { useSession as useBetterAuthSession } from "@/lib/auth-client";
+import { useSession } from "../auth/client";
+
+
 
 interface User {
   id: string;
@@ -29,7 +31,7 @@ interface SessionProviderProps {
 }
 
 export function SessionProvider({ children }: SessionProviderProps) {
-  const { data: session, isPending } = useBetterAuthSession();
+  const { data: session, isPending } = useSession();
 
   const value: SessionContextType = {
     session,
@@ -81,3 +83,4 @@ export function useRequireAuth() {
     isLoading: false,
   };
 }
+

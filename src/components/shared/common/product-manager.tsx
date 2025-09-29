@@ -9,7 +9,7 @@ import ProductEmptyState from "./product-manager/product-empty-state";
 import ProductToolbar from "./product-manager/product-toolbar";
 import { ProductData, ProductViewMode } from "./product-manager/types";
 import { Loader } from "@/components/shared/common/loader";
-import { deleteProduct } from "@/lib/services/product-api";
+
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -21,6 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { deleteProduct } from "@/lib/domains/products/service";
+
 
 interface ProductManagerProps {
   storeSlug: string;
@@ -48,7 +50,7 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
 
   // Delete product mutation
   const deleteProductMutation = useMutation({
-    mutationFn: (product: ProductData) => deleteProduct(storeSlug, product.slug || product.id),
+    mutationFn: (product: ProductData) => deleteProduct(storeSlug,product!.slug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
       toast.success("Product deleted successfully");

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { UploadDropzone } from "@/lib/uploadthing";
+import { UploadDropzone } from "@/lib/storage/uploadthing";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

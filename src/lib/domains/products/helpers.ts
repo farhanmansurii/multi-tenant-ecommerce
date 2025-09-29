@@ -1,4 +1,5 @@
 import { eq, and, desc, like, inArray } from "drizzle-orm";
+import "server-only";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
 import { setTenantContext } from "@/lib/middleware/tenant";

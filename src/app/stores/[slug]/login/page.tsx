@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import StorefrontLogin from '@/components/features/storefront/storefront-auth/storefront-login';
-import { fetchStore } from '@/lib/services/store-api';
+
 import { generateStoreMetadata } from '@/lib/metadata';
+import { fetchStore } from '@/lib/domains/stores/service';
 
 interface LoginPageProps {
   params: Promise<{ slug: string }>;

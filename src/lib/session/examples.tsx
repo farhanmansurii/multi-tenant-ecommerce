@@ -1,14 +1,9 @@
 // Example usage of the session management system
 
 import React from 'react';
-import {
-  useSessionContext,
-  useAuth,
-  useUser,
-  useRequireAuth
-} from './session-context';
-import { withAuth, withOptionalAuth } from '@/components/auth/with-auth';
-import { requireAuthOrNull, getUser } from './session-helpers';
+import { useSessionContext, useAuth, useUser, useRequireAuth } from './context';
+import { withAuth, withOptionalAuth } from '@/components/features/auth/with-auth';
+import { requireAuthOrNull, getUser } from './helpers';
 
 // Example 1: Using the basic session context
 function BasicSessionExample() {

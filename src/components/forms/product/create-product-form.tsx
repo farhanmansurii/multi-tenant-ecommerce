@@ -30,8 +30,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductFormData, ProductFormInput, productSchema } from "@/lib/domains/products/validation";
 
-import { productSchema, ProductFormData, ProductFormInput } from "@/lib/domains/products/validations";
 
 async function uploadFiles(files: File[]): Promise<string[]> {
   throw new Error("Image upload not wired yet. Use UploadThing UI component.");

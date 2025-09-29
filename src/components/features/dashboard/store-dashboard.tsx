@@ -11,7 +11,7 @@ import {
   Package,
 } from "lucide-react";
 
-import { useRequireAuth } from "@/lib/session-context";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,9 +25,11 @@ import ProductManager from "@/components/shared/common/product-manager";
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchProductStats, fetchStore } from "@/lib/services/store-api";
+
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { Loader } from "@/components/shared/common/loader";
+import { fetchProductStats, fetchStore } from "@/lib/domains/stores/service";
+import { useRequireAuth } from "@/lib/session";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;

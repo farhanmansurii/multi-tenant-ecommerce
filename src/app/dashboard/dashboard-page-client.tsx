@@ -1,6 +1,6 @@
 "use client";
 
-import { useSessionContext } from "@/lib/session-context";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,8 +18,10 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import StoreCard from "@/components/features/dashboard/store-card";
 import { StoreData } from "@/lib/domains/stores/types";
-import { fetchStores } from "@/lib/services/store-api";
+
 import { Loader } from "@/components/shared/common/loader";
+import { fetchStores } from "@/lib/domains/stores/service";
+import { useSessionContext } from "@/lib/session";
 
 export default function DashboardPageClient() {
   const { isAuthenticated, user, isPending } = useSessionContext();
