@@ -1,17 +1,20 @@
-import type { ProductData } from '@/lib/types/product';
+import type { ProductData } from '@/lib/domains/products/types';
 
-type ProductRow = typeof import('@/lib/db/schema/product').products.$inferSelect;
+type ProductRow = typeof import('@/lib/db/schema/ecommerce/products').products.$inferSelect;
 
 export const normalizeArray = <T>(value: T[] | null | undefined): T[] =>
 	Array.isArray(value) ? value : [];
 
-export const normalizeProduct = (product: ProductRow | ProductData): ProductData => ({
-	...product,
-	images: normalizeArray(product.images),
-	variants: normalizeArray(product.variants),
-	categories: normalizeArray(product.categories),
-	tags: normalizeArray(product.tags),
-});
+export const normalizeProduct = (product: ProductRow | ProductData): ProductData => {
+	const base = product as unknown as ProductData;
+	return {
+		...base,
+		images: normalizeArray(base.images),
+		variants: normalizeArray((base as ProductData).variants || []),
+		categories: normalizeArray(base.categories),
+		tags: normalizeArray(base.tags),
+	};
+};
 
 export const normalizeProducts = (
 	items: Array<ProductRow | ProductData> | null | undefined

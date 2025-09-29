@@ -32,12 +32,17 @@ const InteractiveShader = ({
 	colorIntensity = 1.2,
 	noiseLayers = 4.0,
 	mouseInfluence = 0.3,
+}: {
+	flowSpeed?: number;
+	colorIntensity?: number;
+	noiseLayers?: number;
+	mouseInfluence?: number;
 }) => {
-	const canvasRef = useRef(null);
-	const mousePos = useRef({ x: 0.5, y: 0.5 });
+	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const mousePos = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
 
 	useEffect(() => {
-		const canvas = canvasRef.current;
+		const canvas = canvasRef.current as HTMLCanvasElement | null;
 		if (!canvas) return;
 
 		const gl = canvas.getContext('webgl');
@@ -119,7 +124,7 @@ const InteractiveShader = ({
       }
     `;
 
-		const compileShader = (source, type) => {
+		const compileShader = (source: string, type: number) => {
 			const shader = gl.createShader(type);
 			if (!shader) return null;
 			gl.shaderSource(shader, source);
@@ -165,9 +170,9 @@ const InteractiveShader = ({
 		const uMouseInfluenceLocation = gl.getUniformLocation(program, 'uMouseInfluence');
 
 		const startTime = performance.now();
-		let animationFrameId;
+		let animationFrameId: number;
 
-		const handleMouseMove = (e) => {
+		const handleMouseMove = (e: MouseEvent) => {
 			if (!canvas) return;
 			const rect = canvas.getBoundingClientRect();
 			mousePos.current = {
@@ -180,8 +185,8 @@ const InteractiveShader = ({
 		const resizeCanvas = () => {
 			canvas.width = canvas.clientWidth;
 			canvas.height = canvas.clientHeight;
-			gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-			gl.uniform2f(iResolutionLocation, gl.canvas.width, gl.canvas.height);
+			gl.viewport(0, 0, (gl.canvas as HTMLCanvasElement).width, (gl.canvas as HTMLCanvasElement).height);
+			gl.uniform2f(iResolutionLocation, (gl.canvas as HTMLCanvasElement).width, (gl.canvas as HTMLCanvasElement).height);
 		};
 		window.addEventListener('resize', resizeCanvas);
 		resizeCanvas();

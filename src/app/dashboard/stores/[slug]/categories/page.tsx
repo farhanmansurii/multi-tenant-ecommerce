@@ -52,7 +52,8 @@ import {
 } from "@tanstack/react-query";
 import { useRequireAuth } from "@/lib/session";
 import { fetchStore } from "@/lib/domains/stores/service";
-import { createCategory, deleteCategory, fetchCategories, updateCategory } from "@/lib/services/category";
+import { createCategory, deleteCategory, fetchCategories, updateCategory } from "@/lib/domains/products/category-service";
+
 
 
 

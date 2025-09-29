@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldHook } from "@/components/ui/form-field";
-import { StoreFormData } from "@/lib/domains/stores/validations";
+import { StoreFormData } from "@/lib/domains/stores/validation";
 
 interface StoreFormSectionsProps {
   form: import("react-hook-form").UseFormReturn<StoreFormData>;
@@ -265,7 +265,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
                 } else {
                   form.setValue(
                     "paymentMethods",
-                    current.filter((m) => m !== "stripe")
+                    current.filter((method: string) => method !== "stripe")
                   );
                 }
               }}
@@ -283,7 +283,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
                 } else {
                   form.setValue(
                     "paymentMethods",
-                    current.filter((m) => m !== "paypal")
+                    current.filter((method: string) => method !== "paypal")
                   );
                 }
               }}
@@ -301,7 +301,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
                 } else {
                   form.setValue(
                     "paymentMethods",
-                    current.filter((m) => m !== "upi")
+                    current.filter((method: string) => method !== "upi")
                   );
                 }
               }}
@@ -319,7 +319,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
                 } else {
                   form.setValue(
                     "paymentMethods",
-                    current.filter((m) => m !== "cod")
+                    current.filter((method: string) => method !== "cod")
                   );
                 }
               }}

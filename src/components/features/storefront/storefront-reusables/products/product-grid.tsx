@@ -1,4 +1,4 @@
-import { ProductData } from '@/lib/types/product';
+import { ProductData } from '@/lib/domains/products/types';
 import React from 'react';
 import ProductCard from './product-card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';

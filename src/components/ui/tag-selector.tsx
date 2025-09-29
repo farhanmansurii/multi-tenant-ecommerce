@@ -1,7 +1,8 @@
 "use client";
 
 import { GeneralSelector } from "@/components/ui/general-selector";
-import { createTag, fetchTags } from "@/lib/services/category";
+import { createTag, fetchTags } from "@/lib/domains/products/category-service";
+
 
 
 interface TagSelectorProps {

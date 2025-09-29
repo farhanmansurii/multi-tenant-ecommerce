@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { UploadedFile } from "@/lib/domains/products/types";
 import { MAX_UPLOAD_FILES } from "@/lib/constants/product";
-import { UploadDropzone } from "@/lib/storage/uploadthing";
+import { UploadDropzone } from "@/lib/utils/uploadthing";
+
 
 interface ImageUploadSectionProps {
   uploadedFiles: UploadedFile[];

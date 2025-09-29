@@ -1,11 +1,11 @@
+
 'use client';
-/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
 import { Menu, MenuIcon, SearchIcon, ShoppingCart, User2Icon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { StoreData } from '@/lib/types/store';
+import { StoreData } from '@/lib/domains/stores/types';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import { ModeToggle } from '@/components/shared/common/theme-toggle';
 import StoreFrontContainer from './container';

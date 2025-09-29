@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -10,8 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import StoreFrontContainer from './storefront-reusables/container';
 import { StoreFrontHeader } from './storefront-reusables/navbar';
 import StoreFrontFooter from './storefront-reusables/footer';
-import type { StoreData } from '@/lib/types/store';
-import type { ProductData } from '@/lib/types/product';
+import type { StoreData } from '@/lib/domains/stores/types';
+import type { ProductData } from '@/lib/domains/products/types';
 import { formatPrice } from '@/lib/utils/price';
 import { cn } from '@/lib/utils';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';

@@ -1,7 +1,8 @@
 'use client';
 
 import { Category } from '@/lib/db/schema';
-import { fetchCategories } from '@/lib/services/category';
+import { fetchCategories } from '@/lib/domains/products/category-service';
+
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 
 

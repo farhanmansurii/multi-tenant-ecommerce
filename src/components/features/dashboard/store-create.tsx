@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 
 import { useRequireAuth } from '@/lib/session';
 
-import { StoreFormData } from '@/lib/validations/store';
+
 import DualStoreForm from '@/components/forms/store/edit-store-form';
 import { Loader } from '@/components/shared/common/loader';
+import { StoreFormData } from '@/lib/domains/stores';
 
 interface StoreLimitInfo {
   count: number;

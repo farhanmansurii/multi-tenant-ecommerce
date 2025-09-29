@@ -1,7 +1,8 @@
 "use client";
 
 import { GeneralSelector } from "@/components/ui/general-selector";
-import { createCategory, fetchCategories } from "@/lib/services/category";
+import { createCategory, fetchCategories } from "@/lib/domains/products/category-service";
+
 
 interface CategorySelectorProps {
   value: string[];

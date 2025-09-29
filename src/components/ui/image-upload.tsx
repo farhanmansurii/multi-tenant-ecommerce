@@ -1,12 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { UploadDropzone } from "@/lib/storage/uploadthing";
+
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UploadDropzone } from "@/lib/utils/uploadthing";
 
 interface ImageUploadProps {
   value: string[];

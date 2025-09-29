@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import StoreProductEdit from '@/components/dashboard/stores/store-product-edit';
+
 import { generateDashboardMetadata } from "@/lib/metadata";
+import { StoreProductEdit } from "@/components";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; productSlug: string }> }): Promise<Metadata> {
   const { slug, productSlug } = await params;

@@ -1,11 +1,19 @@
-import type { ProductImage, ProductVariant } from "@/lib/db/schema/product";
+import { ProductImage } from "@/lib/db/schema";
 
 export type ProductType = "physical" | "digital" | "service";
 export type ProductStatus = "draft" | "active" | "inactive" | "out_of_stock";
 
-type ProductRow = typeof import("@/lib/db/schema/product").products.$inferSelect;
+type ProductRow = typeof import("@/lib/db/schema/ecommerce/products").products.$inferSelect;
 
-export type ProductData = Omit<ProductRow, "images" | "variants" | "categories" | "tags"> & {
+export type ProductVariant = {
+  id: string;
+  name: string;
+  price?: number | null;
+  compareAtPrice?: number | null;
+  attributes?: Record<string, string>;
+};
+
+export type ProductData = Omit<ProductRow, "images" | "categories" | "tags"> & {
   images: ProductImage[];
   variants: ProductVariant[];
   categories: string[];

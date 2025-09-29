@@ -4,9 +4,10 @@
 import { useCallback } from "react";
 import { X, Store } from "lucide-react";
 import { toast } from "sonner";
-import { UploadDropzone } from "@/lib/storage/uploadthing";
+
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { UploadDropzone } from "@/lib/utils/uploadthing";
 
 interface UploadedFile {
   url: string;

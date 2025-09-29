@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ProductData } from '@/lib/types/product';
+import { ProductData } from '@/lib/domains/products/types';
 import { Heart, ImageIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useMemo, useState } from 'react';
