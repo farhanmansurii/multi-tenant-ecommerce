@@ -31,12 +31,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import {
-  productSchema,
-  ProductFormData,
-  ProductFormInput,
-} from "@/lib/validations/product";
-import { uploadFiles } from "@/lib/helpers/products";
+import { productSchema, ProductFormData, ProductFormInput } from "@/lib/domains/products/validations";
+
+async function uploadFiles(files: File[]): Promise<string[]> {
+  throw new Error("Image upload not wired yet. Use UploadThing UI component.");
+}
 
 // ---------------- API ----------------
 function useCreateProduct(storeSlug: string) {

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { UploadDropzone } from "@/lib/uploadthing";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { UploadedFile } from "@/lib/types/product";
+import { UploadedFile } from "@/lib/domains/products/types";
 import { MAX_UPLOAD_FILES } from "@/lib/constants/product";
 
 interface ImageUploadSectionProps {

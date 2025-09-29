@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldHook } from "@/components/ui/form-field";
-import { StoreFormData } from "@/lib/validations/store";
+import { StoreFormData } from "@/lib/domains/stores/validations";
 
 interface StoreFormSectionsProps {
   form: import("react-hook-form").UseFormReturn<StoreFormData>;

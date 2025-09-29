@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import { Loader } from '@/components/shared/common/loader';
 import { fetchProducts } from '@/lib/services/product-api';
@@ -13,9 +14,8 @@ import StoreFrontContainer from './storefront-reusables/container';
 import { useCategories } from '@/hooks/use-categories';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import type { ProductData } from '@/lib/types/product';
-import { Category } from '@/lib/db/schema';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
+import { toast } from 'sonner';
 
 interface StorefrontViewProps {
 	slug: string;
@@ -24,19 +24,18 @@ interface StorefrontViewProps {
 export default function StorefrontView({ slug }: StorefrontViewProps) {
 	const {
 		selectedCategoryId,
-		toggleCategory,
 		setStoreSlug,
 		setSelectedCategoryId,
 		cart,
-		addItem,
 	} = useStorefrontStore((state) => ({
 		selectedCategoryId: state.selectedCategoryId,
-		toggleCategory: state.toggleCategory,
 		setStoreSlug: state.setStoreSlug,
 		setSelectedCategoryId: state.setSelectedCategoryId,
 		cart: state.cart,
-		addItem: state.addItem,
 	}));
+
+	const { customerProfile, addWishlistItem } = useStorefrontCustomer();
+	const router = useRouter();
 
 	useEffect(() => {
 		setStoreSlug(slug);
@@ -95,41 +94,35 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 	const loading = storeLoading || productsLoading || categoriesLoading || categoriesFetching;
 	const error = storeError ?? categoriesError ?? null;
 
-	// Event handlers
-	const handleSearch = (query: string) => {
-		// Implement search functionality
-	};
+	const handleAddToWishlist = (product: ProductData) => {
+		if (!store) {
+			toast.error('Store details are still loading. Please try again.');
+			return;
+		}
 
-	const handleCartClick = () => {
-		// Implement cart functionality
-	};
+		if (!customerProfile || customerProfile.storeSlug !== store.slug) {
+			toast.info('Sign in to save products to your wishlist.', {
+				description: `${store.name} customers can create wishlists after signing in.`,
+				action: {
+					label: 'Sign in',
+					onClick: () => router.push(`/stores/${store.slug}/login`),
+				},
+			});
+			return;
+		}
 
-	const handleAccountClick = () => {
-		// Implement account functionality
-	};
-
-	const handleProductClick = (productId: string) => {
-		// Navigate to product detail page
-	};
-
-	const handleAddToCart = (product: ProductData) => {
-		const price = Number.parseFloat(product.price ?? '0');
-		addItem({
+		const wishPrice = Number.parseFloat(product.price ?? '0');
+		addWishlistItem({
 			id: `${product.id}-${product.slug}`,
+			storeSlug: store.slug,
 			productId: product.id,
+			productSlug: product.slug,
 			name: product.name,
-			price: Number.isFinite(price) ? price : 0,
-			quantity: 1,
+			price: Number.isFinite(wishPrice) ? wishPrice : 0,
 			image: product.images?.[0]?.url ?? null,
+			addedAt: new Date().toISOString(),
 		});
-	};
-
-	const handleAddToWishlist = (productId: string) => {
-		// Implement add to wishlist functionality
-	};
-
-	const handleCategorySelect = (categoryId: string) => {
-		toggleCategory(categoryId);
+		toast.success('Saved to your wishlist.');
 	};
 
 	if (loading) {
@@ -179,18 +172,10 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 					layout="grid"
 					subtitle="Minim amet deserunt ullamco quis pariatur deserunt consequat enim est ullamco quis tempor reprehenderit. Proident est veniam aliquip consequat consequat pariatur commodo sunt et aliquip dolore labore officia tempor. Ea culpa velit nostrud ex deserunt sunt commodo elit nisi incididunt id."
 					categoryLookup={categoryLookup}
+					storeSlug={slug}
+					onAddToWishlist={handleAddToWishlist}
 				/>
 			</StoreFrontContainer>
-			{categories.map((category: Category) => (
-				<div
-					key={category.id}
-					style={{ background: category.color || '' }}
-					className={cn(`bg-${category.color}`)}
-				>
-					<img src={category.image || ''} />
-				</div>
-			))}
-
 			<StoreFrontFooter store={store} />
 		</div>
 	);

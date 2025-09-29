@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { StoreFormData } from "@/lib/validations/store";
+import { StoreFormData } from "@/lib/domains/stores/validations";
 import StoreForm from "@/components/features/dashboard/store-form";
 
 interface StoreFormProps {

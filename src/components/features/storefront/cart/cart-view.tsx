@@ -6,9 +6,11 @@ import { useEffect } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
 import StoreFrontContainer from '../storefront-reusables/container';
-import { Button } from '@/components/ui/button';
+
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import { formatPrice } from '@/lib/utils/price';
+import { Button } from '@/components/ui/button';
+import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
 
 type CartViewProps = {
 	storeSlug: string;
@@ -25,12 +27,18 @@ export default function CartView({ storeSlug, currency = 'INR' }: CartViewProps)
 			setStoreSlug: state.setStoreSlug,
 		})
 	);
+	const { customerProfile } = useStorefrontCustomer();
 
 	useEffect(() => {
 		setStoreSlug(storeSlug);
 	}, [setStoreSlug, storeSlug]);
 
 	const continueShoppingHref = `/stores/${storeSlug}`;
+	const isAuthenticatedForStore =
+		customerProfile?.storeSlug === storeSlug && Boolean(customerProfile?.id);
+	const accountHref = isAuthenticatedForStore
+		? `/stores/${storeSlug}/account`
+		: `/stores/${storeSlug}/login`;
 
 	if (!cart.items.length) {
 		return (
@@ -157,7 +165,14 @@ export default function CartView({ storeSlug, currency = 'INR' }: CartViewProps)
 								</span>
 							</div>
 						</div>
-						<Button className="mt-6 w-full">Proceed to checkout</Button>
+						<Button className="mt-6 w-full" disabled={!isAuthenticatedForStore}>
+							Proceed to checkout
+						</Button>
+						{!isAuthenticatedForStore && (
+							<Button asChild variant="outline" className="mt-3 w-full">
+								<Link href={accountHref}>Sign in to continue</Link>
+							</Button>
+						)}
 						<Button variant="ghost" className="mt-3 w-full" onClick={clearCart}>
 							Clear cart
 						</Button>
@@ -167,6 +182,11 @@ export default function CartView({ storeSlug, currency = 'INR' }: CartViewProps)
 							Taxes and shipping are estimated. You can review final totals during the
 							checkout process.
 						</p>
+						{!isAuthenticatedForStore && (
+							<p className="mt-3 text-orange-500">
+								Sign in to {storeSlug} to save your cart, wishlist, and checkout securely.
+							</p>
+						)}
 					</div>
 				</div>
 			</div>

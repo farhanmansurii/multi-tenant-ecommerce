@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { StoreData } from "@/lib/types/store";
+import { StoreData } from "@/lib/domains/stores/types";
 import { ModeToggle } from "@/components/shared/common/theme-toggle";
 import StoreFrontContainer from "./container";
 

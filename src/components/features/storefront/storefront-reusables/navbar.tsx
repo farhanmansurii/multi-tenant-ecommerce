@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
 import { Menu, MenuIcon, SearchIcon, ShoppingCart, User2Icon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,6 @@ import StoreFrontContainer from './container';
 import StoreLogo from './store-icon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const menuItems = [
-	{ name: 'All Products', href: '/products' },
-	{ name: 'Categories', href: '/categories' },
-];
-
 type StoreFrontHeaderProps = {
 	storeData: StoreData;
 	cartItemCount?: number;
@@ -25,8 +20,31 @@ type StoreFrontHeaderProps = {
 export const StoreFrontHeader = ({ storeData, cartItemCount }: StoreFrontHeaderProps) => {
 	const [menuState, setMenuState] = React.useState(false);
 	const [isScrolled, setIsScrolled] = React.useState(false);
+	const menuItems = React.useMemo(() => {
+		if (!storeData?.slug) {
+			return [
+				{ name: 'All Products', href: '/products' },
+				{ name: 'Categories', href: '/categories' },
+			];
+		}
+
+		return [
+			{ name: 'All Products', href: `/stores/${storeData.slug}` },
+			{ name: 'Categories', href: `/stores/${storeData.slug}#categories` },
+		];
+	}, [storeData?.slug]);
 	const fallbackCartCount = useStorefrontStore((state) => state.cart.totalQuantity);
+	const customerProfile = useStorefrontStore((state) => {
+		if (!storeData?.slug) return null;
+		return state.customerProfile?.storeSlug === storeData.slug ? state.customerProfile : null;
+	});
 	const cartHref = storeData?.slug ? `/stores/${storeData.slug}/cart` : '/cart';
+	const accountHref = storeData?.slug
+		? customerProfile
+			? `/stores/${storeData.slug}/account`
+			: `/stores/${storeData.slug}/login`
+		: '/account';
+	const accountTooltip = customerProfile ? 'Account' : 'Sign in';
 	const displayCartCount = cartItemCount ?? fallbackCartCount;
 
 	React.useEffect(() => {
@@ -114,16 +132,16 @@ export const StoreFrontHeader = ({ storeData, cartItemCount }: StoreFrontHeaderP
 										</TooltipTrigger>
 										<TooltipContent>Search</TooltipContent>
 									</Tooltip>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Link href="/account">
-												<Button variant="ghost" size="icon">
-													<User2Icon />
-												</Button>
-											</Link>
-										</TooltipTrigger>
-										<TooltipContent>Account</TooltipContent>
-									</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Link href={accountHref}>
+								<Button variant="ghost" size="icon">
+									<User2Icon />
+								</Button>
+							</Link>
+						</TooltipTrigger>
+						<TooltipContent>{accountTooltip}</TooltipContent>
+					</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Link href={cartHref}>

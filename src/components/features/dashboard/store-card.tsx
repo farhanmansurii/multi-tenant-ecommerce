@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StoreData } from "@/lib/types/store";
+import { StoreData } from "@/lib/domains/stores/types";
 import { formatDate } from "@/lib/utils";
 import {
   Calendar,

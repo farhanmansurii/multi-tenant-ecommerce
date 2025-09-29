@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
+import Link from 'next/link';
 import { ProductData } from '@/lib/types/product';
-import { ImageIcon, Plus } from 'lucide-react';
+import { Heart, ImageIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useMemo, useState } from 'react';
 import { formatPrice } from '@/lib/utils/price';
@@ -11,13 +11,23 @@ import { Badge } from '@/components/ui/badge';
 type Props = {
 	product: ProductData;
 	categoryLookup?: Record<string, string>;
+	storeSlug?: string;
+	onAddToWishlist?: (product: ProductData) => void;
 };
 
-export default function ProductCard({ product, categoryLookup }: Props) {
+export default function ProductCard({
+	product,
+	categoryLookup,
+	storeSlug,
+	onAddToWishlist,
+}: Props) {
 	const [loaded, setLoaded] = useState(false);
 	const [showDetails, setShowDetails] = useState(false);
 
-	const productImage = product.images?.[0]?.url || 'https://picsum.photos/1000/500';
+	const productImages = Array.isArray(product.images) ? product.images : [];
+	const primaryImage = productImages.find((image) => image.isPrimary) ?? productImages[0];
+	const productImage = primaryImage?.url || 'https://picsum.photos/1000/500';
+	const productHref = storeSlug ? `/stores/${storeSlug}/products/${product.slug}` : undefined;
 
 	const categoryLabels = useMemo(() => {
 		const identifiers = Array.isArray(product.categories) ? product.categories : [];
@@ -58,6 +68,16 @@ export default function ProductCard({ product, categoryLookup }: Props) {
 						<ImageIcon className="h-8 w-8 animate-pulse" />
 					</div>
 				)}
+
+				{productHref ? (
+					<Link
+						href={productHref}
+						className="absolute inset-0"
+						aria-label={`View ${product.name}`}
+					>
+						<span className="sr-only">View {product.name}</span>
+					</Link>
+				) : null}
 
 				<motion.img
 					src={productImage}
@@ -106,7 +126,13 @@ export default function ProductCard({ product, categoryLookup }: Props) {
 					))}
 				</div>
 				<div className="font-semibold text-base lg:text-lg line-clamp-1">
-					{product.name}
+					{productHref ? (
+						<Link href={productHref} className="hover:underline">
+							{product.name}
+						</Link>
+					) : (
+						product.name
+					)}
 				</div>
 				<div className="text-sm mt-1">
 					{formatPrice(product.price)}{' '}
@@ -116,6 +142,16 @@ export default function ProductCard({ product, categoryLookup }: Props) {
 						</span>
 					)}
 				</div>
+				{onAddToWishlist && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="mt-3 w-fit gap-2"
+						onClick={() => onAddToWishlist(product)}
+					>
+						<Heart className="h-4 w-4" /> Save for later
+					</Button>
+				)}
 			</div>
 		</motion.div>
 	);

@@ -1,5 +1,5 @@
 import { ProductFormValues } from "@/lib/validations/product-form";
-import { UploadedFile } from "@/lib/types/product";
+import { UploadedFile } from "@/lib/domains/products/types";
 
 // Utility functions
 export const parseNumberOrUndefined = (value: string | null | undefined): number | undefined => {

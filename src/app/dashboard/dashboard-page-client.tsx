@@ -17,7 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import StoreCard from "@/components/features/dashboard/store-card";
-import { StoreData } from "@/lib/types/store";
+import { StoreData } from "@/lib/domains/stores/types";
 import { fetchStores } from "@/lib/services/store-api";
 import { Loader } from "@/components/shared/common/loader";
 

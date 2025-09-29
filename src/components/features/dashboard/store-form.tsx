@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Store, Save, ArrowLeft } from "lucide-react";
 
-import { storeSchema, StoreFormData } from "@/lib/validations/store";
+import { storeSchema, StoreFormData } from "@/lib/domains/stores/validations";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { LoadingState } from "./components/loading-state";

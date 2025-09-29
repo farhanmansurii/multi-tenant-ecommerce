@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import { useRequireAuth } from "@/lib/session-context";
-import { UploadedFile } from "@/lib/types/product";
+import { UploadedFile } from "@/lib/domains/products/types";
 import {
   productFormSchema,
   ProductFormValues,

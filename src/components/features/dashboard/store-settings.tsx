@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader } from "@/components/shared/common/loader";
-import { StoreData, StoreFormPayload } from "@/lib/types/store";
+import { StoreData, StoreFormPayload } from "@/lib/domains/stores/types";
 import { fetchStore, updateStore } from "@/lib/services/store-api";
 import EditStoreForm from "@/components/forms/store/edit-store-form";
 
