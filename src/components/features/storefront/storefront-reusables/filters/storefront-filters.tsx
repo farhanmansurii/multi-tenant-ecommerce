@@ -73,7 +73,9 @@ export function StorefrontFilters({ categories, value, onChange }: StorefrontFil
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (value.categories.length > 0) count++;
-    if ((value.priceMin ?? 0) > 0 || (value.priceMax ?? 100000) < 100000) count++;
+    const min = Number.isFinite(value.priceMin as number) ? (value.priceMin as number) : 0;
+    const max = Number.isFinite(value.priceMax as number) ? (value.priceMax as number) : 100000;
+    if (min > 0 || max < 100000) count++;
     if (value.inStockOnly) count++;
     return count;
   }, [value.categories, value.priceMin, value.priceMax, value.inStockOnly]);
@@ -158,13 +160,21 @@ export function StorefrontFilters({ categories, value, onChange }: StorefrontFil
               <X className="h-3 w-3 ml-1" />
             </Badge>
           )}
-          {((value.priceMin ?? 0) > 0 || (value.priceMax ?? 100000) < 100000) && (
+          {(() => {
+            const min = Number.isFinite(value.priceMin as number) ? (value.priceMin as number) : 0;
+            const max = Number.isFinite(value.priceMax as number) ? (value.priceMax as number) : 100000;
+            return min > 0 || max < 100000;
+          })() && (
             <Badge
               variant="secondary"
               className="cursor-pointer hover:bg-secondary/80"
               onClick={() => onChange({ ...value, priceMin: 0, priceMax: 100000 })}
             >
-              ₹{value.priceMin ?? 0} - ₹{value.priceMax ?? 100000}
+              {(() => {
+                const min = Number.isFinite(value.priceMin as number) ? (value.priceMin as number) : 0;
+                const max = Number.isFinite(value.priceMax as number) ? (value.priceMax as number) : 100000;
+                return `₹${min} - ₹${max}`;
+              })()}
               <X className="h-3 w-3 ml-1" />
             </Badge>
           )}
@@ -232,8 +242,11 @@ export function StorefrontFilters({ categories, value, onChange }: StorefrontFil
                   <Input
                     id="price-min"
                     type="number"
-                    value={value.priceMin ?? 0}
-                    onChange={(e) => onChange({ ...value, priceMin: Number(e.target.value) })}
+                    value={Number.isFinite(value.priceMin as number) ? (value.priceMin as number) : 0}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      onChange({ ...value, priceMin: Number.isFinite(v) ? v : 0 });
+                    }}
                     placeholder="₹0"
                   />
                 </div>
@@ -245,8 +258,11 @@ export function StorefrontFilters({ categories, value, onChange }: StorefrontFil
                   <Input
                     id="price-max"
                     type="number"
-                    value={value.priceMax ?? 100000}
-                    onChange={(e) => onChange({ ...value, priceMax: Number(e.target.value) })}
+                    value={Number.isFinite(value.priceMax as number) ? (value.priceMax as number) : 100000}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      onChange({ ...value, priceMax: Number.isFinite(v) ? v : 100000 });
+                    }}
                     placeholder="₹100000"
                   />
                 </div>

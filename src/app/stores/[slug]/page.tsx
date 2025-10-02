@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { StorefrontView } from '@/components';
+import StorefrontView from '@/components/features/storefront/storefront-view';
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
 
@@ -38,6 +38,7 @@ export async function generateMetadata({
 	}
 }
 
-export default function StorefrontPage({ params }: StorefrontPageProps) {
-	return <StorefrontView slug={params.slug} />;
+export default async function StorefrontPage({ params }: StorefrontPageProps) {
+    const { slug } = params;
+    return <StorefrontView slug={slug} />;
 }

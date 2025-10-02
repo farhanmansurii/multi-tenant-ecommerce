@@ -9,6 +9,8 @@ type ModeToggleProps = React.ComponentProps<typeof Button>;
 
 export function ModeToggle({ variant = "ghost", size = "icon", className, ...props }: ModeToggleProps) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
   const handleThemeChange = () => {
     setTheme(theme === "light" ? "dark" : "light");
   };
@@ -21,11 +23,13 @@ export function ModeToggle({ variant = "ghost", size = "icon", className, ...pro
       className={`relative ${className ?? ""}`}
       {...props}
     >
-      {theme === "light" ? (
-        <Sun className="h-[1.2rem] w-[1.2rem] " />
-      ) : (
-        <Moon className=" h-[1.2rem] w-[1.2rem]" />
-      )}
+      <span suppressHydrationWarning>
+        {mounted && (theme === "light" ? (
+          <Sun className="h-[1.2rem] w-[1.2rem] " />
+        ) : (
+          <Moon className=" h-[1.2rem] w-[1.2rem]" />
+        ))}
+      </span>
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

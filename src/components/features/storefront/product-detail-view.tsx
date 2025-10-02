@@ -2,11 +2,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Package, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
+import { ChevronDown, ChevronsDown, Package, ShieldCheck, Truck } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
+import RecommendedProducts from './storefront-reusables/products/recommended-products';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import StoreFrontContainer from './storefront-reusables/container';
 import { StoreFrontHeader } from './storefront-reusables/navbar';
 import StoreFrontFooter from './storefront-reusables/footer';
@@ -117,77 +116,81 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
 
       <main className="pt-24 pb-16">
         <StoreFrontContainer className="py-8">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)]">
+            {/* Image Gallery */}
             <section>
-              <div className="aspect-square overflow-hidden rounded-2xl border bg-muted">
-                {selectedImageId ? (
-                  <img
-                    key={selectedImageId}
-                    src={images.find((image) => image.id === selectedImageId)?.url ?? primaryImage?.url ?? ''}
-                    alt={images.find((image) => image.id === selectedImageId)?.alt ?? product.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={primaryImage?.url ?? 'https://picsum.photos/1200/800'}
-                    alt={primaryImage?.alt ?? product.name}
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
-
-              {images.length > 1 && (
-                <div className="mt-4 flex gap-4 overflow-x-auto">
-                  {images.map((image) => (
-                    <button
-                      key={image.id}
-                      type="button"
-                      onClick={() => setSelectedImageId(image.id)}
-                      className={cn(
-                        'h-20 w-20 shrink-0 overflow-hidden rounded-xl border transition-all duration-200',
-                        selectedImageId === image.id ? 'ring-2 ring-primary' : 'opacity-80 hover:opacity-100'
-                      )}
-                    >
-                      <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-6">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant={isInStock ? 'default' : 'secondary'} className="capitalize">
-                    {isInStock ? 'In stock' : product.status.replace(/_/g, ' ')}
-                  </Badge>
-                  {product.featured && <Badge variant="outline">Featured</Badge>}
-                  {product.requiresShipping && (
-                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Truck className="h-4 w-4" /> Ships worldwide
-                    </span>
+              <div className="sticky top-24">
+                <div className="aspect-[3/4] overflow-hidden bg-muted">
+                  {selectedImageId ? (
+                    <img
+                      key={selectedImageId}
+                      src={images.find((image) => image.id === selectedImageId)?.url ?? primaryImage?.url ?? ''}
+                      alt={images.find((image) => image.id === selectedImageId)?.alt ?? product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={primaryImage?.url ?? 'https://picsum.photos/1200/800'}
+                      alt={primaryImage?.alt ?? product.name}
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </div>
 
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{product.name}</h1>
-                {product.shortDescription && (
-                  <p className="text-base text-muted-foreground">{product.shortDescription}</p>
+                {images.length > 1 && (
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    {images.map((image) => (
+                      <button
+                        key={image.id}
+                        type="button"
+                        onClick={() => setSelectedImageId(image.id)}
+                        className={cn(
+                          'aspect-square overflow-hidden bg-muted transition-opacity duration-200',
+                          selectedImageId === image.id ? 'opacity-100 ring-1 ring-foreground' : 'opacity-60 hover:opacity-100'
+                        )}
+                      >
+                        <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Product Info */}
+            <section className="space-y-6 lg:py-2">
+              {/* Title and Price */}
+              <div className="space-y-2">
+                <h1 className="text-2xl font-light tracking-tight uppercase">{product.name}</h1>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-xl font-normal">{formatPrice(priceSource)}</span>
+                  {compareAtSource && (
+                    <span className="text-base text-muted-foreground line-through">
+                      {formatPrice(compareAtSource)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Short Description */}
+              {product.shortDescription && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{product.shortDescription}</p>
+              )}
+
+              {/* Availability */}
+              <div className="text-sm">
+                {isInStock ? (
+                  <span className="text-green-600 dark:text-green-500">In stock</span>
+                ) : (
+                  <span className="text-muted-foreground">Out of stock</span>
                 )}
               </div>
 
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold">{formatPrice(priceSource)}</span>
-                {compareAtSource && (
-                  <span className="text-sm text-muted-foreground line-through">
-                    {formatPrice(compareAtSource)}
-                  </span>
-                )}
-              </div>
-
+              {/* Variants */}
               {variants.length > 0 && (
                 <div className="space-y-3">
-                  <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    Variants
+                  <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Select {variants[0].name.toLowerCase().includes('size') ? 'Size' : 'Option'}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {variants.map((variant) => (
@@ -196,7 +199,8 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
                         type="button"
                         variant={variant.id === selectedVariantId ? 'default' : 'outline'}
                         onClick={() => setSelectedVariantId(variant.id)}
-                        className="rounded-full px-4 py-1"
+                        className="h-auto min-w-[60px] px-4 py-2 text-sm font-normal"
+                        size="sm"
                       >
                         {variant.name}
                       </Button>
@@ -205,80 +209,94 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button size="lg" className="sm:flex-1" onClick={handleAddToCart}>
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Add to cart
-                </Button>
-                <Button size="lg" variant="outline" className="sm:flex-1">
-                  <ShieldCheck className="mr-2 h-4 w-4" />
-                  Secure checkout
-                </Button>
+              {/* Add to Cart */}
+              <Button
+                size="lg"
+                className="w-full h-12 text-base font-normal uppercase tracking-wide"
+                onClick={handleAddToCart}
+                disabled={!isInStock}
+              >
+                {isInStock ? 'Add to bag' : 'Out of stock'}
+              </Button>
+
+              {/* Shipping Info */}
+              <div className="space-y-2 border-t pt-6 text-sm">
+                <div className="flex items-start gap-3">
+                  <Truck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    {product.requiresShipping
+                      ? 'Free shipping on orders over $50. Delivery in 3-5 business days.'
+                      : 'Digital delivery via email after purchase.'}
+                  </span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Package className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">Free returns within 30 days.</span>
+                </div>
               </div>
 
-              <Separator />
-
-              <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-muted-foreground">SKU</dt>
-                  <dd className="font-medium">{product.sku ?? '—'}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Product type</dt>
-                  <dd className="font-medium capitalize">{product.type}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Inventory</dt>
-                  <dd className="font-medium">
-                    {product.trackQuantity ? `${Math.max(quantityNumber, 0)} available` : 'Inventory not tracked'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Backorders</dt>
-                  <dd className="font-medium">{product.allowBackorder ? 'Allowed' : 'Not allowed'}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Shipping</dt>
-                  <dd className="font-medium">{product.requiresShipping ? 'Ships to customer' : 'No shipping required'}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Tax status</dt>
-                  <dd className="font-medium">{product.taxable ? 'Taxable' : 'Tax exempt'}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Weight</dt>
-                  <dd className="font-medium">{weight}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Dimensions</dt>
-                  <dd className="font-medium">{dimensions}</dd>
-                </div>
-              </dl>
-
-              <div className="flex flex-wrap gap-2 pt-4">
-                {Array.isArray(product.categories) && product.categories.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Categories:</span>
-                    {product.categories.map((identifier) => (
-                      <Badge key={identifier} variant="outline" className="capitalize">
-                        <Link href={`/stores/${store.slug}?category=${encodeURIComponent(identifier)}`}>
-                          {formatCategoryLabel(identifier)}
-                        </Link>
-                      </Badge>
-                    ))}
+              {/* Product Details Accordion */}
+              <div className="border-t pt-6 space-y-4">
+                <details className="group">
+                  <summary className="flex cursor-pointer items-center justify-between text-sm font-medium uppercase tracking-wider">
+                    Product Details
+                    <span className="transition group-open:rotate-180"><ChevronDown/></span>
+                  </summary>
+                  <div className="mt-4 space-y-4 text-sm text-muted-foreground">
+                    <p className="leading-relaxed whitespace-pre-line">{product.description}</p>
+                    {(dimensionParts.length > 0 || formatDimension(product.weight)) && (
+                      <div className="space-y-1 pt-2">
+                        {dimensionParts.length > 0 && (
+                          <div className="flex gap-2">
+                            <span className="font-medium text-foreground">Dimensions:</span>
+                            <span>{dimensions}</span>
+                          </div>
+                        )}
+                        {formatDimension(product.weight) && (
+                          <div className="flex gap-2">
+                            <span className="font-medium text-foreground">Weight:</span>
+                            <span>{weight}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-                {Array.isArray(product.tags) && product.tags.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Tags:</span>
-                    {product.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="capitalize">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
+                </details>
+
+                {product.requiresShipping && (
+                  <details className="group border-t pt-4">
+                    <summary className="flex cursor-pointer items-center justify-between text-sm font-medium uppercase tracking-wider">
+                      Shipping & Returns
+                      <span className="transition group-open:rotate-180"><ChevronDown/></span>
+                    </summary>
+                    <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                      <p>Free standard shipping on orders over $50.</p>
+                      <p>Standard delivery: 3-5 business days.</p>
+                      <p>Express delivery available at checkout.</p>
+                      <p className="pt-2">Free returns within 30 days of purchase in original condition and packaging.</p>
+                    </div>
+                  </details>
                 )}
               </div>
+
+              {/* Categories */}
+              {Array.isArray(product.categories) && product.categories.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 border-t pt-6 text-xs">
+                  <span className="text-muted-foreground">Shop:</span>
+                  {product.categories.map((identifier) => {
+                    const label = categoryLookup[identifier] ?? formatCategoryLabel(identifier);
+                    return (
+                      <Link
+                        key={identifier}
+                        href={`/stores/${store.slug}?category=${encodeURIComponent(identifier)}`}
+                        className="underline hover:no-underline"
+                      >
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
 
@@ -288,6 +306,10 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
+
+              <div className="mt-12">
+                <RecommendedProducts storeSlug={store.slug} current={product} />
+              </div>
             </section>
 
             <section className="space-y-6">

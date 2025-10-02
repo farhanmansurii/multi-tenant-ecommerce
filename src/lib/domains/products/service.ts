@@ -87,3 +87,10 @@ export const fetchStoreAndProduct = async (
 		return null;
 	}
 };
+
+export async function fetchRecommendations(storeSlug: string, productSlug: string): Promise<ProductData[]> {
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/products/${productSlug}/recommendations`));
+  if (!response.ok) return [];
+  const data = await response.json();
+  return normalizeProducts(data.products as ProductData[]);
+}
