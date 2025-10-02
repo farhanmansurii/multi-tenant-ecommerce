@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Loader } from '@/components/shared/common/loader';
 
@@ -10,6 +10,7 @@ import { StoreFrontHeader } from './storefront-reusables/navbar';
 import StoreFrontFooter from './storefront-reusables/footer';
 
 import ProductGrid from './storefront-reusables/products/product-grid';
+import { StorefrontFilters, type StorefrontFiltersState } from './storefront-reusables/filters/storefront-filters';
 import StoreFrontContainer from './storefront-reusables/container';
 import { useCategories } from '@/hooks/use-categories';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
@@ -25,24 +26,28 @@ interface StorefrontViewProps {
 }
 
 export default function StorefrontView({ slug }: StorefrontViewProps) {
-	const {
-		selectedCategoryId,
-		setStoreSlug,
-		setSelectedCategoryId,
-		cart,
-	} = useStorefrontStore((state) => ({
-		selectedCategoryId: state.selectedCategoryId,
-		setStoreSlug: state.setStoreSlug,
-		setSelectedCategoryId: state.setSelectedCategoryId,
-		cart: state.cart,
-	}));
+	const { selectedCategoryId, setStoreSlug, setSelectedCategoryId, cart } = useStorefrontStore(
+		(state) => ({
+			selectedCategoryId: state.selectedCategoryId,
+			setStoreSlug: state.setStoreSlug,
+			setSelectedCategoryId: state.setSelectedCategoryId,
+			cart: state.cart,
+		})
+	);
 
-	const { customerProfile, addWishlistItem } = useStorefrontCustomer();
+const { customerProfile, addWishlistItem } = useStorefrontCustomer();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 
 	useEffect(() => {
 		setStoreSlug(slug);
 	}, [setStoreSlug, slug]);
+
+	useEffect(() => {
+		const categoryFromQuery = searchParams.get('category');
+		if (!categoryFromQuery) return;
+		setSelectedCategoryId(categoryFromQuery);
+	}, [searchParams, setSelectedCategoryId]);
 
 	const {
 		data: store,
@@ -86,13 +91,80 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 		}, {});
 	}, [categories]);
 
-	const filteredProducts = useMemo(() => {
-		if (!selectedCategoryId) return products;
+const filtersFromUrl: StorefrontFiltersState = useMemo(() => {
+    const getAll = (key: string) => searchParams.getAll(key).filter(Boolean);
+    const getOne = (key: string) => searchParams.get(key) || '';
+    const num = (v: string | null, fallback: number) => {
+        const n = Number(v ?? '');
+        return Number.isFinite(n) ? n : fallback;
+    };
 
-		return products.filter((product:ProductData) =>
-			product.categories?.some((category:string) => category === selectedCategoryId)
-		);
-	}, [products, selectedCategoryId]);
+    const categoriesFromUrl = getAll('category');
+    const categoriesSel = categoriesFromUrl.length > 0
+        ? categoriesFromUrl
+        : selectedCategoryId
+            ? [selectedCategoryId]
+            : [];
+
+    return {
+        search: getOne('q'),
+        sort: (getOne('sort') as StorefrontFiltersState['sort']) || 'relevance',
+        categories: categoriesSel,
+        priceMin: num(searchParams.get('min'), 0),
+        priceMax: num(searchParams.get('max'), 100000),
+        inStockOnly: searchParams.get('stock') === '1',
+    };
+}, [searchParams, selectedCategoryId]);
+
+const filteredProducts = useMemo(() => {
+		let result = products as ProductData[];
+
+		// Search
+    if (filtersFromUrl.search.trim()) {
+        const q = filtersFromUrl.search.toLowerCase();
+			result = result.filter(
+				(p) =>
+					p.name.toLowerCase().includes(q) ||
+					(p.shortDescription ?? '').toLowerCase().includes(q) ||
+					(p.description ?? '').toLowerCase().includes(q)
+			);
+		}
+
+		// Category filter (supports slugs and ids)
+    if (filtersFromUrl.categories.length > 0) {
+			result = result.filter((p) => {
+				const ids = Array.isArray(p.categories) ? p.categories : [];
+            return filtersFromUrl.categories.every((c) => ids.includes(c));
+			});
+		}
+
+		// Price range
+    const min = Number(filtersFromUrl.priceMin ?? 0);
+    const max = Number(filtersFromUrl.priceMax ?? 100000);
+		result = result.filter((p) => {
+			const priceNum = Number(p.price ?? '0');
+			return priceNum >= min && priceNum <= max;
+		});
+
+		// Stock
+    if (filtersFromUrl.inStockOnly) {
+			result = result.filter((p) => {
+				const qty = Number(p.quantity ?? '0');
+				return p.status === 'active' && (qty > 0 || p.allowBackorder);
+			});
+		}
+
+		// Sort
+		const byPrice = (a: ProductData, b: ProductData) =>
+			Number(a.price ?? '0') - Number(b.price ?? '0');
+		const byNewest = (a: ProductData, b: ProductData) =>
+			new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+    if (filtersFromUrl.sort === 'price_asc') result = [...result].sort(byPrice);
+    else if (filtersFromUrl.sort === 'price_desc') result = [...result].sort((a, b) => byPrice(b, a));
+    else if (filtersFromUrl.sort === 'newest') result = [...result].sort(byNewest);
+
+		return result;
+}, [products, filtersFromUrl]);
 
 	const loading = storeLoading || productsLoading || categoriesLoading || categoriesFetching;
 	const error = storeError ?? categoriesError ?? null;
@@ -165,19 +237,53 @@ export default function StorefrontView({ slug }: StorefrontViewProps) {
 		);
 	}
 
+	const activeCategoryName = selectedCategoryId ? categoryLookup[selectedCategoryId] : null;
+
 	return (
 		<div className="min-h-screen ">
 			<StoreFrontHeader storeData={store} cartItemCount={cart.totalQuantity} />
 			<StoreFrontContainer className="py-30">
-				<ProductGrid
-					products={filteredProducts}
-					title="All Products"
-					layout="grid"
-					subtitle="Minim amet deserunt ullamco quis pariatur deserunt consequat enim est ullamco quis tempor reprehenderit. Proident est veniam aliquip consequat consequat pariatur commodo sunt et aliquip dolore labore officia tempor. Ea culpa velit nostrud ex deserunt sunt commodo elit nisi incididunt id."
-					categoryLookup={categoryLookup}
-					storeSlug={slug}
-					onAddToWishlist={handleAddToWishlist}
-				/>
+				<div className="space-y-8">
+					<header className="space-y-2">
+						<h1 className="text-3xl font-bold">
+							{activeCategoryName || 'All Products'}
+						</h1>
+						<p className="text-muted-foreground">
+							{activeCategoryName
+								? `Browse products in ${activeCategoryName}`
+								: 'Discover our full catalog of products'}
+						</p>
+					</header>
+
+                    <StorefrontFilters
+                        categories={categories}
+                        value={filtersFromUrl}
+                        onChange={(next) => {
+                            const url = new URL(window.location.href);
+                            if (next.search) url.searchParams.set('q', next.search); else url.searchParams.delete('q');
+                            url.searchParams.set('sort', next.sort);
+                            url.searchParams.delete('category');
+                            next.categories.forEach((c) => url.searchParams.append('category', c));
+                            url.searchParams.set('min', String(next.priceMin ?? 0));
+                            url.searchParams.set('max', String(next.priceMax ?? 100000));
+                            if (next.inStockOnly) url.searchParams.set('stock', '1'); else url.searchParams.delete('stock');
+                            history.replaceState(null, '', url.toString());
+                        }}
+                    />
+
+					<ProductGrid
+						products={filteredProducts}
+						layout="grid"
+						subtitle={
+							activeCategoryName
+								? undefined
+								: 'Minim amet deserunt ullamco quis pariatur deserunt consequat enim est ullamco quis tempor reprehenderit.'
+						}
+						categoryLookup={categoryLookup}
+						storeSlug={slug}
+						onAddToWishlist={handleAddToWishlist}
+					/>
+				</div>
 			</StoreFrontContainer>
 			<StoreFrontFooter store={store} />
 		</div>

@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Package, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +15,9 @@ import type { ProductData } from '@/lib/domains/products/types';
 import { formatPrice } from '@/lib/utils/price';
 import { cn } from '@/lib/utils';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
+import { useCategories } from '@/hooks/use-categories';
+import Link from 'next/link';
+
 
 interface StorefrontProductViewProps {
   store: StoreData;
@@ -92,6 +94,22 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
     .filter((value): value is string => Boolean(value));
   const dimensions = dimensionParts.length > 0 ? `${dimensionParts.join(' × ')} cm` : '—';
   const weight = formatDimension(product.weight) ? `${formatDimension(product.weight)} kg` : '—';
+
+  const { data: categories = [] } = useCategories(store.slug);
+  const categoryLookup = useMemo(() => {
+    return categories.reduce<Record<string, string>>((acc, category) => {
+      acc[category.id] = category.name;
+      if (category.slug) acc[category.slug] = category.name;
+      return acc;
+    }, {});
+  }, [categories]);
+
+  const formatCategoryLabel = (identifier: string) => {
+    const fromLookup = categoryLookup[identifier];
+    if (fromLookup) return fromLookup;
+    const cleaned = identifier.replace(/[-_]+/g, ' ').trim();
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,9 +259,11 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
                 {Array.isArray(product.categories) && product.categories.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm text-muted-foreground">Categories:</span>
-                    {product.categories.map((category) => (
-                      <Badge key={category} variant="outline" className="capitalize">
-                        {category}
+                    {product.categories.map((identifier) => (
+                      <Badge key={identifier} variant="outline" className="capitalize">
+                        <Link href={`/stores/${store.slug}?category=${encodeURIComponent(identifier)}`}>
+                          {formatCategoryLabel(identifier)}
+                        </Link>
                       </Badge>
                     ))}
                   </div>

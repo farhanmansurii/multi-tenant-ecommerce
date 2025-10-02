@@ -7,7 +7,6 @@ import { StoreData } from '@/lib/domains/stores';
 import { ProductData } from '@/lib/domains/products';
 import { fetchStoreAndProduct } from '@/lib/domains/products/service';
 
-
 interface RouteParams {
 	slug: string;
 	productSlug: string;
@@ -61,9 +60,7 @@ export default async function StorefrontProductPage({ params }: { params: Promis
 	const { slug, productSlug } = await params;
 	const result = await fetchStoreAndProduct(slug, productSlug);
 
-	if (!result) {
-		notFound();
-	}
+	if (!result) notFound();
 
 	return <StorefrontProductView store={result.store} product={result.product} />;
 }
