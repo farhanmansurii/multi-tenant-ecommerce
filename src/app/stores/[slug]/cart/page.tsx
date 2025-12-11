@@ -1,9 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import CartView from '@/components/features/storefront/cart/cart-view';
-import StoreFrontFooter from '@/components/features/storefront/storefront-reusables/footer';
-import { StoreFrontHeader } from '@/components/features/storefront/storefront-reusables/navbar';
 import { fetchStore } from '@/lib/domains/stores/service';
+import CartView from '@/components/features/storefront/components/cart/cart-view';
 
 
 type CartPageProps = {
@@ -24,10 +22,6 @@ export default async function CartPage({ params }: CartPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <StoreFrontHeader storeData={store} />
-      <CartView storeSlug={slug} currency={store.currency} />
-      <StoreFrontFooter store={store} />
-    </div>
+    <CartView store={store} />
   );
 }

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { CheckoutView } from '@/components/features/storefront/checkout';
 import { storeHelpers } from '@/lib/domains/stores';
+import { CheckoutView } from '@/components/features/storefront/components/checkout';
 
 interface CheckoutPageProps {
   params: Promise<{ slug: string }>;

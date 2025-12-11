@@ -1,7 +1,14 @@
 import type { Metadata } from 'next';
-import StorefrontView from '@/components/features/storefront/storefront-view';
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
+import { fetchProducts } from '@/lib/domains/products/service';
+import { fetchCategories } from '@/lib/domains/products/category-service';
+import { StoreEditorial } from '@/components/features/storefront/shared/modules/editorial-about';
+import { StoreServiceStrip } from '@/components/features/storefront/shared/layout/store-service-strip';
+import StorefrontView from '@/components/features/storefront/views/home/storefront-view';
+import { StoreFooter } from '@/components/features/storefront/shared/layout/footer';
+import { StoreFrontHeader } from '@/components/features/storefront/shared/layout/navbar';
+import { StoreHero } from '@/components/features/storefront/storefront-reusables/hero';
 
 
 interface StorefrontPageProps {
@@ -40,5 +47,25 @@ export async function generateMetadata({
 
 export default async function StorefrontPage({ params }: StorefrontPageProps) {
   const { slug } = await params;
-  return <StorefrontView slug={slug} />;
+
+  const [store, products, categories] = await Promise.all([
+    fetchStore(slug).catch(() => null),
+    fetchProducts(slug).catch(() => []),
+    fetchCategories(slug).catch(() => []),
+  ]);
+
+  if (!store) {
+    return <div>Store not found</div>;
+  }
+
+  return (
+    <>
+      <StoreFrontHeader storeData={store} />
+      <StoreHero store={store} />
+      <StoreEditorial store={store} />
+      <StoreServiceStrip store={store} />
+      <StorefrontView slug={slug} initialStore={store} initialProducts={products} initialCategories={categories} />
+      <StoreFooter store={store} />
+    </>
+  );
 }

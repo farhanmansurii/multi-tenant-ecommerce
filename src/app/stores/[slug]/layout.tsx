@@ -1,5 +1,4 @@
 import React from "react";
-import StoreJoiner from "@/components/features/storefront/storefront-auth/store-joiner";
 
 type Props = {
   children: React.ReactNode;
@@ -11,7 +10,6 @@ export default async function layout({ children, params }: Props) {
 
   return (
     <div className="overflow-hidden">
-      <StoreJoiner storeSlug={slug} />
       {children}
     </div>
   );

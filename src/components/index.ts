@@ -11,7 +11,7 @@ export { default as ProductForm } from "./features/dashboard/product-form";
 export { default as StoreProductCreate } from "./features/dashboard/store-product-create";
 export { default as StoreProductEdit } from "./features/dashboard/store-product-edit";
 
-export { default as StorefrontView } from "./features/storefront/storefront-view";
+export { default as StorefrontView } from "./features/storefront/views/home/storefront-view";
 
 // Features - Auth
 export { withAuth } from "./features/auth/with-auth";

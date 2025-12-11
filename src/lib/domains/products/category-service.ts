@@ -1,7 +1,8 @@
 import { Category, Tag } from "@/lib/db/schema";
+import { withBaseUrl } from "@/lib/utils/url";
 
 export const fetchCategories = async (storeSlug: string): Promise<Category[]> => {
-  const response = await fetch(`/api/stores/${storeSlug}/categories`);
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/categories`));
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);

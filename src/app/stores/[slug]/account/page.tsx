@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import StorefrontAccountView from '@/components/features/storefront/account/storefront-account-view';
 
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
+import StorefrontAccountView from '@/components/features/storefront/components/account/storefront-account-view';
 
 interface AccountPageProps {
   params: Promise<{ slug: string }>;
