@@ -45,13 +45,7 @@ export const StoreImageUploadSection = ({
     <div className="space-y-8">
       {/* Logo Upload Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label>Store Logo</Label>
-          <span className="text-sm text-muted-foreground">
-            Recommended: 200x200px
-          </span>
-        </div>
-
+        <Label>Store Logo</Label>
         {logo ? (
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -111,7 +105,7 @@ export const StoreImageUploadSection = ({
             }}
             content={{
               label: "Drop logo here or click to upload",
-              allowedContent: "Images up to 4MB",
+              allowedContent: "Recommended: 200x200px (Max 4MB)",
             }}
           />
         )}
@@ -122,13 +116,13 @@ export const StoreImageUploadSection = ({
         <div className="flex items-center justify-between">
           <Label>Hero Images</Label>
           <span className="text-sm text-muted-foreground">
-            {heroImages.length}/{MAX_HERO_IMAGES} images
+            {heroImages.length}/{MAX_HERO_IMAGES}
           </span>
         </div>
 
         {canUploadMoreHero && (
           <UploadDropzone
-          className="p-4"
+            className="p-4"
             endpoint="imageUploader"
             onClientUploadComplete={(res) => {
               const newFiles = res.map((file) => ({
@@ -158,9 +152,8 @@ export const StoreImageUploadSection = ({
             }}
             content={{
               label: canUploadMoreHero
-                ? `Drop images here or click to upload (${
-                    MAX_HERO_IMAGES - heroImages.length
-                  } remaining)`
+                ? `Drop images here or click to upload (${MAX_HERO_IMAGES - heroImages.length
+                } remaining)`
                 : "Maximum images reached",
               allowedContent: "Images up to 4MB each",
             }}

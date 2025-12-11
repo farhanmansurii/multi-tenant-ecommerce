@@ -19,8 +19,6 @@ export type ProductImage = {
 	isPrimary: boolean;
 };
 
-// ProductVariant type moved to product-variant.ts
-
 export const products = pgTable("products", {
 	id: text("id").primaryKey(),
 	storeId: text("store_id").notNull(),

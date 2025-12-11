@@ -7,27 +7,27 @@ import { fetchStore } from '@/lib/domains/stores/service';
 
 
 type CartPageProps = {
-	params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export default async function CartPage({ params }: CartPageProps) {
-	const { slug } = params;
+  const { slug } = await params;
 
-	if (!slug) {
-		notFound();
-	}
+  if (!slug) {
+    notFound();
+  }
 
-	const store = await fetchStore(slug).catch(() => null);
+  const store = await fetchStore(slug).catch(() => null);
 
-	if (!store) {
-		notFound();
-	}
+  if (!store) {
+    notFound();
+  }
 
-	return (
-		<div className="min-h-screen bg-background">
-			<StoreFrontHeader storeData={store} />
-			<CartView storeSlug={slug} currency={store.currency} />
-			<StoreFrontFooter store={store} />
-		</div>
-	);
+  return (
+    <div className="min-h-screen bg-background">
+      <StoreFrontHeader storeData={store} />
+      <CartView storeSlug={slug} currency={store.currency} />
+      <StoreFrontFooter store={store} />
+    </div>
+  );
 }

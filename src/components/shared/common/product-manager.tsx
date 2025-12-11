@@ -50,7 +50,7 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
 
   // Delete product mutation
   const deleteProductMutation = useMutation({
-    mutationFn: (product: ProductData) => deleteProduct(storeSlug,product!.slug),
+    mutationFn: (product: ProductData) => deleteProduct(storeSlug, product!.slug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
       toast.success("Product deleted successfully");
@@ -94,63 +94,79 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
   }
 
   return (
-    <div className="space-y-6">
-      <ProductToolbar
-        productCount={products.length}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onCreateProduct={() =>
-          router.push(`/dashboard/stores/${storeSlug}/products/new`)
-        }
-      />
 
-      {products.length === 0 ? (
-        <ProductEmptyState
-          onCreateProduct={() =>
-            router.push(`/dashboard/stores/${storeSlug}/products/new`)
-          }
-        />
-      ) : viewMode === "list" ? (
-        <ProductTable
-          products={products}
-          onEdit={(p: ProductData) =>
-            router.push(
-              `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
-            )
-          }
-          onDelete={handleDeleteProduct}
-          onView={(p: ProductData) => {
-            // Navigate to product detail page
-          }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((p: ProductData) => {
-            // Ensure p is a valid ProductData object
-            if (!p || typeof p !== 'object' || !p.id) {
-              console.error('Invalid product data:', p);
-              return null;
-            }
-
-            return (
-              <ProductCard
-                key={p.id}
-                product={p}
-                viewMode={viewMode}
-                onEdit={() =>
-                  router.push(
-                    `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
-                  )
-                }
-                onDelete={handleDeleteProduct}
-                onView={(cur: ProductData) => {
-                  // Navigate to product detail page
-                }}
-              />
-            );
-          })}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight">Products</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage your store inventory ({products.length} items)
+          </p>
         </div>
-      )}
+      </div>
+
+      <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div className="p-4 border-b">
+          <ProductToolbar
+            productCount={products.length}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onCreateProduct={() =>
+              router.push(`/dashboard/stores/${storeSlug}/products/new`)
+            }
+          />
+        </div>
+
+        <div className="p-6 bg-muted/5 min-h-[400px]">
+          {products.length === 0 ? (
+            <ProductEmptyState
+              onCreateProduct={() =>
+                router.push(`/dashboard/stores/${storeSlug}/products/new`)
+              }
+            />
+          ) : viewMode === "list" ? (
+            <ProductTable
+              products={products}
+              onEdit={(p: ProductData) =>
+                router.push(
+                  `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
+                )
+              }
+              onDelete={handleDeleteProduct}
+              onView={(p: ProductData) => {
+                // Navigate to product detail page
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((p: ProductData) => {
+                // Ensure p is a valid ProductData object
+                if (!p || typeof p !== 'object' || !p.id) {
+                  console.error('Invalid product data:', p);
+                  return null;
+                }
+
+                return (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    viewMode={viewMode}
+                    onEdit={() =>
+                      router.push(
+                        `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
+                      )
+                    }
+                    onDelete={handleDeleteProduct}
+                    onView={(cur: ProductData) => {
+                      // Navigate to product detail page
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>

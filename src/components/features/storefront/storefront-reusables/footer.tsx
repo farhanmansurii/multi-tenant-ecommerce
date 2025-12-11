@@ -1,179 +1,221 @@
 import * as React from "react";
+import Link from "next/link";
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  ArrowRight,
+  MapPin,
+  Mail,
+  Phone,
+  CreditCard,
+  ShieldCheck,
+  Store
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { StoreData } from "@/lib/domains/stores/types";
 import { ModeToggle } from "@/components/shared/common/theme-toggle";
 import StoreFrontContainer from "./container";
+import { StoreData } from "@/lib/domains/stores/types";
+import { cn } from "@/lib/utils";
 
 export default function StoreFrontFooter({ store }: { store: StoreData }) {
-  const footerContent = {
-    newsletter: {
-      title: store.businessName,
-      description:
-       store.tagline,
-      placeholder: "Enter your email",
-    },
-    quickLinks: {
-      title: "Quick Links",
+  const currentYear = new Date().getFullYear();
+
+  // Social Media Configuration
+  const socialLinks = [
+    { label: "Facebook", icon: Facebook, href: "#" },
+    { label: "Twitter", icon: Twitter, href: "#" },
+    { label: "Instagram", icon: Instagram, href: "#" },
+    { label: "LinkedIn", icon: Linkedin, href: "#" },
+  ];
+
+  // Footer Navigation Sections
+  const footerSections = [
+    {
+      title: "Shop",
       links: [
-        { label: "Home", href: "/" },
-        { label: "About Us", href: "/about" },
-        { label: "Products", href: "/products" },
-        { label: "Contact", href: "/contact" },
+        { label: "All Products", href: "/products" },
+        { label: "New Arrivals", href: "/products?sort=newest" },
+        { label: "Featured", href: "/products?featured=true" },
       ],
     },
-    contact: {
-      title: "Contact Us",
-      address: [
-        store.businessName,
-        store.addressLine1 || store.address || "",
-        `${store.city}, ${store.state} ${store.zipCode}`,
-        `Phone: ${store.contactPhone || "N/A"}`,
-        `Email: ${store.contactEmail}`,
-      ].filter(Boolean),
-    },
-    social: {
-      title: "Follow Us",
-      platforms: [
-        {
-          label: "Facebook",
-          icon: Facebook,
-          href: "#",
-          tooltip: "Follow us on Facebook",
-        },
-        {
-          label: "Twitter",
-          icon: Twitter,
-          href: "#",
-          tooltip: "Follow us on Twitter",
-        },
-        {
-          label: "Instagram",
-          icon: Instagram,
-          href: "#",
-          tooltip: "Follow us on Instagram",
-        },
-        {
-          label: "LinkedIn",
-          icon: Linkedin,
-          href: "#",
-          tooltip: "Connect with us on LinkedIn",
-        },
-      ],
-    },
-    bottom: {
-      copyright: `© ${new Date().getFullYear()} ${
-        store.businessName || store.name
-      }. All rights reserved.`,
+    {
+      title: "Support",
       links: [
-        { label: "Privacy Policy", href: store.privacyPolicy },
-        { label: "Terms of Service", href: store.termsOfService },
-        { label: "Refund Policy", href: store.refundPolicy },
+        { label: "Contact Us", href: "/contact" },
+        { label: "Shipping Policy", href: "/shipping" },
+        { label: "Returns & Exchanges", href: "/returns" },
+        { label: "FAQ", href: "/faq" },
       ],
     },
-  };
+    {
+      title: "Legal",
+      links: [
+        { label: "Privacy Policy", href: store.privacyPolicy || "#" },
+        { label: "Terms of Service", href: store.termsOfService || "#" },
+        { label: "Refund Policy", href: store.refundPolicy || "#" },
+      ],
+    },
+  ];
 
   return (
-    <footer className="relative border-t bg-background text-foreground transition-colors duration-300">
-      <StoreFrontContainer className='py-12'>
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
-          {/* Newsletter */}
-          <div className="relative">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">
-              {footerContent.newsletter.title}
-            </h2>
-            <p className="mb-6 text-muted-foreground">
-              {footerContent.newsletter.description}
+    <footer className="relative border-t border-border/40 bg-background text-foreground overflow-hidden">
+
+      {/* 1. Background Texture (Matches Hero/Loader) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute right-0 bottom-0 h-[300px] w-[300px] bg-primary/5 blur-[100px] rounded-full"></div>
+      </div>
+
+      <StoreFrontContainer className="relative z-10 py-16">
+
+        {/* --- Top Section: Brand & Newsletter --- */}
+        <div className="grid gap-12 lg:grid-cols-2 mb-16">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Store className="h-4 w-4 text-primary" />
+              </div>
+              {store.businessName || store.name}
+            </div>
+            <p className="max-w-md text-muted-foreground leading-relaxed">
+              {store.tagline || "Discover quality products curated just for you. Join our community and elevate your lifestyle today."}
             </p>
 
-            <div className="absolute -right-4 top-0 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
+            <div className="flex items-center gap-4 pt-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" /> Secure Payment
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" /> Verified Merchant
+              </div>
+            </div>
           </div>
 
-          {/* Quick Links */}
+          <div className="lg:pl-12">
+            <div className="rounded-2xl border border-border/50 bg-muted/30 p-6 md:p-8 backdrop-blur-sm">
+              <h3 className="mb-2 text-lg font-semibold">Subscribe to our newsletter</h3>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Get the latest updates, exclusive offers, and early access to new products.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter your email"
+                  className="bg-background border-border/60 focus-visible:ring-primary/20"
+                />
+                <Button>
+                  Subscribe <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="bg-border/60 mb-12" />
+
+        {/* --- Middle Section: Links & Contact --- */}
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 lg:gap-12">
+
+          {/* Dynamic Sections */}
+          {footerSections.map((section) => (
+            <div key={section.title}>
+              <h3 className="mb-4 font-semibold tracking-wide text-foreground">{section.title}</h3>
+              <ul className="space-y-3 text-sm">
+                {section.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="group inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <span className="relative">
+                        {link.label}
+                        <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* Contact Info */}
           <div>
-            <h3 className="mb-4 text-lg font-semibold">
-              {footerContent.quickLinks.title}
-            </h3>
-            <nav className="space-y-2 text-sm">
-              {footerContent.quickLinks.links.map((link, idx) => (
-                <a
-                  key={idx}
-                  href={link.href}
-                  className="block transition-colors hover:text-primary"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
+            <h3 className="mb-4 font-semibold tracking-wide text-foreground">Contact</h3>
+            <ul className="space-y-4 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 shrink-0 text-primary/60" />
+                <span>
+                  {store.addressLine1 || store.address} <br />
+                  {store.city && `${store.city}, `} {store.state} {store.zipCode}
+                </span>
+              </li>
+              {store.contactEmail && (
+                <li className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 shrink-0 text-primary/60" />
+                  <a href={`mailto:${store.contactEmail}`} className="hover:text-primary transition-colors">
+                    {store.contactEmail}
+                  </a>
+                </li>
+              )}
+              {store.contactPhone && (
+                <li className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 shrink-0 text-primary/60" />
+                  <a href={`tel:${store.contactPhone}`} className="hover:text-primary transition-colors">
+                    {store.contactPhone}
+                  </a>
+                </li>
+              )}
+            </ul>
           </div>
+        </div>
 
-          {/* Contact */}
-          <div>
-            <h3 className="mb-4 text-lg font-semibold">
-              {footerContent.contact.title}
-            </h3>
-            <address className="space-y-2 text-sm not-italic">
-              {footerContent.contact.address.map((line, idx) => (
-                <p key={idx}>{line}</p>
-              ))}
-            </address>
-          </div>
+        {/* --- Bottom Section: Social & Copyright --- */}
+        <div className="mt-16 flex flex-col items-center justify-between gap-6 border-t border-border/60 pt-8 sm:flex-row">
+          <p className="text-sm text-muted-foreground">
+            © {currentYear} {store.businessName || store.name}. All rights reserved.
+          </p>
 
-          {/* Social + Dark Mode */}
-          <div className="relative">
-            <h3 className="mb-4 text-lg font-semibold">
-              {footerContent.social.title}
-            </h3>
-            <div className="mb-6 flex space-x-4">
-              {footerContent.social.platforms.map((platform, idx) => (
-                <TooltipProvider key={idx}>
+          <div className="flex items-center gap-4">
+            {/* Social Icons */}
+            <div className="flex gap-2">
+              {socialLinks.map((platform) => (
+                <TooltipProvider key={platform.label}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        asChild
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="rounded-full"
+                        className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
+                        asChild
                       >
-                        <a href={platform.href}>
+                        <Link href={platform.href}>
                           <platform.icon className="h-4 w-4" />
                           <span className="sr-only">{platform.label}</span>
-                        </a>
+                        </Link>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{platform.tooltip}</p>
+                      <p>{platform.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ))}
             </div>
+
+            <Separator orientation="vertical" className="h-6" />
+
             <ModeToggle />
           </div>
-        </div>
-
-        {/* Bottom */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 text-center md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            {footerContent.bottom.copyright}
-          </p>
-          <nav className="flex gap-4 text-sm">
-            {footerContent.bottom.links.map((link, idx) => (
-              <a
-                key={idx}
-                href={link.href}
-                className="transition-colors hover:text-primary"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
         </div>
       </StoreFrontContainer>
     </footer>

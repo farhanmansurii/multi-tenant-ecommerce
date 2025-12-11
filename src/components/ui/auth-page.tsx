@@ -130,7 +130,7 @@ export function AuthPage() {
             >
               {isGoogleLoading ? (
                 <Loader
-                  size={16}
+                  size="xs"
                   text="Signing in with Google"
                   className="me-2"
                 />
@@ -199,7 +199,7 @@ export function AuthPage() {
               aria-disabled={isEmailLoading}
             >
               {isEmailLoading ? (
-                <Loader size={16} text="Signing you in…" className="me-2" />
+                <Loader size="xs" text="Signing you in…" className="me-2" />
               ) : (
                 <span>Continue & Create Store</span>
               )}

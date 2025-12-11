@@ -23,10 +23,11 @@ interface BaseFieldProps {
   description?: string;
   className?: string;
   error?: FieldError;
+  disabled?: boolean;
 }
 
 interface InputFieldProps extends BaseFieldProps {
-  type: "text" | "email" | "tel" | "url" | "number" | "password";
+  type: "text" | "email" | "tel" | "url" | "number" | "password" | "date" | "datetime-local";
   placeholder?: string;
   step?: string;
   min?: number;
@@ -34,7 +35,7 @@ interface InputFieldProps extends BaseFieldProps {
   prefix?: string;
   suffix?: string;
   value?: string | number;
-  onChange?: (value: string | number) => void;
+  onChange?: (value: string | number | undefined) => void;
 }
 
 interface TextareaFieldProps extends BaseFieldProps {
@@ -90,6 +91,8 @@ export function FormField(props: FormFieldProps) {
       case "tel":
       case "url":
       case "password":
+      case "date":
+      case "datetime-local":
         return (
           <div className="space-y-2">
             {props.prefix || props.suffix ? (
@@ -105,6 +108,7 @@ export function FormField(props: FormFieldProps) {
                   placeholder={props.placeholder}
                   value={props.value}
                   onChange={(e) => props.onChange?.(e.target.value)}
+                  disabled={props.disabled}
                   className={cn(
                     props.prefix && "rounded-l-none",
                     props.suffix && "rounded-r-none",
@@ -124,6 +128,7 @@ export function FormField(props: FormFieldProps) {
                 placeholder={props.placeholder}
                 value={props.value}
                 onChange={(e) => props.onChange?.(e.target.value)}
+                disabled={props.disabled}
                 className={className}
               />
             )}
@@ -140,7 +145,11 @@ export function FormField(props: FormFieldProps) {
             min={props.min}
             max={props.max}
             value={props.value}
-            onChange={(e) => props.onChange?.(Number(e.target.value))}
+            onChange={(e) => {
+              const val = e.target.value;
+              props.onChange?.(val === "" ? undefined : Number(val));
+            }}
+            disabled={props.disabled}
             className={className}
           />
         );
@@ -206,24 +215,75 @@ export function FormField(props: FormFieldProps) {
         );
 
       case "color":
-        return (
-          <div className="flex gap-2">
-            <Input
-              id={name}
-              placeholder={props.placeholder || "#3B82F6"}
-              className={cn("font-mono", className)}
-              value={props.value}
-              onChange={(e) => props.onChange?.(e.target.value)}
-            />
-            <div
-              className="w-12 h-12 rounded border border-border"
-              style={{
-                backgroundColor: props.value || "#3B82F6",
-              }}
-            />
-          </div>
-        );
+        const solids = [
+          "#000000", "#ffffff", "#6366f1", "#3b82f6", "#0ea5e9",
+          "#10b981", "#eab308", "#f97316", "#ef4444", "#ec4899",
+          "#a855f7", "#64748b",
+        ];
 
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal px-3",
+                  !props.value && "text-muted-foreground"
+                )}
+              >
+                <div className="w-4 h-4 rounded-full border border-border mr-2 shrink-0" style={{ background: props.value || "#000000" }} />
+                <span className="flex-1 truncate font-mono text-xs">
+                  {props.value || "Pick a color"}
+                </span>
+                <Paintbrush className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-medium leading-none text-muted-foreground">Presets</h4>
+                  <div className="grid grid-cols-6 gap-2">
+                    {solids.map((s) => (
+                      <div
+                        key={s}
+                        className={cn(
+                          "h-6 w-6 rounded-md cursor-pointer border border-border/50 flex items-center justify-center transition-all hover:scale-110 active:scale-95",
+                          props.value === s && "border-primary ring-1 ring-primary"
+                        )}
+                        style={{ background: s }}
+                        onClick={() => props.onChange?.(s)}
+                      >
+                        {props.value === s && <CheckIcon className="h-3 w-3 text-white mix-blend-difference" />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-xs font-medium leading-none text-muted-foreground">Custom Hex</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      id={name}
+                      placeholder="#000000"
+                      className="h-8 font-mono text-xs"
+                      value={props.value}
+                      onChange={(e) => props.onChange?.(e.target.value)}
+                      maxLength={7}
+                    />
+                    <div className="relative w-8 h-8 shrink-0 overflow-hidden rounded-md border border-border">
+                      <input
+                        type="color"
+                        value={props.value || "#000000"}
+                        onChange={(e) => props.onChange?.(e.target.value)}
+                        className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer p-0 border-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        );
       default:
         return null;
     }
@@ -265,7 +325,14 @@ interface FormFieldHookProps<T extends FieldValues> {
   prefix?: string;
   suffix?: string;
   rows?: number;
+  disabled?: boolean;
 }
+
+import { Controller } from "react-hook-form";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { Button } from "./button";
+import { CheckIcon, Paintbrush } from "lucide-react";
+
 
 export function FormFieldHook<T extends FieldValues>({
   form,
@@ -283,114 +350,36 @@ export function FormFieldHook<T extends FieldValues>({
   prefix,
   suffix,
   rows,
+  disabled,
 }: FormFieldHookProps<T>) {
-  const { formState: { errors } } = form;
-  const error = errors[name] as FieldError | undefined;
+  const { control } = form;
 
-  if (type === "select") {
-    return (
-      <FormField
-        name={name}
-        label={label}
-        required={required}
-        description={description}
-        className={className}
-        error={error}
-        type="select"
-        placeholder={placeholder}
-        options={options || []}
-        value={form.watch(name)}
-        onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
-      />
-    );
-  }
-
-  if (type === "switch" || type === "checkbox") {
-    return (
-      <FormField
-        name={name}
-        label={label}
-        required={required}
-        description={description}
-        className={className}
-        error={error}
-        type={type}
-        value={form.watch(name)}
-        onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
-      />
-    );
-  }
-
-  if (type === "color") {
-    return (
-      <FormField
-        name={name}
-        label={label}
-        required={required}
-        description={description}
-        className={className}
-        error={error}
-        type="color"
-        placeholder={placeholder}
-        value={form.watch(name)}
-        onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
-      />
-    );
-  }
-
-  if (type === "textarea") {
-    return (
-      <FormField
-        name={name}
-        label={label}
-        required={required}
-        description={description}
-        className={className}
-        error={error}
-        type="textarea"
-        placeholder={placeholder}
-        rows={rows}
-        value={form.watch(name)}
-        onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
-      />
-    );
-  }
-
-  if (type === "number") {
-    return (
-      <FormField
-        name={name}
-        label={label}
-        required={required}
-        description={description}
-        className={className}
-        error={error}
-        type="number"
-        placeholder={placeholder}
-        step={step}
-        min={min}
-        max={max}
-        value={form.watch(name)}
-        onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
-      />
-    );
-  }
-
-  // For text, email, tel, url, password
   return (
-    <FormField
+    <Controller
+      control={control}
       name={name}
-      label={label}
-      required={required}
-      description={description}
-      className={className}
-      error={error}
-      type={type}
-      placeholder={placeholder}
-      prefix={prefix}
-      suffix={suffix}
-      value={form.watch(name)}
-      onChange={(value) => form.setValue(name, value as T[FieldPath<T>])}
+      render={({ field, fieldState: { error } }) => (
+        <FormField
+          name={name}
+          label={label}
+          required={required}
+          description={description}
+          className={className}
+          error={error}
+          type={type as any}
+          placeholder={placeholder}
+          options={options || []}
+          step={step}
+          min={min}
+          max={max}
+          prefix={prefix}
+          suffix={suffix}
+          rows={rows}
+          value={field.value ?? (type === "switch" || type === "checkbox" ? false : "")}
+          onChange={field.onChange}
+          disabled={disabled}
+        />
+      )}
     />
   );
 }

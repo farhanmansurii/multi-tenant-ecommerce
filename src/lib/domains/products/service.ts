@@ -1,4 +1,4 @@
-import { ProductData } from '@/lib/domains/products/types';
+import { ProductData, ProductInput } from '@/lib/domains/products/types';
 import type { StoreData } from '@/lib/domains/stores/types';
 import { fetchStore } from '@/lib/domains/stores/service';
 import { withBaseUrl } from '@/lib/utils/url';
@@ -19,7 +19,7 @@ export const fetchProduct = async (
 export const updateProduct = async (
 	storeSlug: string,
 	productSlug: string,
-	payload: Partial<ProductData>
+	payload: Partial<ProductInput>
 ): Promise<ProductData> => {
 	const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/products/${productSlug}`), {
 		method: 'PATCH',
@@ -38,7 +38,7 @@ export const updateProduct = async (
 
 export const createProduct = async (
 	storeSlug: string,
-	payload: Partial<ProductData>
+	payload: Partial<ProductInput>
 ): Promise<ProductData> => {
 	const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/products`), {
 		method: 'POST',

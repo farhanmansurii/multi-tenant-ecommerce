@@ -1,116 +1,208 @@
 'use client'
-import Link from 'next/link'
-import {  LogoIcon } from '@/components/logo'
-import { Menu, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import React from 'react'
-import { cn } from '@/lib/utils'
 
-const menuItems = [
-    { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#link' },
-    { name: 'About', href: '#link' },
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import {
+  Menu,
+  X,
+  User,
+  LayoutDashboard,
+  LogOut,
+  Sparkles,
+  Settings
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from '@/lib/utils'
+import { useSessionContext } from '@/lib/session'
+import { signOut } from '@/lib/auth/client'
+import { motion, AnimatePresence } from 'framer-motion'
+import { LogoIcon } from '@/components/logo' // Ensure you have this or replace with text
+
+const navLinks = [
+  { name: 'Features', href: '#features' },
+  { name: 'Pricing', href: '/pricing' },
+  { name: 'Blog', href: '/blog' },
 ]
 
 export const HeroHeader = () => {
-    const [menuState, setMenuState] = React.useState(false)
-    const [isScrolled, setIsScrolled] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isAuthenticated, user, isPending } = useSessionContext()
+  const pathname = usePathname()
 
-    React.useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50)
-        }
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
-    return (
-        <header>
-            <nav
-                data-state={menuState && 'active'}
-                className={cn('fixed z-20 w-full transition-all duration-300', isScrolled && 'bg-background/75 border-b border-black/5 backdrop-blur-lg')}>
-                <div className="mx-auto max-w-5xl px-6">
-                    <div className={cn('relative flex flex-wrap items-center justify-between gap-6 py-6 transition-all duration-200 lg:gap-0', isScrolled && 'py-3')}>
-                        <div className="flex w-full justify-between gap-6 lg:w-auto">
-                            <Link
-                                href="/"
-                                aria-label="home"
-                                className="flex items-center space-x-2">
-                                <LogoIcon />
-                            </Link>
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
-                            <button
-                                onClick={() => setMenuState(!menuState)}
-                                aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
-                                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden">
-                                <Menu className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
-                                <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
-                            </button>
+  // --- Sub-components for cleaner render ---
 
-                            <div className="m-auto hidden size-fit lg:block">
-                                <ul className="flex gap-1">
-                                    {menuItems.map((item, index) => (
-                                        <li key={index}>
-                                            <Button
-                                                asChild
-                                                variant="ghost"
-                                                size="sm">
-                                                <Link
-                                                    href={item.href}
-                                                    className="text-base">
-                                                    <span>{item.name}</span>
-                                                </Link>
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
+  const UserDropdown = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 ml-1 ring-2 ring-transparent focus-visible:ring-offset-1 focus-visible:ring-black/10">
+          <Avatar className="h-8 w-8 border border-white/10">
+            <AvatarImage src={typeof user?.image === 'string' ? user.image : undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs">
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl bg-background/80 backdrop-blur-xl border-border/50 shadow-2xl">
+        <DropdownMenuLabel>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{user?.name}</span>
+            <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+          <Link href="/dashboard">
+            <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+          <Link href="/settings">
+            <Settings className="h-4 w-4 mr-2" /> Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-500 rounded-lg cursor-pointer focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20">
+          <LogOut className="h-4 w-4 mr-2" /> Sign Out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 
-                        <div className="bg-background in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-                            <div className="lg:hidden">
-                                <ul className="space-y-6 text-base">
-                                    {menuItems.map((item, index) => (
-                                        <li key={index}>
-                                            <Link
-                                                href={item.href}
-                                                className="text-muted-foreground hover:text-accent-foreground block duration-150">
-                                                <span>{item.name}</span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                                <Button
-                                    asChild
-                                    variant="ghost"
-                                    size="sm"
-                                    className={cn(isScrolled && 'lg:hidden')}>
-                                    <Link href="/sign-in">
-                                        <span>Login</span>
-                                    </Link>
-                                </Button>
-                                <Button
-                                    asChild
-                                    size="sm"
-                                    className={cn(isScrolled && 'lg:hidden')}>
-                                    <Link href="/sign-in">
-                                        <span>Sign Up</span>
-                                    </Link>
-                                </Button>
-                                <Button
-                                    asChild
-                                    size="sm"
-                                    className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>
-                                    <Link href="/sign-in">
-                                        <span>Get Started</span>
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+  return (
+    <>
+      {/* Floating Pill Header
+              Fixed at top, centered, with max-width
+            */}
+      <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+        <nav className="w-full max-w-5xl flex items-center justify-between rounded-full border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/70 backdrop-blur-xl shadow-lg shadow-black/5 ring-1 ring-white/20 pl-4 pr-2 py-2 transition-all duration-300">
+
+          {/* Left: Logo & Desktop Links */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-foreground/90 hover:text-foreground transition-colors">
+              <div className="bg-foreground text-background p-1 rounded-md">
+                <LogoIcon className="w-4 h-4" />
+              </div>
+              <span className="hidden sm:block">GumroadClone</span>
+            </Link>
+
+            <div className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={cn(
+                    "hover:text-foreground transition-colors",
+                    pathname === link.href && "text-foreground font-semibold"
+                  )}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            {isPending ? (
+              // Loading Skeleton
+              <div className="h-9 w-24 bg-muted animate-pulse rounded-full" />
+            ) : isAuthenticated ? (
+              // Logged In State
+              <>
+                <Button asChild variant="ghost" size="sm" className="hidden sm:flex rounded-full text-muted-foreground hover:text-foreground">
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
+                <UserDropdown />
+              </>
+            ) : (
+              // Logged Out State
+              <>
+                <Link href="/sign-in" className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground px-3 transition-colors">
+                  Login
+                </Link>
+                <Button asChild size="sm" className="rounded-full px-5 bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-black/10">
+                  <Link href="/sign-up">
+                    Start Selling
+                  </Link>
+                </Button>
+              </>
+            )}
+
+            {/* Mobile Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden rounded-full ml-1 text-muted-foreground"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-20 left-4 right-4 z-40 md:hidden"
+          >
+            <div className="bg-background/95 backdrop-blur-2xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden p-4 flex flex-col gap-2 ring-1 ring-black/5">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 text-foreground font-medium transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
+
+              <div className="h-px bg-border/50 my-2" />
+
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 text-foreground font-medium">
+                    <LayoutDashboard size={18} /> Dashboard
+                  </Link>
+                  <button onClick={() => { handleSignOut(); setMobileMenuOpen(false); }} className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-red-500 font-medium w-full text-left">
+                    <LogOut size={18} /> Sign Out
+                  </button>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  <Button asChild variant="outline" className="rounded-xl h-11" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/sign-in">Login</Link>
+                  </Button>
+                  <Button asChild className="rounded-xl h-11" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/sign-up">Sign Up</Link>
+                  </Button>
                 </div>
-            </nav>
-        </header>
-    )
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
 }

@@ -1,30 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { useEffect, ReactNode } from "react";
 import { useSession } from "../auth/client";
-
-
-
-interface User {
-  id: string;
-  name?: string;
-  email?: string;
-  [key: string]: unknown;
-}
-
-interface Session {
-  user: User;
-  [key: string]: unknown;
-}
-
-interface SessionContextType {
-  session: Session | null;
-  isPending: boolean;
-  isAuthenticated: boolean;
-  user: User | null;
-}
-
-const SessionContext = createContext<SessionContextType | undefined>(undefined);
+import { useSessionStore } from "../state/auth/session-store";
 
 interface SessionProviderProps {
   children: ReactNode;
@@ -32,40 +10,32 @@ interface SessionProviderProps {
 
 export function SessionProvider({ children }: SessionProviderProps) {
   const { data: session, isPending } = useSession();
+  const setSession = useSessionStore((state) => state.setSession);
 
-  const value: SessionContextType = {
-    session,
-    isPending,
-    isAuthenticated: !!session?.user,
-    user: session?.user || null,
-  };
+  useEffect(() => {
+    setSession(session, isPending);
+  }, [session, isPending, setSession]);
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export function useSessionContext() {
-  const context = useContext(SessionContext);
-  if (context === undefined) {
-    throw new Error("useSessionContext must be used within a SessionProvider");
-  }
-  return context;
+  return useSessionStore();
 }
 
 // Convenience hooks for common use cases
 export function useAuth() {
-  const { isAuthenticated, user, isPending } = useSessionContext();
+  const { isAuthenticated, user, isPending } = useSessionStore();
   return { isAuthenticated, user, isPending };
 }
 
 export function useUser() {
-  const { user, isPending } = useSessionContext();
+  const { user, isPending } = useSessionStore();
   return { user, isPending };
 }
 
 export function useRequireAuth() {
-  const { isAuthenticated, isPending, user } = useSessionContext();
+  const { isAuthenticated, isPending, user } = useSessionStore();
 
   if (isPending) {
     return {

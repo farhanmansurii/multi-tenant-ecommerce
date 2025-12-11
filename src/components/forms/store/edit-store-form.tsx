@@ -13,6 +13,7 @@ interface StoreFormProps {
   isOwner?: boolean;
   storeLoading?: boolean;
   storeError?: Error | null;
+  isSuccess?: boolean;
 }
 
 export default function EditStoreForm({
@@ -24,6 +25,7 @@ export default function EditStoreForm({
   isOwner = true,
   storeLoading = false,
   storeError = null,
+  isSuccess = false,
 }: StoreFormProps) {
   return (
     <StoreForm
@@ -36,6 +38,7 @@ export default function EditStoreForm({
       isOwner={isOwner}
       storeLoading={storeLoading}
       storeError={storeError}
+      isSuccess={isSuccess}
     />
   );
 }

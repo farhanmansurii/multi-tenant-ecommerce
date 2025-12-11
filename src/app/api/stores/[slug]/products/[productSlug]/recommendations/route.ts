@@ -38,13 +38,21 @@ export async function GET(_request: Request, { params }: RouteParams) {
           COALESCE((
             SELECT COUNT(1)
             FROM jsonb_array_elements_text(p.categories) AS c(id)
-            WHERE c.id = ANY(${currentCategories}::text[])
+            WHERE ${
+							currentCategories.length > 0
+								? sql`c.id = ANY(${currentCategories}::text[])`
+								: sql`1=0`
+						}
           ), 0) * 2
           +
           COALESCE((
             SELECT COUNT(1)
             FROM jsonb_array_elements_text(p.tags) AS t(id)
-            WHERE t.id = ANY(${currentTags}::text[])
+            WHERE ${
+							currentTags.length > 0
+								? sql`t.id = ANY(${currentTags}::text[])`
+								: sql`1=0`
+						}
           ), 0)
         ) AS score
       FROM products p

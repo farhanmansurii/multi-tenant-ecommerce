@@ -1,3 +1,5 @@
+import React from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -5,153 +7,195 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { StoreData } from "@/lib/domains/stores/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, sanitizeText } from "@/lib/utils";
+import { cn } from "@/lib/utils"; // Ensure you have this utility
 import {
-  Calendar,
-  CheckCircle,
-  Edit,
+  CalendarDays,
+  CheckCircle2,
   ExternalLink,
+  MoreHorizontal,
   Package,
   PauseCircle,
-  PlusIcon,
   Settings,
   Slash,
   Store,
+  ArrowRight,
+  Globe,
+  TrendingUp
 } from "lucide-react";
-import Link from "next/link";
-import React from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StoreCardProps {
   store: StoreData;
 }
 
-const getStatusBadge = (status: string) => {
+// Configuration for status visual states
+const getStatusConfig = (status: string) => {
   switch (status) {
     case "active":
-      return (
-        <Badge
-          variant="secondary"
-          className="text-green-700 bg-green-50 border-green-200"
-        >
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Active
-        </Badge>
-      );
+      return {
+        icon: CheckCircle2,
+        label: "Active",
+        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        dot: "bg-emerald-500"
+      };
     case "draft":
-      return (
-        <Badge
-          variant="secondary"
-          className="text-amber-700 bg-amber-50 border-amber-200"
-        >
-          <PauseCircle className="h-3 w-3 mr-1" />
-          Draft
-        </Badge>
-      );
+      return {
+        icon: PauseCircle,
+        label: "Draft",
+        className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+        dot: "bg-amber-500"
+      };
     case "suspended":
-      return (
-        <Badge variant="destructive">
-          <Slash className="h-3 w-3 mr-1" />
-          Suspended
-        </Badge>
-      );
+      return {
+        icon: Slash,
+        label: "Suspended",
+        className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+        dot: "bg-red-500"
+      };
     default:
-      return <Badge variant="outline">Unknown</Badge>;
+      return {
+        icon: Store,
+        label: "Unknown",
+        className: "bg-muted text-muted-foreground border-border",
+        dot: "bg-muted-foreground"
+      };
   }
 };
 
 export default function StoreCard({ store }: StoreCardProps) {
+  const statusConfig = getStatusConfig(store.status);
+
+  const primaryColor = store.primaryColor || "#6366f1"; // Default Indigo
+
   return (
-    <Card
-      key={store.id}
-      className="flex flex-col h-full border rounded-2xl transition-all duration-200 hover:shadow-lg hover:border-primary/30"
-    >
-      <CardHeader className="pb-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+    <Card className="group relative flex flex-col overflow-hidden border border-border/60 bg-card transition-all duration-300 hover:border-border hover:shadow-lg hover:-translate-y-1">
+
+      {/* Decorative Top Highlight (Glows on Hover) */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${primaryColor}, transparent)`
+        }}
+      />
+
+      <CardHeader className="p-5 pb-3">
+        <div className="flex items-start justify-between gap-4">
+
+          {/* Icon & Title Group */}
+          <div className="flex gap-4">
+            {/* Store Icon / Logo */}
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 shadow-sm transition-transform duration-300 group-hover:scale-105"
               style={{
-                backgroundColor: store.primaryColor || "hsl(var(--primary))",
+                background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}40)`,
+                color: primaryColor
               }}
             >
-              <Store className="h-5 w-5 text-white" />
+              <Store className="h-6 w-6" />
+              {/* Active Dot indicator on the icon */}
+              <span className={cn("absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-background", statusConfig.dot)} />
             </div>
-            <div className="min-w-0">
-              <CardTitle className="text-lg font-semibold leading-snug truncate">
+
+            {/* Text Details */}
+            <div className="space-y-1">
+              <h3 className="font-bold leading-none tracking-tight text-foreground group-hover:text-primary transition-colors">
                 {store.name}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground truncate">
-                /{store.slug}
-              </p>
+              </h3>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Globe className="h-3 w-3" />
+                <span className="font-mono bg-muted/50 px-1 rounded-[4px]">/{store.slug}</span>
+              </div>
             </div>
           </div>
-          {getStatusBadge(store.status)}
+
+          {/* Status Badge */}
+          <Badge
+            variant="outline"
+            className={cn("px-2.5 py-0.5 text-xs font-medium capitalize shadow-none transition-colors", statusConfig.className)}
+          >
+            {statusConfig.label}
+          </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col justify-between pb-6">
-        {store.description && (
-          <p className="text-sm text-muted-foreground mb-5 line-clamp-3">
-            {store.description}
-          </p>
-        )}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            <span>{store.productCount || 0} products</span>
+      <CardContent className="flex-1 p-5 pt-2">
+        {/* Description */}
+        <p className="line-clamp-2 text-sm text-muted-foreground/80 min-h-[2.5rem] mb-6">
+          {sanitizeText(store.description) || "No description provided. Add a description to help customers understand your store."}
+        </p>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 gap-px bg-border/40 rounded-lg overflow-hidden border border-border/40">
+          <div className="bg-muted/10 p-3 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-2 mb-1">
+              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Products</span>
+            </div>
+            <span className="text-lg font-bold text-foreground">{store.productCount || 0}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span>{formatDate(store.createdAt)}</span>
+
+          <div className="bg-muted/10 p-3 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Created</span>
+            </div>
+            <span className="text-sm font-semibold text-foreground mt-1 block">
+              {new Date(store.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+            </span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="pt-5 border-t mt-auto grid grid-cols-2 gap-3">
-        <Button size="sm" className="w-full" asChild>
-          <Link
-            href={`/dashboard/stores/${store.slug}`}
-            className="flex items-center"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Manage Store
-          </Link>
-        </Button>
+      <CardFooter className="p-4 pt-0 gap-2 border-t border-transparent group-hover:border-border/40 transition-colors mt-auto">
+        <TooltipProvider>
+          {/* Primary Action */}
+          <Button asChild className="flex-1 shadow-sm" variant="default">
+            <Link href={`/dashboard/stores/${store.slug}`}>
+              Manage Store
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
 
-        <Button variant="outline" className="w-full" asChild>
-          <Link
-            href={`/dashboard/stores/${store.slug}/products/new`}
-            className="flex items-center"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Product
-          </Link>
-        </Button>
+          {/* Secondary Actions */}
+          <div className="flex gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" className="hover:bg-muted hover:text-foreground" asChild>
+                  <Link href={`/dashboard/stores/${store.slug}/settings`}>
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <span className="sr-only">Settings</span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings</TooltipContent>
+            </Tooltip>
 
-        <Button variant="ghost" className="w-full" asChild>
-          <Link
-            href={`/stores/${store.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View Store
-          </Link>
-        </Button>
-
-        <Button variant="ghost" className="w-full" asChild>
-          <Link
-            href={`/dashboard/stores/${store.slug}/settings`}
-            className="flex items-center"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Link>
-        </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" className="hover:bg-muted hover:text-foreground" asChild>
+                  <Link
+                    href={`/stores/${store.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <span className="sr-only">Visit Store</span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Live Store</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </CardFooter>
     </Card>
   );

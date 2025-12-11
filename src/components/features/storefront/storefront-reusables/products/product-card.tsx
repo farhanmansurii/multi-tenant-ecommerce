@@ -1,158 +1,220 @@
-import Link from 'next/link';
-import { ProductData } from '@/lib/domains/products/types';
-import { Heart, ImageIcon, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import React, { useMemo, useState } from 'react';
-import { formatPrice } from '@/lib/utils/price';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  Heart,
+  ShoppingBag,
+  Eye,
+  ImageIcon,
+  Check
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ProductData } from '@/lib/domains/products/types';
+import { formatPrice } from '@/lib/utils/price';
 
 type Props = {
-	product: ProductData;
-	categoryLookup?: Record<string, string>;
-	storeSlug?: string;
-	onAddToWishlist?: (product: ProductData) => void;
+  product: ProductData;
+  categoryLookup?: Record<string, string>;
+  storeSlug?: string;
+  onAddToWishlist?: (product: ProductData) => void;
+  onAddToCart?: (product: ProductData) => void;
 };
 
 export default function ProductCard({
-	product,
-	categoryLookup,
-	storeSlug,
-	onAddToWishlist,
+  product,
+  categoryLookup,
+  storeSlug,
+  onAddToWishlist,
+  onAddToCart
 }: Props) {
-	const [loaded, setLoaded] = useState(false);
-	const [showDetails, setShowDetails] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
 
-	const productImages = Array.isArray(product.images) ? product.images : [];
-	const primaryImage = productImages.find((image) => image.isPrimary) ?? productImages[0];
-	const productImage = primaryImage?.url || 'https://picsum.photos/1000/500';
-	const productHref = storeSlug ? `/stores/${storeSlug}/products/${product.slug}` : undefined;
+  // --- Data Logic ---
+  const productImages = Array.isArray(product.images) ? product.images : [];
+  const primaryImage = productImages.find((img) => img.isPrimary) || productImages[0];
+  const secondaryImage = productImages.find((img) => !img.isPrimary && img.id !== primaryImage?.id);
 
-	const categoryLabels = useMemo(() => {
-		const identifiers = Array.isArray(product.categories) ? product.categories : [];
-		const seen = new Set<string>();
-		return identifiers
-			.map((identifier) => categoryLookup?.[identifier] ?? identifier)
-			.filter((label): label is string => {
-				if (!label) return false;
-				if (seen.has(label)) return false;
-				seen.add(label);
-				return true;
-			});
-	}, [product.categories, categoryLookup]);
+  const imageUrl = primaryImage?.url || null;
+  const hoverImageUrl = secondaryImage?.url || null;
+  const productHref = storeSlug ? `/stores/${storeSlug}/products/${product.slug}` : '#';
 
-	const handleActionClick = () => setShowDetails((prev) => !prev);
+  // --- Category Label ---
+  const categoryLabel = useMemo(() => {
+    const cats = Array.isArray(product.categories) ? product.categories : [];
+    if (cats.length === 0) return null;
+    return cats[0].name;
+  }, [product.categories]);
 
-	return (
-		<motion.div
-			className="w-full h-full aspect-[4/5] flex flex-col  overflow-hidden "
-			whileHover={{ scale: 1.02 }}
-			transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-		>
-			<div
-				className={cn(
-					'flex-1 flex items-center justify-center bg-muted relative overflow-hidden'
-				)}
-			>
-				<Button
-					size="icon"
-					onClick={handleActionClick}
-					className="absolute top-2 right-2 h-7 w-7 z-10 rounded-full  shadow-md"
-				>
-					<Plus />
-				</Button>
+  // --- Price Logic ---
+  const price = Number(product.price);
+  const compareAtPrice = product.compareAtPrice ? Number(product.compareAtPrice) : 0;
+  const isOnSale = compareAtPrice > price;
 
-				{!loaded && (
-					<div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-						<ImageIcon className="h-8 w-8 animate-pulse" />
-					</div>
-				)}
+  const discountPercent = isOnSale
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+    : 0;
 
-				{productHref ? (
-					<Link
-						href={productHref}
-						className="absolute inset-0"
-						aria-label={`View ${product.name}`}
-					>
-						<span className="sr-only">View {product.name}</span>
-					</Link>
-				) : null}
+  // --- Handlers ---
+  const handleCartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(product);
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 2000);
+    }
+  };
 
-				<motion.img
-					src={productImage}
-					alt={product.name}
-					className={cn(
-						'object-cover w-full h-full transition-opacity duration-300',
-						loaded ? 'opacity-100' : 'opacity-0'
-					)}
-					onLoad={() => setLoaded(true)}
-					initial={{ scale: 1.1 }}
-					animate={{ scale: 1 }}
-					transition={{ duration: 0.5 }}
-				/>
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddToWishlist?.(product);
+  };
 
-				<AnimatePresence>
-					{showDetails && (
-						<motion.div
-							initial={{ y: 50, opacity: 0 }}
-							animate={{ y: 0, opacity: 1 }}
-							exit={{ y: 50, opacity: 0 }}
-							transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-							className="bottom-0 p-2 absolute w-full bg-background/90 backdrop-blur-sm"
-						>
-							<div className="grid grid-cols-5 gap-2">
-								{['XS', 'S', 'M', 'L', 'XL'].map((size) => (
-									<motion.button
-										key={size}
-										whileHover={{ scale: 1.05 }}
-										className="h-10  flex items-center justify-center border rounded-md cursor-pointer text-sm font-medium"
-									>
-										{size}
-									</motion.button>
-								))}
-							</div>
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</div>
+  return (
+    <TooltipProvider>
+      <motion.div
+        className="group relative flex flex-col h-full bg-card rounded-xl border border-border/40 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* --- Image Container --- */}
+        <Link
+          href={productHref}
+          className="relative block w-full aspect-[4/5] bg-muted overflow-hidden"
+        >
+          {/* 1. Badges (Absolute) */}
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 pointer-events-none">
+            {isOnSale && (
+              <Badge className="bg-red-500 text-white border-0 shadow-sm font-bold">
+                -{discountPercent}%
+              </Badge>
+            )}
+            {categoryLabel && (
+              <Badge variant="secondary" className="bg-background/90 backdrop-blur-md shadow-sm border-border/20">
+                {categoryLabel}
+              </Badge>
+            )}
+          </div>
 
-			<div className="flex p-3 flex-col">
-				<div className=" flex gap-2 mb-2 flex-row w-fit left-1">
-					{categoryLabels.map((category) => (
-						<Badge key={category} className="text-xs">
-							{category}
-						</Badge>
-					))}
-				</div>
-				<div className="font-semibold text-base lg:text-lg line-clamp-1">
-					{productHref ? (
-						<Link href={productHref} className="hover:underline">
-							{product.name}
-						</Link>
-					) : (
-						product.name
-					)}
-				</div>
-				<div className="text-sm mt-1">
-					{formatPrice(product.price)}{' '}
-					{product.compareAtPrice && (
-						<span className="text-destructive line-through opacity-50 ml-2">
-							{formatPrice(product.compareAtPrice)}
-						</span>
-					)}
-				</div>
-				{onAddToWishlist && (
-					<Button
-						variant="ghost"
-						size="sm"
-						className="mt-3 w-fit gap-2"
-						onClick={() => onAddToWishlist(product)}
-					>
-						<Heart className="h-4 w-4" /> Save for later
-					</Button>
-				)}
-			</div>
-		</motion.div>
-	);
+          {/* 2. Wishlist Button */}
+          {onAddToWishlist && (
+            <button
+              onClick={handleWishlistClick}
+              className="absolute top-3 right-3 z-20 p-2 rounded-full bg-background/80 backdrop-blur-md border border-border/10 text-muted-foreground transition-all hover:bg-background hover:text-red-500 hover:scale-110 shadow-sm opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 duration-300"
+            >
+              <Heart className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* 3. Placeholder (While Loading) */}
+          <div className={cn(
+            "absolute inset-0 flex items-center justify-center text-muted-foreground/20 z-0 bg-muted transition-opacity duration-500",
+            isImageLoaded ? "opacity-0" : "opacity-100"
+          )}>
+            <ImageIcon className="w-12 h-12 animate-pulse" />
+          </div>
+
+          {/* 4. Primary Image (Native <img>) */}
+          {imageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imageUrl}
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setIsImageLoaded(true)}
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out z-10 will-change-transform",
+                // Fade in on load
+                isImageLoaded ? "opacity-100" : "opacity-0",
+                // Zoom effect (disabled if secondary image exists and hovered)
+                hoverImageUrl && isHovered ? "opacity-0" : "scale-100 group-hover:scale-110"
+              )}
+            />
+          )}
+
+          {/* 5. Secondary Image (Native <img>) */}
+          {hoverImageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={hoverImageUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out z-10 will-change-transform",
+                isHovered ? "opacity-100 scale-110" : "opacity-0 scale-100"
+              )}
+            />
+          )}
+
+          {/* 6. Action Bar (Slide Up) */}
+          <div className="absolute inset-x-0 bottom-0 z-30 p-4 translate-y-full transition-transform duration-300 group-hover:translate-y-0">
+            <div className="flex gap-2">
+              <Button
+                className={cn(
+                  "flex-1 gap-2 shadow-lg transition-all active:scale-95",
+                  isAdded
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-background/95 hover:bg-background text-foreground hover:text-primary backdrop-blur-md"
+                )}
+                onClick={handleCartClick}
+              >
+                {isAdded ? (
+                  <><Check className="w-4 h-4" /> Added</>
+                ) : (
+                  <><ShoppingBag className="w-4 h-4" /> Quick Add</>
+                )}
+              </Button>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="secondary" className="bg-background/80 backdrop-blur-md shadow-lg hover:bg-background">
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Details</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </Link>
+
+        {/* --- Product Info --- */}
+        <div className="flex flex-col p-4 gap-1.5 bg-card z-20">
+          <Link href={productHref} className="group/title block">
+            <h3 className="font-semibold text-base leading-tight truncate text-foreground group-hover/title:text-primary transition-colors">
+              {product.name}
+            </h3>
+          </Link>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold text-lg text-foreground">
+                {formatPrice(product.price)}
+              </span>
+              {isOnSale && (
+                <span className="text-xs text-muted-foreground line-through opacity-70">
+                  {formatPrice(product.compareAtPrice!)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </TooltipProvider>
+  );
 }

@@ -22,7 +22,7 @@ export interface ProductData {
   compareAtPrice?: string;
   quantity: string;
   images: ProductImage[];
-  categories: string[];
+  categories: { id: string; name: string }[];
   tags: string[];
   featured: boolean;
   createdAt: string;

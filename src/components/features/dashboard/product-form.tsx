@@ -160,21 +160,8 @@ export default function ProductForm({
     : "Saving Changes...";
 
   return (
-    <DashboardLayout
-      title={title}
-      desc={description}
-      breadcrumbs={[
-        { label: "Home", href: "/" },
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores", href: "/dashboard" },
-        { label: store?.name || "Store", href: "/dashboard" },
-        { label: "Products", href: "/products" },
-        {
-          label: isCreateMode ? "New Product" : product?.name || "Edit Product",
-        },
-      ]}
-      icon={Package2Icon}
-      headerActions={
+    <div className="space-y-8">
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           {!isCreateMode && (
             <DangerZone
@@ -205,8 +192,8 @@ export default function ProductForm({
             )}
           </Button>
         </div>
-      }
-    >
+      </div>
+
       <form
         id="product-form"
         onSubmit={form.handleSubmit(onSubmit)}
@@ -258,6 +245,6 @@ export default function ProductForm({
         </section>
         <CategoriesAndTagsSection form={form} storeSlug={storeSlug} />
       </form>
-    </DashboardLayout>
+    </div>
   );
 }

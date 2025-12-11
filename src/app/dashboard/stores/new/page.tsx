@@ -8,6 +8,23 @@ export const metadata: Metadata = generateDashboardMetadata("stores", {
   keywords: ["create store", "new store", "store builder", "online store", "ecommerce setup"],
 });
 
+import { Store } from 'lucide-react';
+import DashboardLayout from '@/components/shared/layout/dashboard-container';
+
 export default function StoreCreatePage() {
-  return <StoreCreate />;
+  return (
+    <DashboardLayout
+      title="Create New Store"
+      desc="Set up your store and start selling online."
+      icon={<Store />}
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Stores', href: '/dashboard' },
+        { label: 'New Store' },
+      ]}
+    >
+      <StoreCreate />
+    </DashboardLayout>
+  );
 }

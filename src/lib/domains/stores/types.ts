@@ -5,7 +5,7 @@ export interface StoreData {
   codEnabled: boolean;
   productCount: number;
   id: string;
-  ownerId: string;
+  ownerUserId: string;
   name: string;
   slug: string;
   tagline?: string | null;
@@ -41,6 +41,7 @@ export interface StoreData {
   paypalEmail?: string | null;
   createdAt: string;
   updatedAt: string;
+  currentUserRole?: 'owner' | 'admin' | 'member' | 'customer' | null;
 }
 
 export interface StoreFormPayload {

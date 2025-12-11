@@ -16,8 +16,12 @@ export type ProductVariant = {
 export type ProductData = Omit<ProductRow, "images" | "categories" | "tags"> & {
   images: ProductImage[];
   variants: ProductVariant[];
-  categories: string[];
+  categories: { id: string; name: string }[];
   tags: string[];
+};
+
+export type ProductInput = Omit<ProductData, "categories"> & {
+  categories: string[];
 };
 
 export interface UploadedFile {

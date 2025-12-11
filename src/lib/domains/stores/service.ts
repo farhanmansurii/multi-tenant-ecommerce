@@ -47,7 +47,19 @@ export async function fetchProductStats(slug: string): Promise<number> {
   const res = await fetch(withBaseUrl(`/api/stores/${slug}/products`));
   if (!res.ok) return 0;
   const data = (await res.json()) as ProductsResponse;
-  if (typeof data.count === "number") return data.count;
   if (Array.isArray(data.products)) return data.products.length;
   return 0;
+}
+
+export async function fetchStoreAnalytics(slug: string) {
+  const response = await fetch(withBaseUrl(`/api/stores/${slug}/analytics`));
+  if (!response.ok) {
+    throw new Error("Failed to load analytics");
+  }
+  const data = await response.json();
+  return {
+    analytics: data.analytics,
+    currency: data.currency || "INR",
+    storeName: data.storeName,
+  };
 }

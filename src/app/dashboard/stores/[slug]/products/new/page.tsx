@@ -3,7 +3,7 @@ import StoreProductCreate from "@/components/features/dashboard/store-product-cr
 import { generateDashboardMetadata } from "@/lib/metadata";
 
 interface StoreProductCreatePageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -16,6 +16,31 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default function StoreProductCreatePage({ params }: StoreProductCreatePageProps) {
-  return <StoreProductCreate params={Promise.resolve(params)} />;
+import { Package } from 'lucide-react';
+import DashboardLayout from '@/components/shared/layout/dashboard-container';
+import { StoreSidebar } from '@/components/features/dashboard/store-sidebar';
+
+// ...
+
+export default async function StoreProductCreatePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  return (
+    <DashboardLayout
+      title="Create Product"
+      desc="Add a new product to your store"
+      icon={<Package />}
+      sidebar={<StoreSidebar slug={slug} />}
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Stores', href: '/dashboard/stores' },
+        { label: slug, href: `/dashboard/stores/${slug}` },
+        { label: 'Products', href: `/dashboard/stores/${slug}/products` },
+        { label: 'Create' },
+      ]}
+    >
+      <StoreProductCreate params={Promise.resolve({ slug })} />
+    </DashboardLayout>
+  );
 }

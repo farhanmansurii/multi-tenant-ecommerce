@@ -2,15 +2,15 @@ import { cn } from '@/lib/utils';
 import React, { ReactNode } from 'react';
 
 export default function StoreFrontContainer({
-	children,
-	className,
+  children,
+  className,
 }: {
-	children: ReactNode;
-	className?: string;
+  children: ReactNode;
+  className?: string;
 }) {
-	return (
-		<div className={cn('container max-w-7xl mx-auto px-4  md:px-6 lg:px-8', className)}>
-			{children}
-		</div>
-	);
+  return (
+    <div className={cn('container  mx-auto px-4  md:px-6 lg:px-8', className)}>
+      {children}
+    </div>
+  );
 }

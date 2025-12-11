@@ -2,21 +2,41 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronsDown, Package, ShieldCheck, Truck } from 'lucide-react';
+import {
+  ChevronDown,
+  Package,
+  ShieldCheck,
+  Truck,
+  Heart,
+  Share2,
+  ArrowLeft,
+  Check,
+  Loader2,
+  ShoppingBag
+} from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner'; // Ensure sonner is installed
 
 import RecommendedProducts from './storefront-reusables/products/recommended-products';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import StoreFrontContainer from './storefront-reusables/container';
 import { StoreFrontHeader } from './storefront-reusables/navbar';
 import StoreFrontFooter from './storefront-reusables/footer';
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 import type { StoreData } from '@/lib/domains/stores/types';
 import type { ProductData } from '@/lib/domains/products/types';
-import { formatPrice } from '@/lib/utils/price';
+import { formatPrice } from '@/lib/utils/price'; // Ensure this utility accepts options
 import { cn } from '@/lib/utils';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import { useCategories } from '@/hooks/use-categories';
-import Link from 'next/link';
-
 
 interface StorefrontProductViewProps {
   store: StoreData;
@@ -42,6 +62,10 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
     setStoreSlug: state.setStoreSlug,
     setSelectedCategoryId: state.setSelectedCategoryId,
   }));
+
+  // --- Button State for UX ---
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     setStoreSlug(store.slug);
@@ -70,22 +94,42 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
 
   const quantityNumber = Number.parseFloat(String(product.quantity ?? '0'));
   const isInStock = product.status === 'active' && (quantityNumber > 0 || product.allowBackorder);
+
   const priceSource = selectedVariant?.price ?? Number.parseFloat(String(product.price ?? '0'));
   const compareAtSource = selectedVariant?.compareAtPrice ?? (product.compareAtPrice ? Number(product.compareAtPrice) : undefined);
 
+  // --- Enhanced Add to Cart Handler ---
   const handleAddToCart = () => {
-    const price = typeof priceSource === 'number' ? priceSource : Number(priceSource ?? 0);
-    const normalizedPrice = Number.isFinite(price) ? price : 0;
-    addItem({
-      id: selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id,
-      productId: product.id,
-      name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name,
-      price: normalizedPrice,
-      quantity: 1,
-      image: primaryImage?.url ?? null,
-      variantId: selectedVariant?.id ?? null,
-      metadata: selectedVariant?.attributes ? { attributes: selectedVariant.attributes } : undefined,
-    });
+    if (isAdding || isSuccess) return; // Prevent double clicks
+
+    setIsAdding(true);
+
+    // Simulate a small network delay for better UX feeling
+    setTimeout(() => {
+      const price = typeof priceSource === 'number' ? priceSource : Number(priceSource ?? 0);
+      const normalizedPrice = Number.isFinite(price) ? price : 0;
+
+      addItem({
+        id: selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id,
+        productId: product.id,
+        name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name,
+        price: normalizedPrice,
+        quantity: 1,
+        image: primaryImage?.url ?? null,
+        variantId: selectedVariant?.id ?? null,
+        metadata: selectedVariant?.attributes ? { attributes: selectedVariant.attributes } : undefined,
+      });
+
+      // UX Feedback
+      setIsAdding(false);
+      setIsSuccess(true);
+      toast.success("Added to cart", {
+        description: `${product.name} is now in your bag.`
+      });
+
+      // Reset button after 2 seconds
+      setTimeout(() => setIsSuccess(false), 2000);
+    }, 600);
   };
 
   const dimensionParts = [product.length, product.width, product.height]
@@ -110,43 +154,71 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   };
 
+  // Helper to format price with Store Currency
+  const displayPrice = (amount: number) => {
+    return formatPrice(amount, store.currency);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <StoreFrontHeader storeData={store} cartItemCount={cart.totalQuantity} />
 
       <main className="pt-24 pb-16">
         <StoreFrontContainer className="py-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)]">
-            {/* Image Gallery */}
-            <section>
-              <div className="sticky top-24">
-                <div className="aspect-[3/4] overflow-hidden bg-muted">
+
+          <div className="mb-8">
+            <Link
+              href={`/stores/${store.slug}`}
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors group"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              Back to Store
+            </Link>
+          </div>
+
+          <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] xl:gap-20">
+
+            {/* --- Left Column: Image Gallery --- */}
+            <section className="relative">
+              <div className="sticky top-32 space-y-4">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted border border-border/40 shadow-sm">
                   {selectedImageId ? (
                     <img
                       key={selectedImageId}
                       src={images.find((image) => image.id === selectedImageId)?.url ?? primaryImage?.url ?? ''}
                       alt={images.find((image) => image.id === selectedImageId)?.alt ?? product.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-opacity duration-300"
                     />
                   ) : (
-                    <img
-                      src={primaryImage?.url ?? 'https://picsum.photos/1200/800'}
-                      alt={primaryImage?.alt ?? product.name}
-                      className="h-full w-full object-cover"
-                    />
+                    <div className="flex h-full w-full items-center justify-center bg-muted">
+                      <Package className="h-16 w-16 text-muted-foreground/30" />
+                    </div>
+                  )}
+
+                  {!isInStock && (
+                    <Badge className="absolute top-4 left-4 bg-muted text-muted-foreground hover:bg-muted">
+                      Out of Stock
+                    </Badge>
+                  )}
+                  {isInStock && compareAtSource && compareAtSource > priceSource && (
+                    <Badge className="absolute top-4 left-4 bg-red-500 text-white hover:bg-red-600 border-0">
+                      Sale
+                    </Badge>
                   )}
                 </div>
 
                 {images.length > 1 && (
-                  <div className="mt-3 grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-5 gap-3">
                     {images.map((image) => (
                       <button
                         key={image.id}
                         type="button"
                         onClick={() => setSelectedImageId(image.id)}
                         className={cn(
-                          'aspect-square overflow-hidden bg-muted transition-opacity duration-200',
-                          selectedImageId === image.id ? 'opacity-100 ring-1 ring-foreground' : 'opacity-60 hover:opacity-100'
+                          'relative aspect-square overflow-hidden rounded-lg bg-muted border-2 transition-all',
+                          selectedImageId === image.id
+                            ? 'border-primary opacity-100 ring-2 ring-primary/20'
+                            : 'border-transparent opacity-60 hover:opacity-100'
                         )}
                       >
                         <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
@@ -157,105 +229,187 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
               </div>
             </section>
 
-            {/* Product Info */}
-            <section className="space-y-6 lg:py-2">
-              {/* Title and Price */}
-              <div className="space-y-2">
-                <h1 className="text-2xl font-light tracking-tight uppercase">{product.name}</h1>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-xl font-normal">{formatPrice(priceSource)}</span>
-                  {compareAtSource && (
-                    <span className="text-base text-muted-foreground line-through">
-                      {formatPrice(compareAtSource)}
+            {/* --- Right Column: Product Details --- */}
+            <section className="flex flex-col gap-8 lg:py-2">
+
+              {/* Header Info */}
+              <div className="space-y-4 border-b border-border/40 pb-6">
+                {Array.isArray(product.categories) && product.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {product.categories.map((identifier) => (
+                      <Badge
+                        key={identifier.id}
+                        variant="secondary"
+                        className="font-normal text-xs uppercase tracking-wide px-2 py-0.5"
+                      >
+                        {identifier.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <h1 className="text-4xl font-bold tracking-tight text-foreground text-balance">
+                  {product.name}
+                </h1>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-3">
+                    {/* Using Store Currency */}
+                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                      {displayPrice(priceSource)}
                     </span>
-                  )}
+                    {compareAtSource && (
+                      <span className="text-lg text-muted-foreground line-through decoration-red-500/50">
+                        {displayPrice(compareAtSource)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full">
+                            <Heart className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Add to Wishlist</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full">
+                            <Share2 className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Share Product</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-              </div>
 
-              {/* Short Description */}
-              {product.shortDescription && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{product.shortDescription}</p>
-              )}
-
-              {/* Availability */}
-              <div className="text-sm">
-                {isInStock ? (
-                  <span className="text-green-600 dark:text-green-500">In stock</span>
-                ) : (
-                  <span className="text-muted-foreground">Out of stock</span>
+                {product.shortDescription && (
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    {product.shortDescription}
+                  </p>
                 )}
               </div>
 
-              {/* Variants */}
-              {variants.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Select {variants[0].name.toLowerCase().includes('size') ? 'Size' : 'Option'}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {variants.map((variant) => (
-                      <Button
-                        key={variant.id}
-                        type="button"
-                        variant={variant.id === selectedVariantId ? 'default' : 'outline'}
-                        onClick={() => setSelectedVariantId(variant.id)}
-                        className="h-auto min-w-[60px] px-4 py-2 text-sm font-normal"
-                        size="sm"
-                      >
-                        {variant.name}
-                      </Button>
-                    ))}
+              {/* Action Area */}
+              <div className="space-y-6">
+
+                {variants.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Select {variants[0].name.toLowerCase().includes('size') ? 'Size' : 'Option'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {variants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => setSelectedVariantId(variant.id)}
+                          className={cn(
+                            "px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all min-w-[3rem]",
+                            variant.id === selectedVariantId
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border hover:border-foreground/50 bg-background"
+                          )}
+                        >
+                          {variant.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Add to Cart */}
-              <Button
-                size="lg"
-                className="w-full h-12 text-base font-normal uppercase tracking-wide"
-                onClick={handleAddToCart}
-                disabled={!isInStock}
-              >
-                {isInStock ? 'Add to bag' : 'Out of stock'}
-              </Button>
+                {/* --- Enhanced CTA Button --- */}
+                <div className="space-y-4 pt-4">
+                  <Button
+                    size="lg"
+                    className={cn(
+                      "w-full h-14 text-lg font-semibold rounded-full shadow-xl transition-all duration-300",
+                      isSuccess
+                        ? "bg-green-600 hover:bg-green-700 shadow-green-500/20"
+                        : "shadow-primary/20 hover:-translate-y-0.5 active:scale-[0.99]"
+                    )}
+                    onClick={handleAddToCart}
+                    disabled={!isInStock || isAdding}
+                  >
+                    {isAdding ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Adding...
+                      </>
+                    ) : isSuccess ? (
+                      <>
+                        <Check className="mr-2 h-5 w-5" />
+                        Added to Bag
+                      </>
+                    ) : isInStock ? (
+                      <>
+                        <ShoppingBag className="mr-2 h-5 w-5" />
+                        Add to Bag
+                        <span className="mx-2 opacity-50">•</span>
+                        {displayPrice(priceSource)}
+                      </>
+                    ) : (
+                      'Out of Stock'
+                    )}
+                  </Button>
 
-              {/* Shipping Info */}
-              <div className="space-y-2 border-t pt-6 text-sm">
-                <div className="flex items-start gap-3">
-                  <Truck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-muted-foreground">
-                    {product.requiresShipping
-                      ? 'Free shipping on orders over $50. Delivery in 3-5 business days.'
-                      : 'Digital delivery via email after purchase.'}
-                  </span>
+                  {isInStock && (
+                    <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                      <ShieldCheck className="w-3 h-3" /> Secure checkout • Free shipping over $50
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-start gap-3">
-                  <Package className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-muted-foreground">Free returns within 30 days.</span>
+
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="p-2 rounded-full bg-background border shadow-sm">
+                      <Truck className="h-4 w-4 text-foreground" />
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-semibold">Fast Delivery</p>
+                      <p className="text-muted-foreground">2-4 business days</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="p-2 rounded-full bg-background border shadow-sm">
+                      <ShieldCheck className="h-4 w-4 text-foreground" />
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-semibold">Secure Checkout</p>
+                      <p className="text-muted-foreground">SSL Encrypted</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Product Details Accordion */}
-              <div className="border-t pt-6 space-y-4">
-                <details className="group">
-                  <summary className="flex cursor-pointer items-center justify-between text-sm font-medium uppercase tracking-wider">
-                    Product Details
-                    <span className="transition group-open:rotate-180"><ChevronDown/></span>
+              {/* Details Sections (Unchanged but ensuring currency is used if present) */}
+              <div className="border-t border-border/40 pt-4">
+                <details className="group border-b border-border/40" open>
+                  <summary className="flex cursor-pointer items-center justify-between py-4 text-sm font-medium uppercase tracking-wider hover:text-primary transition-colors select-none">
+                    Product Description
+                    <ChevronDown className="h-4 w-4 transition-transform duration-300 group-open:rotate-180" />
                   </summary>
-                  <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-                    <p className="leading-relaxed whitespace-pre-line">{product.description}</p>
+                  <div className="pb-6 text-muted-foreground text-sm leading-relaxed space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <p className="whitespace-pre-line">{product.description}</p>
+
                     {(dimensionParts.length > 0 || formatDimension(product.weight)) && (
-                      <div className="space-y-1 pt-2">
+                      <div className="bg-muted/30 p-4 rounded-lg space-y-2 mt-4">
+                        <h4 className="font-semibold text-foreground text-xs uppercase tracking-wide mb-2">Specifications</h4>
                         {dimensionParts.length > 0 && (
-                          <div className="flex gap-2">
-                            <span className="font-medium text-foreground">Dimensions:</span>
-                            <span>{dimensions}</span>
+                          <div className="flex justify-between text-xs">
+                            <span>Dimensions</span>
+                            <span className="font-mono">{dimensions}</span>
                           </div>
                         )}
                         {formatDimension(product.weight) && (
-                          <div className="flex gap-2">
-                            <span className="font-medium text-foreground">Weight:</span>
-                            <span>{weight}</span>
+                          <div className="flex justify-between text-xs">
+                            <span>Weight</span>
+                            <span className="font-mono">{weight}</span>
                           </div>
                         )}
                       </div>
@@ -263,110 +417,34 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
                   </div>
                 </details>
 
-                {product.requiresShipping && (
-                  <details className="group border-t pt-4">
-                    <summary className="flex cursor-pointer items-center justify-between text-sm font-medium uppercase tracking-wider">
-                      Shipping & Returns
-                      <span className="transition group-open:rotate-180"><ChevronDown/></span>
-                    </summary>
-                    <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                      <p>Free standard shipping on orders over $50.</p>
-                      <p>Standard delivery: 3-5 business days.</p>
-                      <p>Express delivery available at checkout.</p>
-                      <p className="pt-2">Free returns within 30 days of purchase in original condition and packaging.</p>
-                    </div>
-                  </details>
-                )}
+                <details className="group border-b border-border/40">
+                  <summary className="flex cursor-pointer items-center justify-between py-4 text-sm font-medium uppercase tracking-wider hover:text-primary transition-colors select-none">
+                    Shipping & Returns
+                    <ChevronDown className="h-4 w-4 transition-transform duration-300 group-open:rotate-180" />
+                  </summary>
+                  <div className="pb-6 text-muted-foreground text-sm space-y-2 animate-in slide-in-from-top-2 duration-300">
+                    <p>Free standard shipping on orders over {displayPrice(50)}.</p>
+                    <p>Standard delivery: 3-5 business days.</p>
+                    <p>Express delivery available at checkout.</p>
+                    <p className="pt-2">Free returns within 30 days of purchase in original condition and packaging.</p>
+                  </div>
+                </details>
               </div>
-
-              {/* Categories */}
-              {Array.isArray(product.categories) && product.categories.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 border-t pt-6 text-xs">
-                  <span className="text-muted-foreground">Shop:</span>
-                  {product.categories.map((identifier) => {
-                    const label = categoryLookup[identifier] ?? formatCategoryLabel(identifier);
-                    return (
-                      <Link
-                        key={identifier}
-                        href={`/stores/${store.slug}?category=${encodeURIComponent(identifier)}`}
-                        className="underline hover:no-underline"
-                      >
-                        {label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
             </section>
           </div>
 
-          <div className="mt-16 grid gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <section className="prose max-w-none dark:prose-invert">
-              <h2 className="text-2xl font-semibold">Product description</h2>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                {product.description}
-              </p>
+          <Separator className="my-16" />
 
-              <div className="mt-12">
-                <RecommendedProducts storeSlug={store.slug} current={product} />
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="rounded-2xl border bg-card p-6">
-                <h3 className="text-lg font-semibold">Shipping & returns</h3>
-                <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <Truck className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>
-                      {product.requiresShipping
-                        ? 'Ships within 3-5 business days from our roastery.'
-                        : 'Digital delivery via email immediately after purchase.'}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Package className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>Free returns within 30 days in original packaging.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>Secure payments and buyer protection on every order.</span>
-                  </li>
-                </ul>
-              </div>
-
-              {product.downloadUrl && (
-                <div className="rounded-2xl border bg-card p-6">
-                  <h3 className="text-lg font-semibold">Digital delivery</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    This is a digital product. Download link will be available after purchase
-                    {product.downloadExpiry ? ` and expires in ${product.downloadExpiry} days.` : '.'}
-                  </p>
-                  <Button asChild variant="outline" className="mt-4">
-                    <Link href={product.downloadUrl}>Preview download</Link>
-                  </Button>
-                </div>
-              )}
-
-              {product.metaDescription && (
-                <div className="rounded-2xl border bg-card p-6">
-                  <h3 className="text-lg font-semibold">SEO metadata</h3>
-                  <dl className="mt-3 space-y-2 text-sm text-muted-foreground">
-                    {product.metaTitle && (
-                      <div>
-                        <dt className="font-medium text-foreground">Meta title</dt>
-                        <dd>{product.metaTitle}</dd>
-                      </div>
-                    )}
-                    <div>
-                      <dt className="font-medium text-foreground">Meta description</dt>
-                      <dd>{product.metaDescription}</dd>
-                    </div>
-                  </dl>
-                </div>
-              )}
-            </section>
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight">You might also like</h2>
+              <Link href={`/stores/${store.slug}/products`} className="text-sm font-medium hover:underline">
+                View all
+              </Link>
+            </div>
+            <RecommendedProducts storeSlug={store.slug} current={product} />
           </div>
+
         </StoreFrontContainer>
       </main>
 

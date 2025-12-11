@@ -13,10 +13,35 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default function StoreProductEditPage({
+import { Package } from 'lucide-react';
+import DashboardLayout from '@/components/shared/layout/dashboard-container';
+import { StoreSidebar } from '@/components/features/dashboard/store-sidebar';
+
+// ...
+
+export default async function StoreProductEditPage({
   params,
 }: {
-  params: { slug: string; productSlug: string };
+  params: Promise<{ slug: string; productSlug: string }>;
 }) {
-  return <StoreProductEdit params={params} />;
+  const { slug, productSlug } = await params;
+
+  return (
+    <DashboardLayout
+      title="Edit Product"
+      desc="Update product details"
+      icon={<Package />}
+      sidebar={<StoreSidebar slug={slug} />}
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Stores', href: '/dashboard/stores' },
+        { label: slug, href: `/dashboard/stores/${slug}` },
+        { label: 'Products', href: `/dashboard/stores/${slug}/products` },
+        { label: productSlug },
+      ]}
+    >
+      <StoreProductEdit params={{ slug, productSlug }} />
+    </DashboardLayout>
+  );
 }

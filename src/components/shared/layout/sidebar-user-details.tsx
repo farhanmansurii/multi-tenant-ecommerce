@@ -22,7 +22,7 @@ export default function UserDetailsSidebar() {
     return (
       <SidebarMenuButton asChild className="justify-center font-medium">
         <Link href='/sign-in'>
-        Sign In
+          Sign In
         </Link>
       </SidebarMenuButton>
     );
@@ -53,10 +53,7 @@ export default function UserDetailsSidebar() {
           <User2 className="h-4 w-4 opacity-70" />
           <span>Account</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2">
-          <CreditCard className="h-4 w-4 opacity-70" />
-          <span>Billing</span>
-        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => signOut()}

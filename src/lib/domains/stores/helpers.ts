@@ -1,5 +1,6 @@
 import "server-only";
 import { eq, and } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { stores, storeMembers } from "@/lib/db/schema";
 import { setTenantContext } from "@/lib/middleware/tenant";
@@ -84,9 +85,9 @@ export async function createStore(data: CreateStoreData) {
 }
 
 /**
- * Get store by slug
+ * Get store by slug (uncached - for internal use)
  */
-export async function getStoreBySlug(slug: string) {
+async function _getStoreBySlug(slug: string) {
   const [store] = await db
     .select()
     .from(stores)
@@ -95,6 +96,12 @@ export async function getStoreBySlug(slug: string) {
 
   return store || null;
 }
+
+/**
+ * Get store by slug - cached per request to avoid redundant queries
+ * Uses React's cache() to deduplicate calls within the same request
+ */
+export const getStoreBySlug = cache(_getStoreBySlug);
 
 /**
  * Get store by ID

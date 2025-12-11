@@ -60,7 +60,7 @@ export const useProductForm = ({
   });
 
   // Check permissions
-  const isOwner = store && user && store.ownerId === user.id;
+  const isOwner = store && user && store.ownerUserId === user.id;
 
   // Form setup
   const form = useForm<ProductFormValues>({
@@ -103,7 +103,9 @@ export const useProductForm = ({
         trackQuantity: product.trackQuantity ?? true,
         allowBackorder: product.allowBackorder ?? false,
         featured: product.featured ?? false,
-        categories: Array.isArray(product.categories) ? product.categories : [],
+        categories: Array.isArray(product.categories)
+          ? product.categories.map((c) => c.id)
+          : [],
         tags: Array.isArray(product.tags) ? product.tags : [],
       });
 

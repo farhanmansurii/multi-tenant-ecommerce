@@ -65,8 +65,8 @@ function mapStoreToForm(store: StoreData): StoreFormPayload {
       typeof store.freeShippingThreshold === "number"
         ? store.freeShippingThreshold
         : store.freeShippingThreshold
-        ? Number(store.freeShippingThreshold)
-        : 0,
+          ? Number(store.freeShippingThreshold)
+          : 0,
     shippingRates: store.shippingRates ?? [],
     termsOfService: store.termsOfService ?? "",
     privacyPolicy: store.privacyPolicy ?? "",
@@ -75,6 +75,9 @@ function mapStoreToForm(store: StoreData): StoreFormPayload {
     featured: store.featured ?? false,
   };
 }
+
+import { usePermission } from "@/lib/auth/permissions";
+
 
 export default function StoreSettings({ params }: StoreSettingsProps) {
   const { isAuthenticated, user, isPending } = useRequireAuth();
@@ -95,8 +98,8 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
   });
 
   // Check permissions
-  const isOwner = store && user && store.ownerId === user.id;
-  const hasPermissionError = store && user && !isOwner;
+  const { can } = usePermission(store, user);
+  const hasPermissionError = store && user && !can('manage_settings');
 
   // Update store mutation
   const updateMutation = useMutation({
@@ -232,7 +235,9 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
     );
   }
 
-  const formData = mapStoreToForm(store);
+  const formData = React.useMemo(() => {
+    return store ? mapStoreToForm(store) : undefined;
+  }, [store]);
 
   return (
     <EditStoreForm
@@ -240,6 +245,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
       onSave={handleSave}
       onCancel={() => router.back()}
       isSaving={updateMutation.isPending}
+      isSuccess={updateMutation.isSuccess}
     />
   );
 }

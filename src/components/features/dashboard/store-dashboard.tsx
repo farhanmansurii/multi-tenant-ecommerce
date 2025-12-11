@@ -1,14 +1,19 @@
-"use client";
-
+'use client'
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   ShoppingBag,
-  TagsIcon,
-  Settings2,
   Package,
+  Users,
+  DollarSign,
+  CreditCard,
+  Activity,
+  AlertTriangle,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Plus,
 } from "lucide-react";
 
 
@@ -27,9 +32,14 @@ import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { useQuery } from "@tanstack/react-query";
 
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
-import { Loader } from "@/components/shared/common/loader";
-import { fetchProductStats, fetchStore } from "@/lib/domains/stores/service";
+import { fetchProductStats, fetchStore, fetchStoreAnalytics } from "@/lib/domains/stores/service";
 import { useRequireAuth } from "@/lib/session";
+import { StoreSidebar } from "@/components/features/dashboard/store-sidebar";
+import { StoreDashboardSkeleton } from "@/components/skeletons/store-dashboard-skeleton";
+import { SalesChart } from "@/components/features/dashboard/overview/sales-chart";
+import { RecentActivity } from "@/components/features/dashboard/overview/recent-activity";
+import { formatCurrency } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;
@@ -56,25 +66,40 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
     enabled: !!store && !paramsLoading,
   });
 
-  const isOwner = store && user?.id === store.ownerId;
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["storeAnalytics", slug],
+    queryFn: () => fetchStoreAnalytics(slug),
+    enabled: !!store && !paramsLoading,
+    staleTime: 0, // Always refetch analytics data
+  });
+
+  const analytics = analyticsData?.analytics;
+  const currency = analyticsData?.currency || store?.currency || "INR";
+
+  const isOwner = store && user?.id === store.ownerUserId;
 
   const handleCreateProduct = () =>
     router.push(`/dashboard/stores/${slug}/products/new`);
-  const handleEditStore = () =>
-    router.push(`/dashboard/stores/${slug}/settings`);
-  const handleManageCategories = () =>
-    router.push(`/dashboard/stores/${slug}/categories`);
 
   // Loading states
-  if (isPending || paramsLoading || storeLoading) {
-    return <Loader text="Loading store dashboard..." className="min-h-screen" />;
+  if (isPending || paramsLoading || storeLoading || analyticsLoading) {
+    return (
+      <DashboardLayout
+        title="Store Dashboard"
+        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Dashboard", href: "/dashboard" }, { label: "Loading..." }]}
+        sidebar={<StoreSidebar slug={slug || ""} />}
+        fullWidth
+      >
+        <StoreDashboardSkeleton />
+      </DashboardLayout>
+    );
   }
 
   // Authentication guard
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-muted/20">
+        <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
             <CardTitle className="text-center">
               Authentication Required
@@ -84,7 +109,7 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button asChild>
+            <Button asChild className="w-full">
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </CardContent>
@@ -148,94 +173,128 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
 
   if (!store) return null;
 
-
   return (
     <DashboardLayout
       title={store.name}
-      desc="Manage your store and products"
+      desc="Overview of your store performance"
+      sidebar={<StoreSidebar slug={slug} />}
+      fullWidth
       breadcrumbs={[
         { label: "Home", href: "/" },
         { label: "Dashboard", href: "/dashboard" },
         { label: "Stores" },
         { label: store.name },
       ]}
-      bottomActions={
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/stores/${store.slug}`)}
-          >
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Storefront
+      headerActions={
+        <div className="flex items-center gap-3">
+          <Button variant="outline" asChild className="hidden sm:flex">
+            <Link href={`/stores/${store.slug}`} target="_blank">
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              View Storefront
+            </Link>
           </Button>
-
-          <Button variant="outline" onClick={handleManageCategories}>
-            <TagsIcon className="mr-2 h-4 w-4" />
-            Categories
-          </Button>
-
-          <Button variant="outline" onClick={handleEditStore}>
-            <Settings2 className="mr-2 h-4 w-4" />
-            Store Settings
-          </Button>
-
-          <Button onClick={handleCreateProduct}>
-            <Package className="mr-2 h-4 w-4" />
-            New Product
+          <Button onClick={handleCreateProduct} className="bg-primary hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
           </Button>
         </div>
       }
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Products
-            </CardTitle>
-            <CardDescription>Total products currently listed</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {productsLoading ? (
-              <Loader size={20} text="" className="h-12" />
-            ) : (
-              <p className="text-3xl font-semibold text-foreground">
-                {productCount}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Store Status
-            </CardTitle>
-            <CardDescription>Status visible to customers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-medium capitalize text-foreground">
-              {store.status}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Support Contact
-            </CardTitle>
-            <CardDescription>How customers reach you</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p className="text-foreground">{store.contactEmail}</p>
-            {store.contactPhone && (
-              <p className="text-muted-foreground">{store.contactPhone}</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <div className="space-y-8 pb-8">
+        {/* Metric Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Revenue
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight">
+                {formatCurrency(analytics?.revenue.total || 0, currency)}
+              </div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                {analytics?.revenue.growth === 0 ? (
+                  <span className="text-muted-foreground">No change</span>
+                ) : (
+                  <span className={`flex items-center ${analytics?.revenue.growth > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                    {analytics?.revenue.growth > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
+                    {Math.abs(analytics?.revenue.growth || 0).toFixed(1)}%
+                  </span>
+                )}
+                <span className="ml-1">from last month</span>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Suspense>
-        <ProductManager storeSlug={store.slug} />
-      </Suspense>
+          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Orders
+              </CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight">+{analytics?.orders.total || 0}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                {analytics?.orders.growth === 0 ? (
+                  <span className="text-muted-foreground">No change</span>
+                ) : (
+                  <span className={`flex items-center ${analytics?.orders.growth > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                    {analytics?.orders.growth > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
+                    {Math.abs(analytics?.orders.growth || 0).toFixed(1)}%
+                  </span>
+                )}
+                <span className="ml-1">from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Customers
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight">+{analytics?.customers.total || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total registered customers
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Active Products
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight">{productCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Products currently listed
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts and Activity */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <SalesChart data={analytics?.salesOverTime || []} currency={currency} />
+          <RecentActivity data={analytics?.recentActivity || []} currency={currency} />
+        </div>
+
+        <Separator className="my-8" />
+
+        {/* Products Section */}
+        <Suspense fallback={<div className="h-96 bg-muted animate-pulse rounded-xl" />}>
+          <ProductManager storeSlug={store.slug} />
+        </Suspense>
+      </div>
     </DashboardLayout>
   );
 }

@@ -59,14 +59,7 @@ export const BasicInformationSection = ({ form }: StoreFormSectionsProps) => (
 );
 
 export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
-  <section className="space-y-6">
-    <div>
-      <h3 className="text-lg font-medium">Contact Information</h3>
-      <p className="text-sm text-muted-foreground">
-        Contact details and business address
-      </p>
-    </div>
-
+  <div className="space-y-6">
     <div className="grid gap-6 md:grid-cols-2">
       <FormFieldHook
         form={form}
@@ -152,294 +145,221 @@ export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
         />
       </div>
     </div>
-  </section>
+  </div>
 );
 
 export const BrandingSection = ({ form }: StoreFormSectionsProps) => (
-  <section className="space-y-6">
+  <div className="grid gap-6 md:grid-cols-2">
+    <FormFieldHook
+      form={form}
+      name="primaryColor"
+      label="Primary Color"
+      type="color"
+      placeholder="#3B82F6"
+      required
+    />
+
+    <FormFieldHook
+      form={form}
+      name="secondaryColor"
+      label="Secondary Color"
+      type="color"
+      placeholder="#10B981"
+    />
+
+    <FormFieldHook
+      form={form}
+      name="currency"
+      label="Currency"
+      type="select"
+      placeholder="Select currency"
+      options={[
+        { value: "USD", label: "USD - US Dollar" },
+        { value: "EUR", label: "EUR - Euro" },
+        { value: "GBP", label: "GBP - British Pound" },
+        { value: "CAD", label: "CAD - Canadian Dollar" },
+        { value: "AUD", label: "AUD - Australian Dollar" },
+        { value: "JPY", label: "JPY - Japanese Yen" },
+        { value: "INR", label: "INR - Indian Rupee" },
+      ]}
+      required
+    />
+
+    <FormFieldHook
+      form={form}
+      name="language"
+      label="Language"
+      type="select"
+      placeholder="Select language"
+      options={[
+        { value: "en", label: "English" },
+        { value: "es", label: "Spanish" },
+        { value: "fr", label: "French" },
+        { value: "de", label: "German" },
+        { value: "it", label: "Italian" },
+        { value: "pt", label: "Portuguese" },
+        { value: "hi", label: "Hindi" },
+      ]}
+      required
+    />
+
+    <FormFieldHook
+      form={form}
+      name="timezone"
+      label="Timezone"
+      type="select"
+      placeholder="Select timezone"
+      options={[
+        { value: "America/New_York", label: "Eastern Time (ET)" },
+        { value: "America/Chicago", label: "Central Time (CT)" },
+        { value: "America/Denver", label: "Mountain Time (MT)" },
+        { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+        { value: "Europe/London", label: "London (GMT)" },
+        { value: "Europe/Paris", label: "Paris (CET)" },
+        { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+        { value: "Asia/Kolkata", label: "India (IST)" },
+        { value: "Australia/Sydney", label: "Sydney (AEST)" },
+      ]}
+      required
+    />
+  </div>
+);
+
+import { Controller } from "react-hook-form";
+
+
+export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
+  <div className="space-y-6">
     <div>
-      <h3 className="text-lg font-medium">Branding & Design</h3>
-      <p className="text-sm text-muted-foreground">
-        Customize your store&apos;s appearance and branding
-      </p>
+      <Label className="text-base font-medium">Payment Methods *</Label>
+      <Controller
+        control={form.control}
+        name="paymentMethods"
+        render={({ field }) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            {[
+              { id: "stripe", label: "Stripe" },
+              { id: "paypal", label: "PayPal" },
+              { id: "upi", label: "UPI" },
+              { id: "cod", label: "Cash on Delivery" },
+            ].map((method) => (
+              <div key={method.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={method.id}
+                  checked={field.value?.includes(method.id)}
+                  onCheckedChange={(checked) => {
+                    const current = field.value || [];
+                    if (checked) {
+                      field.onChange([...current, method.id]);
+                    } else {
+                      field.onChange(current.filter((m: string) => m !== method.id));
+                    }
+                  }}
+                />
+                <Label htmlFor={method.id}>{method.label}</Label>
+              </div>
+            ))}
+          </div>
+        )}
+      />
+      {form.formState.errors.paymentMethods && (
+        <p className="text-sm text-destructive mt-2">
+          {form.formState.errors.paymentMethods.message}
+        </p>
+      )}
     </div>
 
     <div className="grid gap-6 md:grid-cols-2">
       <FormFieldHook
         form={form}
-        name="primaryColor"
-        label="Primary Color"
-        type="color"
-        placeholder="#3B82F6"
-        required
+        name="stripeAccountId"
+        label="Stripe Account ID"
+        type="text"
+        placeholder="acct_1234567890"
       />
 
       <FormFieldHook
         form={form}
-        name="secondaryColor"
-        label="Secondary Color"
-        type="color"
-        placeholder="#10B981"
+        name="paypalEmail"
+        label="PayPal Email"
+        type="email"
+        placeholder="payments@mystore.com"
       />
 
       <FormFieldHook
         form={form}
-        name="currency"
-        label="Currency"
-        type="select"
-        placeholder="Select currency"
-        options={[
-          { value: "USD", label: "USD - US Dollar" },
-          { value: "EUR", label: "EUR - Euro" },
-          { value: "GBP", label: "GBP - British Pound" },
-          { value: "CAD", label: "CAD - Canadian Dollar" },
-          { value: "AUD", label: "AUD - Australian Dollar" },
-          { value: "JPY", label: "JPY - Japanese Yen" },
-          { value: "INR", label: "INR - Indian Rupee" },
-        ]}
-        required
-      />
-
-      <FormFieldHook
-        form={form}
-        name="language"
-        label="Language"
-        type="select"
-        placeholder="Select language"
-        options={[
-          { value: "en", label: "English" },
-          { value: "es", label: "Spanish" },
-          { value: "fr", label: "French" },
-          { value: "de", label: "German" },
-          { value: "it", label: "Italian" },
-          { value: "pt", label: "Portuguese" },
-          { value: "hi", label: "Hindi" },
-        ]}
-        required
-      />
-
-      <FormFieldHook
-        form={form}
-        name="timezone"
-        label="Timezone"
-        type="select"
-        placeholder="Select timezone"
-        options={[
-          { value: "America/New_York", label: "Eastern Time (ET)" },
-          { value: "America/Chicago", label: "Central Time (CT)" },
-          { value: "America/Denver", label: "Mountain Time (MT)" },
-          { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-          { value: "Europe/London", label: "London (GMT)" },
-          { value: "Europe/Paris", label: "Paris (CET)" },
-          { value: "Asia/Tokyo", label: "Tokyo (JST)" },
-          { value: "Asia/Kolkata", label: "India (IST)" },
-          { value: "Australia/Sydney", label: "Sydney (AEST)" },
-        ]}
-        required
+        name="upiId"
+        label="UPI ID"
+        type="text"
+        placeholder="yourname@paytm"
       />
     </div>
-  </section>
-);
 
-export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
-  <section className="space-y-6">
-    <div>
-      <h3 className="text-lg font-medium">Payment & Shipping</h3>
-      <p className="text-sm text-muted-foreground">
-        Configure payment methods and shipping options
-      </p>
-    </div>
+    <div className="space-y-4">
+      <FormFieldHook
+        form={form}
+        name="codEnabled"
+        label="Enable Cash on Delivery"
+        type="switch"
+      />
 
-    <div className="space-y-6">
-      <div>
-        <Label className="text-base font-medium">Payment Methods *</Label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="stripe"
-              checked={form.watch("paymentMethods")?.includes("stripe") || false}
-              onCheckedChange={(checked) => {
-                const current = form.watch("paymentMethods") || [];
-                if (checked) {
-                  form.setValue("paymentMethods", [...current, "stripe"]);
-                } else {
-                  form.setValue(
-                    "paymentMethods",
-                    current.filter((method: string) => method !== "stripe")
-                  );
-                }
-              }}
-            />
-            <Label htmlFor="stripe">Stripe</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="paypal"
-              checked={form.watch("paymentMethods")?.includes("paypal") || false}
-              onCheckedChange={(checked) => {
-                const current = form.watch("paymentMethods") || [];
-                if (checked) {
-                  form.setValue("paymentMethods", [...current, "paypal"]);
-                } else {
-                  form.setValue(
-                    "paymentMethods",
-                    current.filter((method: string) => method !== "paypal")
-                  );
-                }
-              }}
-            />
-            <Label htmlFor="paypal">PayPal</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="upi"
-              checked={form.watch("paymentMethods")?.includes("upi") || false}
-              onCheckedChange={(checked) => {
-                const current = form.watch("paymentMethods") || [];
-                if (checked) {
-                  form.setValue("paymentMethods", [...current, "upi"]);
-                } else {
-                  form.setValue(
-                    "paymentMethods",
-                    current.filter((method: string) => method !== "upi")
-                  );
-                }
-              }}
-            />
-            <Label htmlFor="upi">UPI</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="cod"
-              checked={form.watch("paymentMethods")?.includes("cod") || false}
-              onCheckedChange={(checked) => {
-                const current = form.watch("paymentMethods") || [];
-                if (checked) {
-                  form.setValue("paymentMethods", [...current, "cod"]);
-                } else {
-                  form.setValue(
-                    "paymentMethods",
-                    current.filter((method: string) => method !== "cod")
-                  );
-                }
-              }}
-            />
-            <Label htmlFor="cod">Cash on Delivery</Label>
-          </div>
-        </div>
-        {form.formState.errors.paymentMethods && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.paymentMethods.message}
-          </p>
-        )}
-      </div>
+      <FormFieldHook
+        form={form}
+        name="shippingEnabled"
+        label="Enable Shipping"
+        type="switch"
+      />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <FormFieldHook
-          form={form}
-          name="stripeAccountId"
-          label="Stripe Account ID"
-          type="text"
-          placeholder="acct_1234567890"
-        />
-
-        <FormFieldHook
-          form={form}
-          name="paypalEmail"
-          label="PayPal Email"
-          type="email"
-          placeholder="payments@mystore.com"
-        />
-
-        <FormFieldHook
-          form={form}
-          name="upiId"
-          label="UPI ID"
-          type="text"
-          placeholder="yourname@paytm"
-        />
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="codEnabled"
-            checked={form.watch("codEnabled")}
-            onCheckedChange={(checked) => form.setValue("codEnabled", checked)}
+      {form.watch("shippingEnabled") && (
+        <div className="space-y-4 pl-6">
+          <FormFieldHook
+            form={form}
+            name="freeShippingThreshold"
+            label="Free Shipping Threshold"
+            type="number"
+            placeholder="50.00"
+            step="0.01"
+            min={0}
+            description="Minimum order amount for free shipping"
           />
-          <Label htmlFor="codEnabled">Enable Cash on Delivery</Label>
         </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="shippingEnabled"
-            checked={form.watch("shippingEnabled")}
-            onCheckedChange={(checked) => form.setValue("shippingEnabled", checked)}
-          />
-          <Label htmlFor="shippingEnabled">Enable Shipping</Label>
-        </div>
-
-        {form.watch("shippingEnabled") && (
-          <div className="space-y-4 pl-6">
-            <FormFieldHook
-              form={form}
-              name="freeShippingThreshold"
-              label="Free Shipping Threshold"
-              type="number"
-              placeholder="50.00"
-              step="0.01"
-              min={0}
-              description="Minimum order amount for free shipping"
-            />
-          </div>
-        )}
-      </div>
+      )}
     </div>
-  </section>
+  </div>
 );
 
 export const LegalPoliciesSection = ({ form }: StoreFormSectionsProps) => (
-  <section className="space-y-6">
-    <div>
-      <h3 className="text-lg font-medium">Legal Policies</h3>
-      <p className="text-sm text-muted-foreground">
-        Required legal documents for your store
-      </p>
-    </div>
+  <div className="space-y-6">
+    <FormFieldHook
+      form={form}
+      name="termsOfService"
+      label="Terms of Service"
+      type="textarea"
+      placeholder="Enter your terms of service..."
+      rows={4}
+      required
+    />
 
-    <div className="space-y-6">
-      <FormFieldHook
-        form={form}
-        name="termsOfService"
-        label="Terms of Service"
-        type="textarea"
-        placeholder="Enter your terms of service..."
-        rows={4}
-        required
-      />
+    <FormFieldHook
+      form={form}
+      name="privacyPolicy"
+      label="Privacy Policy"
+      type="textarea"
+      placeholder="Enter your privacy policy..."
+      rows={4}
+      required
+    />
 
-      <FormFieldHook
-        form={form}
-        name="privacyPolicy"
-        label="Privacy Policy"
-        type="textarea"
-        placeholder="Enter your privacy policy..."
-        rows={4}
-        required
-      />
-
-      <FormFieldHook
-        form={form}
-        name="refundPolicy"
-        label="Refund Policy"
-        type="textarea"
-        placeholder="Enter your refund policy..."
-        rows={4}
-        required
-      />
-    </div>
-  </section>
+    <FormFieldHook
+      form={form}
+      name="refundPolicy"
+      label="Refund Policy"
+      type="textarea"
+      placeholder="Enter your refund policy..."
+      rows={4}
+      required
+    />
+  </div>
 );
 
-// StoreSettingsSection removed as status and featured fields are not in the new schema
 

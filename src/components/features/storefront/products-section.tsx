@@ -50,7 +50,7 @@ export function ProductsSection({
   const filteredProducts = products
     .filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchQuery.toLowerCase());
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = !selectedCategory || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     })
@@ -93,7 +93,7 @@ export function ProductsSection({
   if (isLoading) {
     return (
       <section id="products" className={cn("py-16", className)}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -116,7 +116,7 @@ export function ProductsSection({
   if (products.length === 0) {
     return (
       <section id="products" className={cn("py-16", className)}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="border-dashed border-2">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -137,7 +137,7 @@ export function ProductsSection({
 
   return (
     <section id="products" className={cn("py-16", className)}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
