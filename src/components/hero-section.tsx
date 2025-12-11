@@ -145,7 +145,7 @@ export default function HeroSection() {
                   <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
                 </div>
                 <div className="mx-auto bg-black/5 dark:bg-white/10 h-6 w-1/2 rounded-md flex items-center justify-center text-[10px] text-muted-foreground font-medium font-mono">
-                  gumroad-clone.com/dashboard
+                  trykiosk.com/dashboard
                 </div>
               </div>
 

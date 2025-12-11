@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { generateBaseMetadata } from '@/lib/metadata';
-import HomePageClient from './home-page-client';
+import LandingPage from "./home-page-client";
+
 
 export const metadata: Metadata = generateBaseMetadata({
-  title: "Multi-Tenant Ecommerce Platform",
-  description: "Create and manage your own online store with our powerful multi-tenant ecommerce platform. Start selling online today with our easy-to-use tools and features.",
+  title: "Kiosk - Your Personal Storefront Builder",
+  description: "Create and manage your own online store with Kiosk. Simple, powerful, and yours.",
   keywords: [
     "ecommerce platform",
     "online store builder",
@@ -18,5 +19,5 @@ export const metadata: Metadata = generateBaseMetadata({
 });
 
 export default function Home() {
-  return <HomePageClient />;
+  return (<LandingPage />)
 }

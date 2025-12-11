@@ -30,9 +30,9 @@ interface ProductMetadataOptions extends BaseMetadataOptions {
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const appName = "Multi-Tenant Ecommerce";
+const appName = "Kiosk";
 const appDescription =
-  "Create and manage your own online store with our powerful multi-tenant ecommerce platform";
+  "Your personal storefront builder. Create, manage, and scale your online business with Kiosk.";
 
 export function generateBaseMetadata(
   options: BaseMetadataOptions = {}
@@ -46,7 +46,7 @@ export function generateBaseMetadata(
     type = "website",
     publishedTime,
     modifiedTime,
-    authors = ["Multi-Tenant Ecommerce"],
+    authors = ["Kiosk Team"],
     section,
     tags = [],
   } = options;
@@ -59,8 +59,8 @@ export function generateBaseMetadata(
     description,
     keywords: fullKeywords.join(", "),
     authors: authors.map((author) => ({ name: author })),
-    creator: "Multi-Tenant Ecommerce",
-    publisher: "Multi-Tenant Ecommerce",
+    creator: "Kiosk",
+    publisher: "Kiosk",
     formatDetection: {
       email: false,
       address: false,
@@ -76,8 +76,8 @@ export function generateBaseMetadata(
       title: fullTitle,
       description,
       images: [image],
-      creator: "@multitenantecommerce",
-      site: "@multitenantecommerce",
+      creator: "@trykiosk",
+      site: "@trykiosk",
     },
     robots: {
       index: true,

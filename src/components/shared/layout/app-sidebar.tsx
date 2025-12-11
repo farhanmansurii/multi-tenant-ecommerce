@@ -41,12 +41,12 @@ const items = [
   },
 ]
 
-export function AppSidebar({className}:{className:string}) {
+export function AppSidebar({ className }: { className: string }) {
   return (
     <Sidebar variant="floating" side="right" className={className} collapsible="offcanvas">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>SellYourShit</SidebarGroupLabel>
+          <SidebarGroupLabel>Kiosk</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -64,12 +64,12 @@ export function AppSidebar({className}:{className:string}) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <UserDetailsSidebar />
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <UserDetailsSidebar />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }

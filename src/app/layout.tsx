@@ -21,11 +21,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`antialiased`}>
         <AppProviders>
-            <div className="w-full h-full">{children}</div>
+          <div className="w-full h-full">{children}</div>
         </AppProviders>
       </body>
     </html>

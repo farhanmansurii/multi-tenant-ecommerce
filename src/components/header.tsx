@@ -97,7 +97,7 @@ export const HeroHeader = () => {
               <div className="bg-foreground text-background p-1 rounded-md">
                 <LogoIcon className="w-4 h-4" />
               </div>
-              <span className="hidden sm:block">GumroadClone</span>
+              <span className="hidden sm:block">Kiosk</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
