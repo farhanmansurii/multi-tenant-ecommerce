@@ -61,7 +61,9 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
   return (
     <>
       <StoreFrontHeader storeData={store} />
-      <StoreHero store={store} />
+      <div className='pt-24'>
+        <StoreHero store={store} />
+      </div>
       <StoreEditorial store={store} />
       <StoreServiceStrip store={store} />
       <StorefrontView slug={slug} initialStore={store} initialProducts={products} initialCategories={categories} />
