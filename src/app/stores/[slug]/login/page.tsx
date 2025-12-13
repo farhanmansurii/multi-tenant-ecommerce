@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-
-import StorefrontLogin from '@/components/features/storefront/storefront-auth/storefront-login';
-
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
+import StorefrontLoginView from '@/components/features/storefront/components/auth/storefront-login';
 
 interface LoginPageProps {
   params: Promise<{ slug: string }>;
@@ -37,7 +35,7 @@ export default async function StorefrontLoginPage({ params }: LoginPageProps) {
   const { slug } = await params;
   try {
     const store = await fetchStore(slug);
-    return <StorefrontLogin store={store} />;
+    return <StorefrontLoginView store={store} />;
   } catch {
     notFound();
   }
