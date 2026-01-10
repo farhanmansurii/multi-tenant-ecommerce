@@ -16,6 +16,7 @@ export default function Loading() {
         { label: "Discounts" },
       ]}
       headerActions={<Skeleton className="h-10 w-36 rounded-full" />}
+      disableAnimation={true}
     >
       <div className="space-y-6">
         {/* Stats */}

@@ -1,5 +1,5 @@
-import { StoreSidebar } from "@/components/features/dashboard/store-sidebar";
 import { StoreCategoriesClient } from "./categories-client";
+import { getStoreBySlug } from "@/lib/domains/stores/helpers";
 
 interface StoreCategoriesPageProps {
   params: Promise<{ slug: string }>;
@@ -7,11 +7,7 @@ interface StoreCategoriesPageProps {
 
 export default async function StoreCategoriesPage({ params }: StoreCategoriesPageProps) {
   const { slug } = await params;
+  const store = await getStoreBySlug(slug);
 
-  return (
-    <StoreCategoriesClient
-      slug={slug}
-      sidebar={<StoreSidebar slug={slug} />}
-    />
-  );
+  return <StoreCategoriesClient slug={slug} initialStore={store} />;
 }

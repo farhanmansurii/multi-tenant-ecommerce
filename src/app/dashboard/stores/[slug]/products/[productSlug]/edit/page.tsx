@@ -15,9 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 import { Package } from 'lucide-react';
 import DashboardLayout from '@/components/shared/layout/dashboard-container';
-import { StoreSidebar } from '@/components/features/dashboard/store-sidebar';
-
-// ...
+import { getStoreBySlug } from '@/lib/domains/stores/helpers';
 
 export default async function StoreProductEditPage({
   params,
@@ -25,18 +23,18 @@ export default async function StoreProductEditPage({
   params: Promise<{ slug: string; productSlug: string }>;
 }) {
   const { slug, productSlug } = await params;
+  const store = await getStoreBySlug(slug);
 
   return (
     <DashboardLayout
       title="Edit Product"
       desc="Update product details"
       icon={<Package />}
-      sidebar={<StoreSidebar slug={slug} />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
-        { label: slug, href: `/dashboard/stores/${slug}` },
+        { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
         { label: 'Products', href: `/dashboard/stores/${slug}/products` },
         { label: productSlug },
       ]}

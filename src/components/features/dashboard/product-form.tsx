@@ -6,13 +6,7 @@ import { Loader2, Package2Icon } from "lucide-react";
 
 import { useProductForm } from "@/hooks/use-product-form";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageCard } from "@/components/shared/layout/page-card";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { LoadingState } from "./components/loading-state";
 import { ErrorState } from "./components/error-state";
@@ -82,22 +76,18 @@ export default function ProductForm({
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">
-              Authentication Required
-            </CardTitle>
-            <CardDescription className="text-center">
-              You must be logged in to {mode === "create" ? "create" : "edit"}{" "}
-              products.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
+        <PageCard
+          title="Authentication Required"
+          description={`You must be logged in to ${mode === "create" ? "create" : "edit"} products.`}
+          variant="outlined"
+          className="max-w-md"
+        >
+          <div className="text-center">
             <Button asChild>
               <Link href="/sign-in">Sign In</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </PageCard>
       </div>
     );
   }

@@ -76,92 +76,76 @@ export default function StoreCard({ store }: StoreCardProps) {
   const primaryColor = store.primaryColor || "#6366f1"; // Default Indigo
 
   return (
-    <Card className="group relative flex flex-col overflow-hidden border border-border/60 bg-card transition-all duration-300 hover:border-border hover:shadow-lg hover:-translate-y-1">
+    <Card className="group relative flex flex-col overflow-hidden border border-border/50 bg-card transition-all duration-200 hover:border-border/70 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-0.5">
 
-      {/* Decorative Top Highlight (Glows on Hover) */}
-      <div
-        className="absolute top-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${primaryColor}, transparent)`
-        }}
-      />
 
-      <CardHeader className="p-5 pb-3">
+      <CardHeader className="p-5 pb-4">
         <div className="flex items-start justify-between gap-4">
-
-          {/* Icon & Title Group */}
-          <div className="flex gap-4">
-            {/* Store Icon / Logo */}
+          <div className="flex gap-3 min-w-0">
             <div
-              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 shadow-sm transition-transform duration-300 group-hover:scale-105"
+              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/30 transition-transform duration-200 group-hover:scale-[1.02]"
               style={{
-                background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}40)`,
+                background: `linear-gradient(135deg, ${primaryColor}12, ${primaryColor}25)`,
                 color: primaryColor
               }}
             >
-              <Store className="h-6 w-6" />
-              {/* Active Dot indicator on the icon */}
-              <span className={cn("absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-background", statusConfig.dot)} />
+              <Store className="h-5 w-5" />
+              <span className={cn("absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background", statusConfig.dot)} />
             </div>
 
-            {/* Text Details */}
-            <div className="space-y-1">
-              <h3 className="font-bold leading-none tracking-tight text-foreground group-hover:text-primary transition-colors">
+            <div className="space-y-1 min-w-0">
+              <h3 className="font-semibold leading-none tracking-tight text-foreground group-hover:text-foreground/90 transition-colors truncate">
                 {store.name}
               </h3>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3 w-3" />
-                <span className="font-mono bg-muted/50 px-1 rounded-[4px]">/{store.slug}</span>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Globe className="h-3 w-3 opacity-60" />
+                <span className="font-mono opacity-70">/{store.slug}</span>
               </div>
             </div>
           </div>
 
-          {/* Status Badge */}
           <Badge
             variant="outline"
-            className={cn("px-2.5 py-0.5 text-xs font-medium capitalize shadow-none transition-colors", statusConfig.className)}
+            className={cn("px-2 py-0.5 text-[10px] font-medium capitalize border shrink-0", statusConfig.className)}
           >
             {statusConfig.label}
           </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 p-5 pt-2">
-        {/* Description */}
-        <p className="line-clamp-2 text-sm text-muted-foreground/80 min-h-[2.5rem] mb-6">
+      <CardContent className="flex-1 p-5 pt-0">
+        <p className="line-clamp-2 text-sm text-muted-foreground min-h-[2.5rem] mb-5 leading-relaxed">
           {sanitizeText(store.description) || "No description provided. Add a description to help customers understand your store."}
         </p>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-px bg-border/40 rounded-lg overflow-hidden border border-border/40">
-          <div className="bg-muted/10 p-3 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="grid grid-cols-2 gap-px bg-border/30 rounded-md overflow-hidden border border-border/40">
+          <div className="bg-muted/5 p-3 hover:bg-muted/15 transition-colors">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Package className="h-3.5 w-3.5 text-muted-foreground opacity-70" />
               <span className="text-xs font-medium text-muted-foreground">Products</span>
             </div>
-            <span className="text-lg font-bold text-foreground">{store.productCount || 0}</span>
+            <span className="text-base font-semibold text-foreground">{store.productCount || 0}</span>
           </div>
 
-          <div className="bg-muted/10 p-3 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-2 mb-1">
-              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="bg-muted/5 p-3 hover:bg-muted/15 transition-colors">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground opacity-70" />
               <span className="text-xs font-medium text-muted-foreground">Created</span>
             </div>
-            <span className="text-sm font-semibold text-foreground mt-1 block">
+            <span className="text-sm font-semibold text-foreground">
               {new Date(store.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
             </span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 gap-2 border-t border-transparent group-hover:border-border/40 transition-colors mt-auto">
+      <CardFooter className="p-5 pt-4 gap-2 border-t border-transparent group-hover:border-border/30 transition-colors mt-auto">
         <TooltipProvider>
-          {/* Primary Action */}
-          <Button asChild className="flex-1 shadow-sm" variant="default">
+          <Button asChild className="flex-1" variant="default">
             <Link href={`/dashboard/stores/${store.slug}`}>
               Manage Store
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </Button>
 

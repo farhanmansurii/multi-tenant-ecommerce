@@ -4,6 +4,7 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import { stores, storeMembers } from "@/lib/db/schema";
 import { setTenantContext } from "@/lib/middleware/tenant";
+import type { StoreSettings } from "./types";
 
 export interface CreateStoreData {
   ownerUserId: string;
@@ -13,6 +14,7 @@ export interface CreateStoreData {
   contactEmail: string;
   businessType: string;
   businessName: string;
+  taxId?: string;
   addressLine1: string;
   city: string;
   state: string;
@@ -22,12 +24,32 @@ export interface CreateStoreData {
   currency?: string;
   timezone?: string;
   language?: string;
+  settings?: StoreSettings;
 }
 
 /**
  * Create a new store
  */
 export async function createStore(data: CreateStoreData) {
+  const defaultSettings: StoreSettings = {
+    paymentMethods: [],
+    shippingRates: [],
+    upiId: undefined,
+    codEnabled: true,
+    stripeAccountId: undefined,
+    paypalEmail: undefined,
+    shippingEnabled: true,
+    freeShippingThreshold: undefined,
+    termsOfService: "",
+    privacyPolicy: "",
+    refundPolicy: "",
+  };
+
+  const mergedSettings = {
+    ...defaultSettings,
+    ...data.settings,
+  } satisfies StoreSettings;
+
   const [store] = await db
     .insert(stores)
     .values({
@@ -39,6 +61,7 @@ export async function createStore(data: CreateStoreData) {
       contactEmail: data.contactEmail,
       businessType: data.businessType,
       businessName: data.businessName,
+      taxId: data.taxId,
       addressLine1: data.addressLine1,
       city: data.city,
       state: data.state,
@@ -50,19 +73,7 @@ export async function createStore(data: CreateStoreData) {
       language: data.language || "en",
       status: "draft",
       featured: false,
-      settings: {
-        paymentMethods: [],
-        shippingRates: [],
-        upiId: undefined,
-        codEnabled: true,
-        stripeAccountId: undefined,
-        paypalEmail: undefined,
-        shippingEnabled: true,
-        freeShippingThreshold: undefined,
-        termsOfService: "",
-        privacyPolicy: "",
-        refundPolicy: "",
-      },
+      settings: mergedSettings,
     })
     .returning();
 

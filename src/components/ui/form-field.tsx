@@ -104,6 +104,7 @@ export function FormField(props: FormFieldProps) {
                 )}
                 <Input
                   id={name}
+                  name={name}
                   type={props.type}
                   placeholder={props.placeholder}
                   value={props.value}
@@ -124,6 +125,7 @@ export function FormField(props: FormFieldProps) {
             ) : (
               <Input
                 id={name}
+                name={name}
                 type={props.type}
                 placeholder={props.placeholder}
                 value={props.value}
@@ -139,6 +141,7 @@ export function FormField(props: FormFieldProps) {
         return (
           <Input
             id={name}
+            name={name}
             type="number"
             placeholder={props.placeholder}
             step={props.step}
@@ -158,6 +161,7 @@ export function FormField(props: FormFieldProps) {
         return (
           <Textarea
             id={name}
+            name={name}
             placeholder={props.placeholder}
             rows={props.rows}
             value={props.value}
@@ -168,22 +172,24 @@ export function FormField(props: FormFieldProps) {
 
       case "select":
         return (
-          <Select value={props.value} onValueChange={props.onChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={props.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {props.options.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.disabled}
-                >
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div data-field={name}>
+            <Select value={props.value || undefined} onValueChange={props.onChange}>
+              <SelectTrigger id={name} name={name} className={cn("w-full", className)}>
+                <SelectValue placeholder={props.placeholder || "Select an option"} />
+              </SelectTrigger>
+              <SelectContent>
+                {props.options.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    disabled={option.disabled}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         );
 
       case "switch":
@@ -264,6 +270,7 @@ export function FormField(props: FormFieldProps) {
                   <div className="flex gap-2">
                     <Input
                       id={name}
+                      name={name}
                       placeholder="#000000"
                       className="h-8 font-mono text-xs"
                       value={props.value}
@@ -308,7 +315,6 @@ export function FormField(props: FormFieldProps) {
   );
 }
 
-// Hook-based form field component for easier integration with react-hook-form
 interface FormFieldHookProps<T extends FieldValues> {
   form: UseFormReturn<T>;
   name: FieldPath<T>;

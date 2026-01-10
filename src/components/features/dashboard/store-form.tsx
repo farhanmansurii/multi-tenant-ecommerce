@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react"; // 1. Import useEffect
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Store, Save, ArrowLeft, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingState } from "./components/loading-state";
 import { ErrorState } from "./components/error-state";
 import { StoreImageUploadSection } from "./components/store-image-upload-section";
+import { FormValidationErrors } from "./components/form-validation-errors";
 import {
   BasicInformationSection,
   BusinessDetailsSection,
@@ -23,18 +25,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageCard } from "@/components/shared/layout/page-card";
+import { buildStoreFormState } from "@/lib/domains/stores/form";
 import { StoreFormData, storeSchema } from "@/lib/domains/stores/validation";
 
 interface StoreFormProps {
   mode: "create" | "edit";
-  storeData?: Partial<StoreFormData>;
+  initialValues?: Partial<StoreFormData>;
   onSave: (data: StoreFormData) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
@@ -47,7 +44,7 @@ interface StoreFormProps {
 
 export default function StoreForm({
   mode,
-  storeData,
+  initialValues,
   onSave,
   onCancel,
   isSaving = false,
@@ -58,6 +55,12 @@ export default function StoreForm({
   isSuccess = false,
 }: StoreFormProps) {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+
+  const resolvedDefaults = useMemo(
+    () => buildStoreFormState(initialValues),
+    [initialValues]
+  );
 
   useEffect(() => {
     if (isSuccess) {
@@ -67,54 +70,17 @@ export default function StoreForm({
     }
   }, [isSuccess]);
 
-  const form = useForm<StoreFormData>({
-    resolver: zodResolver(storeSchema),
-    defaultValues: {
-      storeName: storeData?.storeName || "",
-      storeSlug: storeData?.storeSlug || "",
-      description: storeData?.description || "",
-      tagline: storeData?.tagline || "",
-      email: storeData?.email || "",
-      phone: storeData?.phone || "",
-      website: storeData?.website || "",
-      address: storeData?.address || "",
-      city: storeData?.city || "",
-      state: storeData?.state || "",
-      zipCode: storeData?.zipCode || "",
-      country: storeData?.country || "",
-      logo: storeData?.logo || "",
-      favicon: storeData?.favicon || "",
-      heroImages: storeData?.heroImages || [],
-      primaryColor: storeData?.primaryColor || "#3B82F6",
-      secondaryColor: storeData?.secondaryColor || "#10B981",
-      currency: storeData?.currency || "INR",
-      timezone: storeData?.timezone || "Asia/Kolkata",
-      language: storeData?.language || "en",
-      paymentMethods: storeData?.paymentMethods || [],
-      upiId: storeData?.upiId || "",
-      codEnabled: storeData?.codEnabled ?? false,
-      stripeAccountId: storeData?.stripeAccountId || "",
-      paypalEmail: storeData?.paypalEmail || "",
-      shippingEnabled: storeData?.shippingEnabled ?? true,
-      freeShippingThreshold: storeData?.freeShippingThreshold || undefined,
-      shippingRates: storeData?.shippingRates || [],
-      termsOfService: storeData?.termsOfService || "",
-      privacyPolicy: storeData?.privacyPolicy || "",
-      refundPolicy: storeData?.refundPolicy || "",
-    },
+  const form = useForm<StoreFormData, any, StoreFormData>({
+    resolver: zodResolver(storeSchema) as any,
+    defaultValues: resolvedDefaults,
+    mode: "onChange",
   });
 
-  const { handleSubmit, setValue, watch, reset } = form;
+  const { handleSubmit, setValue, watch, reset, formState: { errors } } = form;
 
-  // Reset form when storeData changes (e.g. after loading)
   useEffect(() => {
-    if (storeData) {
-      reset({
-        ...storeData,
-        heroImages: storeData.heroImages || [],
-      });
-    }
-  }, [storeData, reset]);
+    reset(resolvedDefaults);
+  }, [reset, resolvedDefaults]);
 
   const logo = watch("logo");
   const heroImages = watch("heroImages") || [];
@@ -135,7 +101,84 @@ export default function StoreForm({
     setValue("heroImages", updatedImages, { shouldDirty: true, shouldTouch: true });
   };
 
-  const onSubmit = async (data: StoreFormData) => {
+  const fieldToTabMap: Record<string, string> = {
+    storeName: "basic",
+    storeSlug: "basic",
+    tagline: "basic",
+    description: "basic",
+    logo: "media",
+    favicon: "media",
+    heroImages: "media",
+    email: "business",
+    phone: "business",
+    website: "business",
+    businessName: "business",
+    businessType: "business",
+    taxId: "business",
+    address: "business",
+    city: "business",
+    state: "business",
+    zipCode: "business",
+    country: "business",
+    primaryColor: "branding",
+    secondaryColor: "branding",
+    currency: "branding",
+    timezone: "branding",
+    language: "branding",
+    paymentMethods: "payment",
+    upiId: "payment",
+    codEnabled: "payment",
+    stripeAccountId: "payment",
+    paypalEmail: "payment",
+    shippingEnabled: "payment",
+    freeShippingThreshold: "payment",
+    shippingRates: "payment",
+    termsOfService: "legal",
+    privacyPolicy: "legal",
+    refundPolicy: "legal",
+  };
+
+  const handleErrorClick = (fieldName: string) => {
+    const tabValue = fieldToTabMap[fieldName];
+    if (tabValue) {
+      setActiveTab(tabValue);
+    }
+
+    setTimeout(() => {
+      const selectors = [
+        `[name="${fieldName}"]`,
+        `#${fieldName}`,
+        `input[name="${fieldName}"]`,
+        `textarea[name="${fieldName}"]`,
+        `select[name="${fieldName}"]`,
+        `[data-field="${fieldName}"]`,
+      ];
+
+      for (const selector of selectors) {
+        const element = document.querySelector(selector) as HTMLElement;
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          setTimeout(() => {
+            const input = element.querySelector('input, textarea, select, button[role="combobox"]') as HTMLElement;
+            const targetElement = input || element;
+            targetElement.focus();
+            if (targetElement instanceof HTMLElement) {
+              targetElement.click?.();
+            }
+          }, 200);
+          break;
+        }
+      }
+    }, 100);
+  };
+
+  const onSubmit = async (data: StoreFormData): Promise<void> => {
+    if (isSaving) {
+      return;
+    }
     try {
       await onSave(data);
     } catch (error) {
@@ -212,13 +255,28 @@ export default function StoreForm({
     ? "Creating Store..."
     : "Saving Changes...";
 
+  const hasValidationErrors = Object.keys(errors).length > 0;
+
   return (
-    <div className="space-y-8 pb-10">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 border-b -mx-6 px-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {showSavedMessage && (
+        <Alert className="border-green-200 bg-green-50">
+          <Check className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Success</AlertTitle>
+          <AlertDescription className="text-green-700">
+            {mode === "create" ? "Store created successfully!" : "Store updated successfully!"}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {hasValidationErrors && !isSaving && (
+        <FormValidationErrors errors={errors} onErrorClick={handleErrorClick} />
+      )}
+
+      <div className="flex items-center justify-between pb-4 border-b">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground hidden md:block">
+          <p className="text-sm text-muted-foreground mt-1">
             {description}
           </p>
         </div>
@@ -231,7 +289,12 @@ export default function StoreForm({
           >
             Cancel
           </Button>
-          <Button type="submit" form="store-form" disabled={isSaving}>
+          <Button
+            type="submit"
+            form="store-form"
+            disabled={isSaving}
+            className={showSavedMessage ? "bg-green-600 hover:bg-green-700" : ""}
+          >
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -252,8 +315,17 @@ export default function StoreForm({
         </div>
       </div>
 
-      <form id="store-form" onSubmit={handleSubmit(onSubmit)}>
-        <Tabs defaultValue="basic" className="w-full flex flex-col lg:flex-row gap-8">
+      <form
+        id="store-form"
+        onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+          console.error("Form validation errors:", validationErrors);
+          const firstError = Object.keys(validationErrors)[0];
+          if (firstError) {
+            handleErrorClick(firstError);
+          }
+        })}
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-24">
               <TabsList className="flex flex-col h-auto w-full items-stretch p-0 bg-transparent gap-1">
@@ -299,92 +371,62 @@ export default function StoreForm({
 
           <div className="flex-1 space-y-6">
             <TabsContent value="basic" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>
-                    Manage your store's core details and identity.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BasicInformationSection form={form} />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Basic Information"
+                description="Manage your store's core details and identity."
+              >
+                <BasicInformationSection form={form} />
+              </PageCard>
             </TabsContent>
 
             <TabsContent value="media" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Media & Images</CardTitle>
-                  <CardDescription>
-                    Upload your store logo and hero images.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <StoreImageUploadSection
-                    logo={logo}
-                    setLogo={setLogo}
-                    heroImages={heroImages}
-                    setHeroImages={setHeroImages}
-                  />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Media & Images"
+                description="Upload your store logo and hero images."
+              >
+                <StoreImageUploadSection
+                  logo={logo}
+                  setLogo={setLogo}
+                  heroImages={heroImages}
+                  setHeroImages={setHeroImages}
+                />
+              </PageCard>
             </TabsContent>
 
             <TabsContent value="business" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Business Details</CardTitle>
-                  <CardDescription>
-                    Your contact info and business address.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BusinessDetailsSection form={form} />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Business Details"
+                description="Your contact info and business address."
+              >
+                <BusinessDetailsSection form={form} />
+              </PageCard>
             </TabsContent>
 
             <TabsContent value="branding" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Branding</CardTitle>
-                  <CardDescription>
-                    Customize your store's appearance and regional settings.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BrandingSection form={form} />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Branding"
+                description="Customize your store's appearance and regional settings."
+              >
+                <BrandingSection form={form} />
+              </PageCard>
             </TabsContent>
 
             <TabsContent value="payment" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment & Shipping</CardTitle>
-                  <CardDescription>
-                    Configure how you accept payments and ship products.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PaymentAndShippingSection form={form} />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Payment & Shipping"
+                description="Configure how you accept payments and ship products."
+              >
+                <PaymentAndShippingSection form={form} />
+              </PageCard>
             </TabsContent>
 
             <TabsContent value="legal" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Legal Policies</CardTitle>
-                  <CardDescription>
-                    Define your terms, privacy, and refund policies.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <LegalPoliciesSection form={form} />
-                </CardContent>
-              </Card>
+              <PageCard
+                title="Legal Policies"
+                description="Define your terms, privacy, and refund policies."
+              >
+                <LegalPoliciesSection form={form} />
+              </PageCard>
             </TabsContent>
           </div>
         </Tabs>

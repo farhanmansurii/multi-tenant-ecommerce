@@ -1,14 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageCard } from "@/components/shared/layout/page-card";
 import { Progress } from "@/components/ui/progress";
 import { Store, Plus, ArrowRight, TrendingUp, Package, Users } from "lucide-react";
 import Link from "next/link";
@@ -60,24 +53,21 @@ export default function StoresPage() {
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4 bg-muted/20">
-        <Card className="w-full max-w-md shadow-lg border-muted">
-          <CardHeader className="text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
-              <Store className="h-8 w-8 text-primary" />
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-2xl">Welcome Back</CardTitle>
-              <CardDescription className="text-base">
-                Sign in to manage your stores and view analytics
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardFooter>
+        <PageCard
+          title="Welcome Back"
+          description="Sign in to manage your stores and view analytics"
+          variant="elevated"
+          className="w-full max-w-md"
+          footer={
             <Button asChild className="w-full h-11 text-base">
               <Link href="/sign-in">Sign In to Continue</Link>
             </Button>
-          </CardFooter>
-        </Card>
+          }
+        >
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Store className="h-8 w-8 text-primary" />
+          </div>
+        </PageCard>
       </div>
     );
   }
@@ -118,8 +108,11 @@ export default function StoresPage() {
         {isLoading ? (
           <DashboardSkeleton />
         ) : stores.length === 0 ? (
-          <Card className="border-dashed border-2 bg-muted/5 shadow-none">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <PageCard
+            variant="outlined"
+            className="border-dashed border-2 bg-muted/5"
+          >
+            <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                 <Store className="h-10 w-10 text-primary" />
               </div>
@@ -133,8 +126,8 @@ export default function StoresPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </PageCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stores.map((store: StoreData) => (

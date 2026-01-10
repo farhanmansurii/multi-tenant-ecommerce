@@ -1,4 +1,26 @@
 
+export type StoreBusinessType = 'individual' | 'business' | 'nonprofit';
+
+export interface StoreShippingRate {
+  name: string;
+  price: number;
+  estimatedDays: string;
+}
+
+export interface StoreSettings {
+  paymentMethods?: string[];
+  shippingRates?: StoreShippingRate[];
+  upiId?: string;
+  codEnabled?: boolean;
+  stripeAccountId?: string;
+  paypalEmail?: string;
+  shippingEnabled?: boolean;
+  freeShippingThreshold?: number | null;
+  termsOfService?: string;
+  privacyPolicy?: string;
+  refundPolicy?: string;
+}
+
 export interface StoreData {
   address: string;
   upiId: string;
@@ -13,7 +35,7 @@ export interface StoreData {
   contactEmail: string;
   contactPhone?: string | null;
   website?: string | null;
-  businessType: 'individual' | 'business' | 'nonprofit';
+  businessType: StoreBusinessType;
   businessName: string;
   taxId?: string | null;
   addressLine1: string;
@@ -29,7 +51,7 @@ export interface StoreData {
   paymentMethods: string[];
   shippingEnabled: boolean;
   freeShippingThreshold?: string | number | null;
-  shippingRates?: Array<{ name: string; price: number; estimatedDays: string }> | null;
+  shippingRates?: StoreShippingRate[] | null;
   termsOfService: string;
   privacyPolicy: string;
   refundPolicy: string;
@@ -39,6 +61,7 @@ export interface StoreData {
   favicon?: string | null;
   stripeAccountId?: string | null;
   paypalEmail?: string | null;
+  settings?: StoreSettings | null;
   createdAt: string;
   updatedAt: string;
   currentUserRole?: 'owner' | 'admin' | 'member' | 'customer' | null;
@@ -52,7 +75,7 @@ export interface StoreFormPayload {
   email: string;
   phone?: string;
   website?: string;
-  businessType: 'individual' | 'business' | 'nonprofit';
+  businessType: StoreBusinessType;
   businessName: string;
   taxId?: string;
   address: string;
@@ -74,11 +97,10 @@ export interface StoreFormPayload {
   paypalEmail?: string;
   shippingEnabled: boolean;
   freeShippingThreshold?: number;
-  shippingRates?: Array<{ name: string; price: number; estimatedDays: string }>;
+  shippingRates?: StoreShippingRate[];
   termsOfService: string;
   privacyPolicy: string;
   refundPolicy: string;
   status: 'draft' | 'active' | 'suspended';
   featured: boolean;
 }
-

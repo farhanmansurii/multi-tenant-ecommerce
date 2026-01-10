@@ -21,31 +21,42 @@ export default function Loading() {
           <Skeleton className="h-10 w-32" />
         </div>
       }
+      disableAnimation={true}
     >
-      <div className="space-y-6">
-        {/* Filters Bar Skeleton */}
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-10 w-72 rounded-lg" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-24" />
+      <div className="space-y-4">
+        {/* Header Section - Match exact structure */}
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
           </div>
         </div>
 
-        {/* Products Table Skeleton */}
-        <Card className="border-border/40">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-5 w-20" />
+        {/* Products Card - Match exact structure */}
+        <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+          {/* Toolbar Section */}
+          <div className="p-4 border-b">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-1">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Skeleton className="h-9 w-full sm:w-[300px] rounded-md" />
+                <Skeleton className="h-9 w-20" />
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <Skeleton className="h-8 w-16 rounded-md" />
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-28" />
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="border-t border-border/40">
+          </div>
+
+          {/* Content Area - Match exact structure with grid/list view */}
+          <div className="p-6 bg-muted/5 min-h-[400px]">
+            {/* List view skeleton (default) */}
+            <div className="space-y-0">
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 px-6 py-4 border-b border-border/40 last:border-0"
+                  className="flex items-center gap-4 py-4 border-b border-border/40 last:border-0"
                   style={{ animationDelay: `${i * 50}ms` }}
                 >
                   <Skeleton className="h-14 w-14 rounded-lg shrink-0" />
@@ -59,16 +70,6 @@ export default function Loading() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Pagination Skeleton */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-32" />
-          <div className="flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-8 w-8" />
-            ))}
           </div>
         </div>
       </div>

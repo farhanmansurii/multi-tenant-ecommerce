@@ -5,9 +5,10 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldHook } from "@/components/ui/form-field";
 import { StoreFormData } from "@/lib/domains/stores/validation";
+import { UseFormReturn } from "react-hook-form";
 
 interface StoreFormSectionsProps {
-  form: import("react-hook-form").UseFormReturn<StoreFormData>;
+  form: UseFormReturn<StoreFormData>;
 }
 
 export const BasicInformationSection = ({ form }: StoreFormSectionsProps) => (
@@ -61,6 +62,36 @@ export const BasicInformationSection = ({ form }: StoreFormSectionsProps) => (
 export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
   <div className="space-y-6">
     <div className="grid gap-6 md:grid-cols-2">
+      <FormFieldHook
+        form={form}
+        name="businessType"
+        label="Business Type"
+        type="select"
+        options={[
+          { value: "individual", label: "Individual" },
+          { value: "business", label: "Business" },
+          { value: "nonprofit", label: "Nonprofit" },
+        ]}
+        required
+      />
+
+      <FormFieldHook
+        form={form}
+        name="businessName"
+        label="Business / Legal Name"
+        type="text"
+        placeholder="Acme Inc."
+        required
+      />
+
+      <FormFieldHook
+        form={form}
+        name="taxId"
+        label="Tax ID"
+        type="text"
+        placeholder="GST / EIN / VAT"
+      />
+
       <FormFieldHook
         form={form}
         name="email"
@@ -361,5 +392,4 @@ export const LegalPoliciesSection = ({ form }: StoreFormSectionsProps) => (
     />
   </div>
 );
-
 

@@ -60,7 +60,16 @@ export default function SignInPageClient() {
     try {
       await signIn.social({ provider: "google", callbackURL: "/dashboard" })
     } catch (error) {
-      toast.error("Something went wrong with Google Sign In")
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Google Sign In is not configured. Please use email/password or contact support.";
+
+      // Check if it's a provider not found error
+      if (errorMessage.includes("Provider not found") || errorMessage.includes("404")) {
+        toast.error("Google Sign In is not available. Please use email/password to sign in.");
+      } else {
+        toast.error("Something went wrong with Google Sign In");
+      }
       setIsLoading(false)
     }
   }

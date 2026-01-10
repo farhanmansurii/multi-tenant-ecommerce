@@ -3,5 +3,9 @@ node_modules
 dist
 build
 coverage
-drizzle
-*.lock
+*.log
+package-lock.json
+tsconfig.tsbuildinfo
+drizzle/meta
+public/fonts
+public/images

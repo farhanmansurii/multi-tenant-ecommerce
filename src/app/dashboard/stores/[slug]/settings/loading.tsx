@@ -15,6 +15,7 @@ export default function Loading() {
         { label: "Stores" },
         { label: "Settings" },
       ]}
+      disableAnimation={true}
     >
       <div className="space-y-8 max-w-4xl">
         {/* Store Info Section */}

@@ -7,15 +7,17 @@ export default function Loading() {
     <DashboardLayout
       title="Categories"
       desc="Organize your products for a better customer experience."
-      icon={<Tags className="text-indigo-500" />}
+      icon={<Tags />}
       breadcrumbs={[
-        { label: "Stores", href: "/dashboard" },
-        { label: "Loading..." },
+        { label: "Home", href: "/" },
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Categories" },
       ]}
       headerActions={
         <Skeleton className="h-10 w-36 rounded-full" />
       }
+      disableAnimation={true}
     >
       <div className="space-y-6">
         {/* Search Bar Skeleton */}

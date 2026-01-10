@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 
 export const DashboardFooter = () => {
   return (
-    <footer className="mt-auto py-6 border-t border-border/40 bg-background/50 backdrop-blur-sm">
+    <footer className="mt-auto py-6  backdrop-blur-sm">
       <div className="w-full px-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">

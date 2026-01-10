@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, LayoutDashboard, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ErrorStateProps {
   title: string;
@@ -41,17 +42,13 @@ export const ErrorState = ({
       </div>
 
       {showPermissionAlert && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-left flex gap-3 items-start">
-          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-500">
-              Permission Restricted
-            </p>
-            <p className="text-xs text-amber-600/80 dark:text-amber-400/70 leading-relaxed">
-              This action requires store owner privileges. Please contact the administrator or switch accounts.
-            </p>
-          </div>
-        </div>
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Permission Restricted</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            This action requires store owner privileges. Please contact the administrator or switch accounts.
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">

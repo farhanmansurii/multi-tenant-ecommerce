@@ -15,6 +15,7 @@ export default function Loading() {
         { label: "Stores" },
         { label: "Customers" },
       ]}
+      disableAnimation={true}
     >
       <div className="space-y-6">
         {/* Search & Filter */}

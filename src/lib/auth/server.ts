@@ -4,7 +4,12 @@ import { db } from '@/lib/db';
 import * as schema from '@/lib/db/schema/auth';
 import { nextCookies } from 'better-auth/next-js';
 
-export const auth = betterAuth({
+const googleClientId = process.env.BETTER_AUTH_GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET;
+
+const hasGoogleConfig = !!(googleClientId && googleClientSecret);
+
+const authConfig: Parameters<typeof betterAuth>[0] = {
 	database: drizzleAdapter(db, {
 		provider: 'pg',
 		schema: schema,
@@ -12,11 +17,17 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 	},
-	socialProviders: {
-		google: {
-			clientId: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID as string,
-			clientSecret: process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET as string,
-		},
-	},
 	plugins: [nextCookies()],
-});
+};
+
+// Only add socialProviders if Google is configured
+if (hasGoogleConfig) {
+	authConfig.socialProviders = {
+		google: {
+			clientId: googleClientId!,
+			clientSecret: googleClientSecret!,
+		},
+	};
+}
+
+export const auth = betterAuth(authConfig);

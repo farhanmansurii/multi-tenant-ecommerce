@@ -19,61 +19,15 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader } from "@/components/shared/common/loader";
 import { StoreData, StoreFormPayload } from "@/lib/domains/stores/types";
+import { StoreFormData } from "@/lib/domains/stores/validation";
+import { storeDataToFormValues, storeFormValuesToPayload } from "@/lib/domains/stores/form";
 
 import EditStoreForm from "@/components/forms/store/edit-store-form";
-import { fetchStore } from "@/lib/domains/stores/service";
-import { updateStore } from "@/lib/domains/stores/service";
+import { fetchStore, updateStore } from "@/lib/domains/stores/service";
 import { useRequireAuth } from "@/lib/session";
 
 interface StoreSettingsProps {
   params: Promise<{ slug: string }>;
-}
-
-function mapStoreToForm(store: StoreData): StoreFormPayload {
-  return {
-    storeName: store.name ?? "",
-    storeSlug: store.slug ?? "",
-    tagline: store.tagline ?? "",
-    description: store.description ?? "",
-    email: store.contactEmail ?? "",
-    phone: store.contactPhone ?? "",
-    website: store.website ?? "",
-    businessType: store.businessType ?? "individual",
-    businessName: store.businessName ?? "",
-    taxId: store.taxId ?? "",
-    address: store.addressLine1 ?? "",
-    city: store.city ?? "",
-    state: store.state ?? "",
-    zipCode: store.zipCode ?? "",
-    country: store.country ?? "",
-    logo: store.logo ?? "",
-    favicon: store.favicon ?? "",
-    primaryColor: store.primaryColor ?? "#3B82F6",
-    secondaryColor: store.secondaryColor ?? "#1E40AF",
-    currency: store.currency ?? "INR",
-    timezone: store.timezone ?? "Asia/Kolkata",
-    language: store.language ?? "en",
-    paymentMethods: Array.isArray(store.paymentMethods)
-      ? store.paymentMethods
-      : [],
-    upiId: store.upiId ?? "",
-    codEnabled: store.codEnabled ?? true,
-    stripeAccountId: store.stripeAccountId ?? "",
-    paypalEmail: store.paypalEmail ?? "",
-    shippingEnabled: store.shippingEnabled ?? false,
-    freeShippingThreshold:
-      typeof store.freeShippingThreshold === "number"
-        ? store.freeShippingThreshold
-        : store.freeShippingThreshold
-          ? Number(store.freeShippingThreshold)
-          : 0,
-    shippingRates: store.shippingRates ?? [],
-    termsOfService: store.termsOfService ?? "",
-    privacyPolicy: store.privacyPolicy ?? "",
-    refundPolicy: store.refundPolicy ?? "",
-    status: store.status ?? "draft",
-    featured: store.featured ?? false,
-  };
 }
 
 import { usePermission } from "@/lib/auth/permissions";
@@ -103,38 +57,29 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
 
   // Update store mutation
   const updateMutation = useMutation({
-    mutationFn: (values: Partial<StoreFormPayload>) => {
+    mutationFn: (payload: StoreFormPayload) => {
       if (!store) throw new Error("Store not found");
-
-      const base = mapStoreToForm(store);
-      const payload: StoreFormPayload = {
-        ...base,
-        ...values,
-        paymentMethods: values.paymentMethods ?? base.paymentMethods,
-        shippingRates: values.shippingRates ?? base.shippingRates,
-        stripeAccountId: values.stripeAccountId ?? base.stripeAccountId,
-        paypalEmail: values.paypalEmail ?? base.paypalEmail,
-        freeShippingThreshold:
-          values.freeShippingThreshold !== undefined
-            ? values.freeShippingThreshold
-            : base.freeShippingThreshold,
-      };
-
       return updateStore(store.slug, payload);
     },
     onSuccess: (updatedStore) => {
       queryClient.setQueryData(["store", slug], updatedStore);
+      queryClient.invalidateQueries({ queryKey: ["stores"] });
       toast.success("Store updated successfully!");
       router.refresh();
     },
     onError: (error: Error) => {
       console.error("Error updating store:", error);
-      toast.error(error.message);
+      const errorMessage = error.message || "Failed to update store";
+      toast.error(errorMessage);
     },
   });
 
-  const handleSave = async (values: Partial<StoreFormPayload>) => {
-    updateMutation.mutate(values);
+  const handleSave = async (values: StoreFormData): Promise<void> => {
+    if (!store) {
+      throw new Error('Store not found');
+    }
+    const payload = storeFormValuesToPayload(values, store);
+    await updateMutation.mutateAsync(payload);
   };
 
 
@@ -198,8 +143,8 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <Alert className="border-red-200 bg-red-50">
-              <AlertDescription className="text-red-800">
+            <Alert variant="destructive">
+              <AlertDescription>
                 Only the store owner can edit this store.
               </AlertDescription>
             </Alert>
@@ -236,12 +181,12 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
   }
 
   const formData = React.useMemo(() => {
-    return store ? mapStoreToForm(store) : undefined;
+    return store ? storeDataToFormValues(store) : undefined;
   }, [store]);
 
   return (
     <EditStoreForm
-      storeData={formData}
+      initialValues={formData}
       onSave={handleSave}
       onCancel={() => router.back()}
       isSaving={updateMutation.isPending}

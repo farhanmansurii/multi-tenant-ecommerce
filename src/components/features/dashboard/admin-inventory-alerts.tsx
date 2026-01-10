@@ -78,13 +78,13 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>Total Products</CardDescription>
             <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
         <Card className={stats.outOfStock > 0 ? 'border-red-500/50' : ''}>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-500" />
               Out of Stock
@@ -93,7 +93,7 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
           </CardHeader>
         </Card>
         <Card className={stats.lowStock > 0 ? 'border-yellow-500/50' : ''}>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-yellow-500" />
               Low Stock
@@ -102,7 +102,7 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>Healthy Stock</CardDescription>
             <CardTitle className="text-2xl text-green-600">{stats.healthy}</CardTitle>
           </CardHeader>

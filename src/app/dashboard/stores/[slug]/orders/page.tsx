@@ -4,28 +4,26 @@ import { ClipboardList } from 'lucide-react';
 import AdminOrdersList from '@/components/features/dashboard/admin-orders-list';
 import DashboardLayout from '@/components/shared/layout/dashboard-container';
 import { Loader } from '@/components/shared/common/loader';
+import { getStoreBySlug } from '@/lib/domains/stores/helpers';
 
 interface OrdersPageProps {
   params: Promise<{ slug: string }>;
 }
 
-import { StoreSidebar } from '@/components/features/dashboard/store-sidebar';
-
-
 export default async function OrdersPage({ params }: OrdersPageProps) {
   const { slug } = await params;
+  const store = await getStoreBySlug(slug);
 
   return (
     <DashboardLayout
       title="Orders"
       desc="View and manage all customer orders"
       icon={<ClipboardList />}
-      sidebar={<StoreSidebar slug={slug} />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
-        { label: slug, href: `/dashboard/stores/${slug}` },
+        { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
         { label: 'Orders' },
       ]}
     >

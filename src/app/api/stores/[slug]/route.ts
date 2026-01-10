@@ -53,13 +53,28 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
-  const { slug } = await params;
-  const existing = await storeHelpers.getStoreBySlug(slug);
-  if (!existing) {
-    return NextResponse.json({ error: "Store not found" }, { status: 404 });
-  }
+  try {
+    const { slug } = await params;
+    const existing = await storeHelpers.getStoreBySlug(slug);
+    if (!existing) {
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
 
-  const body = await request.json();
+    // Check authentication
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is owner
+    if (existing.ownerUserId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
 
   // Construct the settings object by merging existing settings with new values
   const currentSettings = (existing.settings as any) || {};
@@ -78,35 +93,45 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     refundPolicy: body.refundPolicy ?? currentSettings.refundPolicy,
   };
 
-  const [updated] = await db
-    .update(stores)
-    .set({
-      name: body.storeName ?? existing.name, // Note: form sends storeName, DB expects name
-      description: body.description ?? existing.description,
-      tagline: body.tagline ?? existing.tagline,
-      contactEmail: body.email ?? existing.contactEmail,
-      contactPhone: body.phone ?? existing.contactPhone,
-      website: body.website ?? existing.website,
-      businessType: body.businessType ?? existing.businessType,
-      businessName: body.businessName ?? existing.businessName,
-      taxId: body.taxId ?? existing.taxId,
-      addressLine1: body.address ?? existing.addressLine1,
-      city: body.city ?? existing.city,
-      state: body.state ?? existing.state,
-      zipCode: body.zipCode ?? existing.zipCode,
-      country: body.country ?? existing.country,
-      logo: body.logo ?? existing.logo,
-      favicon: body.favicon ?? existing.favicon,
-      primaryColor: body.primaryColor ?? existing.primaryColor,
-      secondaryColor: body.secondaryColor ?? existing.secondaryColor,
-      currency: body.currency ?? existing.currency,
-      timezone: body.timezone ?? existing.timezone,
-      language: body.language ?? existing.language,
-      settings: newSettings,
-      updatedAt: new Date(),
-    })
-    .where(eq(stores.id, existing.id))
-    .returning();
+    const [updated] = await db
+      .update(stores)
+      .set({
+        name: body.storeName ?? existing.name, // Note: form sends storeName, DB expects name
+        description: body.description ?? existing.description,
+        tagline: body.tagline ?? existing.tagline,
+        contactEmail: body.email ?? existing.contactEmail,
+        contactPhone: body.phone ?? existing.contactPhone,
+        website: body.website ?? existing.website,
+        businessType: body.businessType ?? existing.businessType,
+        businessName: body.businessName ?? existing.businessName,
+        taxId: body.taxId ?? existing.taxId,
+        addressLine1: body.address ?? existing.addressLine1,
+        city: body.city ?? existing.city,
+        state: body.state ?? existing.state,
+        zipCode: body.zipCode ?? existing.zipCode,
+        country: body.country ?? existing.country,
+        logo: body.logo ?? existing.logo,
+        favicon: body.favicon ?? existing.favicon,
+        primaryColor: body.primaryColor ?? existing.primaryColor,
+        secondaryColor: body.secondaryColor ?? existing.secondaryColor,
+        currency: body.currency ?? existing.currency,
+        timezone: body.timezone ?? existing.timezone,
+        language: body.language ?? existing.language,
+        settings: newSettings,
+        updatedAt: new Date(),
+      })
+      .where(eq(stores.id, existing.id))
+      .returning();
 
-  return NextResponse.json({ store: updated });
+    return NextResponse.json({ store: updated });
+  } catch (error) {
+    console.error("Error updating store:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to update store",
+        message: error instanceof Error ? error.message : "An unexpected error occurred"
+      },
+      { status: 500 }
+    );
+  }
 }

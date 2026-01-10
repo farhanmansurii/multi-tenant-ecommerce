@@ -11,8 +11,9 @@ import { UploadDropzone } from "@/lib/utils/uploadthing";
 
 interface UploadedFile {
   url: string;
-  name: string;
-  size: number;
+  id?: string;
+  name?: string;
+  size?: number;
 }
 
 interface StoreImageUploadSectionProps {

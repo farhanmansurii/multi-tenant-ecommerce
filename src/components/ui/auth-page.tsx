@@ -52,17 +52,20 @@ export function AuthPage() {
   const handleGoogleSignIn = useCallback(async () => {
     setIsGoogleLoading(true);
     try {
+      const { signIn } = await import("@/lib/auth/client");
       const callbackURL =
         typeof window !== "undefined"
           ? new URL("/dashboard/stores/new", window.location.origin).toString()
           : "/dashboard/stores/new";
+      await signIn.social({ provider: "google", callbackURL });
     } catch (error) {
       console.error("Failed to initiate Google sign in", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unable to start Google sign in right now"
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unable to start Google sign in right now";
+      if (errorMessage.includes("Provider not found") || errorMessage.includes("404")) {
+        toast.error("Google Sign In is not configured. Please use email/password to sign in.");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsGoogleLoading(false);
     }

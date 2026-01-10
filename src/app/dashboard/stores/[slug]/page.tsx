@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import StoreDashboard from "@/components/features/dashboard/store-dashboard";
 import { generateDashboardMetadata } from "@/lib/metadata";
+import { getStoreBySlug } from "@/lib/domains/stores/helpers";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -12,6 +13,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default function StoreDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
-  return <StoreDashboard params={params} />;
+export default async function StoreDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const store = await getStoreBySlug(slug);
+
+  return <StoreDashboard params={params} initialStore={store} />;
 }

@@ -3,12 +3,14 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
 import { orders } from "@/lib/db/schema/ecommerce/orders";
-import { sql, eq, inArray, and } from "drizzle-orm";
+import { sql, inArray } from "drizzle-orm";
 import { storeHelpers } from "@/lib/domains/stores";
 import { requireAuthOrNull } from "@/lib/session/helpers";
 import { storeSchema } from "@/lib/domains/stores/validation";
+import { storeFormValuesToPayload } from "@/lib/domains/stores/form";
 
 const MAX_STORES_PER_USER = 3;
+const CACHE_DURATION = 30;
 
 export async function POST(request: Request) {
 	const session = await requireAuthOrNull();
@@ -18,7 +20,6 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		// Check if user has reached the store limit
 		const userStores = await storeHelpers.getStoresByOwner(session.user.id);
 
 		if (userStores.length >= MAX_STORES_PER_USER) {
@@ -33,24 +34,39 @@ export async function POST(request: Request) {
 
 		const payload = await request.json();
 		const data = storeSchema.parse(payload);
+		const formPayload = storeFormValuesToPayload(data);
 
 		const createdStore = await storeHelpers.createStore({
 			ownerUserId: session.user.id,
-			name: data.storeName,
-			slug: data.storeSlug,
-			description: data.description,
-			contactEmail: data.email,
-			businessType: "retail",
-			businessName: data.storeName,
-			addressLine1: data.address || "",
-			city: data.city || "",
-			state: data.state || "",
-			zipCode: data.zipCode || "",
-			country: data.country || "",
-			primaryColor: data.primaryColor,
-			currency: data.currency,
-			timezone: data.timezone,
-			language: data.language,
+			name: formPayload.storeName,
+			slug: formPayload.storeSlug,
+			description: formPayload.description,
+			contactEmail: formPayload.email,
+			businessType: formPayload.businessType,
+			businessName: formPayload.businessName,
+			taxId: formPayload.taxId,
+			addressLine1: formPayload.address || "",
+			city: formPayload.city || "",
+			state: formPayload.state || "",
+			zipCode: formPayload.zipCode || "",
+			country: formPayload.country || "",
+			primaryColor: formPayload.primaryColor,
+			currency: formPayload.currency,
+			timezone: formPayload.timezone,
+			language: formPayload.language,
+			settings: {
+				paymentMethods: formPayload.paymentMethods,
+				shippingRates: formPayload.shippingRates,
+				upiId: formPayload.upiId,
+				codEnabled: formPayload.codEnabled,
+				stripeAccountId: formPayload.stripeAccountId,
+				paypalEmail: formPayload.paypalEmail,
+				shippingEnabled: formPayload.shippingEnabled,
+				freeShippingThreshold: formPayload.freeShippingThreshold,
+				termsOfService: formPayload.termsOfService,
+				privacyPolicy: formPayload.privacyPolicy,
+				refundPolicy: formPayload.refundPolicy,
+			},
 		});
 
 		return NextResponse.json(
@@ -67,7 +83,6 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-	console.log(">>> [/api/stores] GET called <<<");
 	const session = await requireAuthOrNull();
 
 	if (!session) {
@@ -75,58 +90,73 @@ export async function GET() {
 	}
 
 	try {
-		// Get stores
 		const userStores = await storeHelpers.getStoresByOwner(session.user.id);
+
+		if (userStores.length === 0) {
+			return NextResponse.json(
+				{
+					stores: [],
+					count: 0,
+					limit: MAX_STORES_PER_USER,
+					canCreateMore: true,
+					totalRevenue: 0,
+				},
+				{
+					headers: {
+						"Cache-Control": `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`,
+					},
+				}
+			);
+		}
 
 		const storeIds = userStores.map((s) => s.id);
 
-		// Get product counts and revenue for all stores in parallel
 		const [productCounts, storeRevenues] = await Promise.all([
-			storeIds.length > 0
-				? db
-						.select({
-							storeId: products.storeId,
-							count: sql<number>`COUNT(*)::int`.as("count"),
-						})
-						.from(products)
-						.where(inArray(products.storeId, storeIds))
-						.groupBy(products.storeId)
-				: [],
-			storeIds.length > 0
-				? db
-						.select({
-							storeId: orders.storeId,
-							revenue: sql<number>`COALESCE(SUM((${orders.amounts}->>'total')::numeric), 0)`,
-						})
-						.from(orders)
-						.where(inArray(orders.storeId, storeIds))
-						.groupBy(orders.storeId)
-				: [],
+			db
+				.select({
+					storeId: products.storeId,
+					count: sql<number>`COUNT(*)::int`.as("count"),
+				})
+				.from(products)
+				.where(inArray(products.storeId, storeIds))
+				.groupBy(products.storeId),
+			db
+				.select({
+					storeId: orders.storeId,
+					revenue: sql<number>`COALESCE(SUM(((${orders.amounts}->>'total')::text)::numeric), 0)`.as("revenue"),
+				})
+				.from(orders)
+				.where(inArray(orders.storeId, storeIds))
+				.groupBy(orders.storeId),
 		]);
 
 		const countMap = new Map(productCounts.map((pc) => [pc.storeId, pc.count]));
-		const revenueMap = new Map(storeRevenues.map((sr) => [sr.storeId, Number(sr.revenue) || 0]));
+		const revenueMap = new Map(
+			storeRevenues.map((sr) => [sr.storeId, Number(sr.revenue) || 0])
+		);
 
-		console.log("[stores API] storeRevenues:", storeRevenues);
-		console.log("[stores API] storeIds:", storeIds);
-
-		// Calculate totals
 		const totalRevenue = storeRevenues.reduce((acc, sr) => acc + (Number(sr.revenue) || 0), 0);
 
-		// Add product counts and revenue to stores
 		const storesWithData = userStores.map((store) => ({
 			...store,
 			productCount: countMap.get(store.id) || 0,
 			revenue: revenueMap.get(store.id) || 0,
 		}));
 
-		return NextResponse.json({
-			stores: storesWithData,
-			count: userStores.length,
-			limit: MAX_STORES_PER_USER,
-			canCreateMore: userStores.length < MAX_STORES_PER_USER,
-			totalRevenue,
-		});
+		return NextResponse.json(
+			{
+				stores: storesWithData,
+				count: userStores.length,
+				limit: MAX_STORES_PER_USER,
+				canCreateMore: userStores.length < MAX_STORES_PER_USER,
+				totalRevenue,
+			},
+			{
+				headers: {
+					"Cache-Control": `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`,
+				},
+			}
+		);
 	} catch (error) {
 		console.error("Failed to fetch stores", error);
 		return NextResponse.json(
@@ -135,4 +165,3 @@ export async function GET() {
 		);
 	}
 }
-

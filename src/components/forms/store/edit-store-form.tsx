@@ -5,7 +5,8 @@ import { StoreFormData } from "@/lib/domains/stores/validation";
 import StoreForm from "@/components/features/dashboard/store-form";
 
 interface StoreFormProps {
-  storeData?: Partial<StoreFormData>;
+  mode?: "create" | "edit";
+  initialValues?: Partial<StoreFormData>;
   onSave: (data: StoreFormData) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
@@ -17,7 +18,8 @@ interface StoreFormProps {
 }
 
 export default function EditStoreForm({
-  storeData,
+  mode = "edit",
+  initialValues,
   onSave,
   onCancel,
   isSaving = false,
@@ -29,8 +31,8 @@ export default function EditStoreForm({
 }: StoreFormProps) {
   return (
     <StoreForm
-      mode="edit"
-      storeData={storeData}
+      mode={mode}
+      initialValues={initialValues}
       onSave={onSave}
       onCancel={onCancel}
       isSaving={isSaving}

@@ -18,24 +18,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 import { Package } from 'lucide-react';
 import DashboardLayout from '@/components/shared/layout/dashboard-container';
-import { StoreSidebar } from '@/components/features/dashboard/store-sidebar';
-
-// ...
+import { getStoreBySlug } from '@/lib/domains/stores/helpers';
 
 export default async function StoreProductCreatePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const store = await getStoreBySlug(slug);
 
   return (
     <DashboardLayout
       title="Create Product"
       desc="Add a new product to your store"
       icon={<Package />}
-      sidebar={<StoreSidebar slug={slug} />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
-        { label: slug, href: `/dashboard/stores/${slug}` },
+        { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
         { label: 'Products', href: `/dashboard/stores/${slug}/products` },
         { label: 'Create' },
       ]}

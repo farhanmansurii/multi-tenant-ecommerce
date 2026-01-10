@@ -34,7 +34,6 @@ import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { fetchProductStats, fetchStore, fetchStoreAnalytics } from "@/lib/domains/stores/service";
 import { useRequireAuth } from "@/lib/session";
-import { StoreSidebar } from "@/components/features/dashboard/store-sidebar";
 import { StoreDashboardSkeleton } from "@/components/skeletons/store-dashboard-skeleton";
 import { SalesChart } from "@/components/features/dashboard/overview/sales-chart";
 import { RecentActivity } from "@/components/features/dashboard/overview/recent-activity";
@@ -43,9 +42,10 @@ import { Separator } from "@/components/ui/separator";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;
+  initialStore?: { id: string; name: string; slug: string; ownerUserId: string; currency?: string } | null;
 }
 
-export default function StoreDashboard({ params }: StoreDashboardProps) {
+export default function StoreDashboard({ params, initialStore }: StoreDashboardProps) {
   const { isAuthenticated, user, isPending } = useRequireAuth();
   const router = useRouter();
   const { slug, isLoading: paramsLoading } = useDashboardParams(params);
@@ -58,7 +58,13 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
     queryKey: ["store", slug],
     queryFn: () => fetchStore(slug),
     enabled: !!slug && !paramsLoading,
+    placeholderData: initialStore || undefined,
+    staleTime: 10 * 60 * 1000, // 10 minutes - store data doesn't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
+
+  // Use store from query or fallback to initialStore
+  const displayStore = store || initialStore;
 
   const { data: productCount = 0, isLoading: productsLoading } = useQuery({
     queryKey: ["productCount", slug],
@@ -74,21 +80,24 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
   });
 
   const analytics = analyticsData?.analytics;
-  const currency = analyticsData?.currency || store?.currency || "INR";
+  const currency = analyticsData?.currency || displayStore?.currency || "INR";
 
-  const isOwner = store && user?.id === store.ownerUserId;
+  const isOwner = displayStore && user?.id === displayStore.ownerUserId;
 
   const handleCreateProduct = () =>
     router.push(`/dashboard/stores/${slug}/products/new`);
 
-  // Loading states
-  if (isPending || paramsLoading || storeLoading || analyticsLoading) {
+  // Loading states - only show loading if we don't have initial store data
+  if (isPending || paramsLoading || (storeLoading && !initialStore) || analyticsLoading) {
     return (
       <DashboardLayout
         title="Store Dashboard"
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Dashboard", href: "/dashboard" }, { label: "Loading..." }]}
-        sidebar={<StoreSidebar slug={slug || ""} />}
+        breadcrumbs={[
+          { label: "Stores", href: "/dashboard/stores" },
+          { label: displayStore?.name || slug || "Loading..." }
+        ]}
         fullWidth
+        disableAnimation={true}
       >
         <StoreDashboardSkeleton />
       </DashboardLayout>
@@ -175,20 +184,17 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
 
   return (
     <DashboardLayout
-      title={store.name}
+      title={displayStore.name}
       desc="Overview of your store performance"
-      sidebar={<StoreSidebar slug={slug} />}
       fullWidth
       breadcrumbs={[
-        { label: "Home", href: "/" },
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
-        { label: store.name },
+        { label: "Stores", href: "/dashboard/stores" },
+        { label: displayStore.name },
       ]}
       headerActions={
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild className="hidden sm:flex">
-            <Link href={`/stores/${store.slug}`} target="_blank">
+            <Link href={`/stores/${displayStore.slug}`} target="_blank">
               <ShoppingBag className="mr-2 h-4 w-4" />
               View Storefront
             </Link>
@@ -292,7 +298,7 @@ export default function StoreDashboard({ params }: StoreDashboardProps) {
 
         {/* Products Section */}
         <Suspense fallback={<div className="h-96 bg-muted animate-pulse rounded-xl" />}>
-          <ProductManager storeSlug={store.slug} />
+          <ProductManager storeSlug={displayStore.slug} />
         </Suspense>
       </div>
     </DashboardLayout>

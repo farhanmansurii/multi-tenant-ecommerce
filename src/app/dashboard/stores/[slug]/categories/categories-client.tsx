@@ -34,13 +34,12 @@ import { fetchStore } from "@/lib/domains/stores/service";
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from "@/lib/domains/products/category-service";
 import { cn } from "@/lib/utils";
 
-// --- Constants & Types ---
 
 const DEFAULT_FORM_DATA = {
   name: "",
   description: "",
   image: "",
-  color: "#6366f1", // Default Indigo
+  color: "#6366f1",
   sortOrder: 0,
 };
 
@@ -48,8 +47,6 @@ const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#0ea5e9", "#10b981", "#22c55e", "#eab308",
   "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#a855f7", "#64748b",
 ];
-
-// --- Components ---
 
 const ColorPicker = ({ value, onChange }: { value: string; onChange: (color: string) => void }) => {
   const [open, setOpen] = useState(false);
@@ -122,14 +119,12 @@ const CategoryFormContent = ({ data, onChange, errors }: { data: typeof DEFAULT_
   );
 };
 
-// --- Main Client Component ---
-
 interface StoreCategoriesClientProps {
   slug: string;
-  sidebar: React.ReactNode;
+  initialStore?: { id: string; name: string; slug: string; ownerUserId: string } | null;
 }
 
-export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientProps) {
+export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesClientProps) {
   const { isAuthenticated, user, isPending: authPending } = useRequireAuth();
   const router = useRouter();
 
@@ -141,10 +136,17 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // --- Data Fetching & Mutations ---
   const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ["store", slug], queryFn: () => fetchStore(slug), enabled: !!slug && isAuthenticated && !!user,
+    queryKey: ["store", slug],
+    queryFn: () => fetchStore(slug),
+    enabled: !!slug && isAuthenticated && !!user,
+    placeholderData: initialStore || undefined,
+    staleTime: 10 * 60 * 1000, // 10 minutes - store data doesn't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
+
+  // Use store from query or fallback to initialStore, then slug
+  const displayStore = store || initialStore;
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories", slug], queryFn: () => fetchCategories(slug), enabled: !!slug && isAuthenticated && !!user,
   });
@@ -165,31 +167,26 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
     onError: () => toast.error("Failed to delete category"),
   });
 
-  // --- Handlers ---
   const handleCreate = () => { if (!formData.name.trim()) return toast.error("Name is required"); createCategoryMutation.mutate(formData); };
   const openEditModal = (category: Category) => { setEditingCategory(category); setFormData({ name: category.name, description: category.description || "", image: category.image || "", color: category.color || "#6366f1", sortOrder: category.sortOrder || 0, }); setIsEditOpen(true); };
   const handleUpdate = () => { if (!formData.name.trim()) return toast.error("Name is required"); if (!editingCategory) return; updateCategoryMutation.mutate({ categoryId: editingCategory.id, data: formData }); };
 
   const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const isLoading = authPending || storeLoading || categoriesLoading;
+  const isLoading = authPending || (storeLoading && !initialStore) || categoriesLoading;
 
-  // Handle access denied
-  if (!authPending && isAuthenticated && store && store.ownerUserId !== user?.id) {
+  if (!authPending && isAuthenticated && displayStore && displayStore.ownerUserId !== user?.id) {
     return (
-      <DashboardLayout title="Access Denied" icon={<Tags />} sidebar={sidebar}>
+      <DashboardLayout title="Access Denied" icon={<Tags />}>
         <div className="flex flex-col items-center justify-center h-[50vh]">
-          <h2 className="text-xl font-bold text-red-500">Permission Error</h2>
+          <h2 className="text-xl font-bold">Permission Error</h2>
           <p className="text-muted-foreground">You do not have access to this store.</p>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Handle unauthenticated
   if (!authPending && !isAuthenticated) {
-    // Ideally redirect, but for now show nothing or loader until redirect happens
-    // router.push("/sign-in"); // This causes side effect during render, better to use useEffect or just let the hook handle it if it does
     return null;
   }
 
@@ -198,19 +195,18 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
       <DashboardLayout
         title="Categories"
         desc="Organize your products for a better customer experience."
-        sidebar={sidebar}
         breadcrumbs={[
           { label: 'Home', href: '/' },
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Stores', href: '/dashboard/stores' },
-          { label: slug, href: `/dashboard/stores/${slug}` },
+          { label: displayStore?.name || slug, href: `/dashboard/stores/${slug}` },
           { label: 'Categories' },
         ]}
-        icon={<Tags className="text-indigo-500" />}
+        icon={<Tags />}
         headerActions={
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="shadow-lg shadow-indigo-500/20 rounded-full">
+              <Button>
                 <Plus className="mr-2 h-4 w-4" /> Add Category
               </Button>
             </DialogTrigger>
@@ -235,17 +231,15 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
               )}
 
               {categories.length === 0 ? (
-                // Empty State
                 <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border/60 rounded-xl bg-muted/5 animate-in fade-in zoom-in-95 duration-500">
-                  <div className="h-20 w-20 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6"><Tags className="h-10 w-10 text-indigo-500" /></div>
+                  <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-6"><Tags className="h-10 w-10 text-muted-foreground" /></div>
                   <h3 className="text-xl font-bold mb-2">No categories found</h3>
                   <p className="text-muted-foreground text-center max-w-sm mb-8">Categories help customers navigate your store. Create your first one to get started.</p>
-                  <Button onClick={() => setIsCreateOpen(true)} size="lg" className="rounded-full px-8 shadow-md"><Plus className="mr-2 h-5 w-5" />Create First Category</Button>
+                  <Button onClick={() => setIsCreateOpen(true)} size="lg"><Plus className="mr-2 h-5 w-5" />Create First Category</Button>
                 </div>
               ) : filteredCategories.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">No categories match your search.</div>
               ) : (
-                /* ----- FULLY REVAMPED GRID ----- */
                 <motion.div layout className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   <AnimatePresence>
                     {filteredCategories.map((category, index) => {
@@ -258,17 +252,14 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className="group relative bg-card rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
-                          // Set CSS variable for the hover effect
                           style={{ ['--accent-color' as string]: accentColor }}
-                          onClick={() => openEditModal(category)} // Entire card clicks to edit
+                          onClick={() => openEditModal(category)}
                         >
 
-                          {/* 1. Subtle Background Tint on Hover */}
                           <div
                             className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-300 pointer-events-none bg-[var(--accent-color)]"
                           />
 
-                          {/* 2. Top Right Actions Menu (Only visible on hover) */}
                           <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -288,7 +279,6 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
                             </DropdownMenu>
                           </div>
 
-                          {/* 3. Image / Professional Placeholder */}
                           <div className="aspect-[3/2] relative bg-muted/20">
                             {category.image ? (
                               <Image
@@ -299,7 +289,6 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
                               />
                             ) : (
                               <div className="w-full h-full flex flex-col items-center justify-center">
-                                {/* Styled Icon Placeholder */}
                                 <div
                                   className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm mb-3 transition-transform group-hover:scale-110 duration-300"
                                   style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
@@ -311,13 +300,11 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
                             )}
                           </div>
 
-                          {/* 4. Content Body */}
                           <div className="p-5 relative">
                             <div className="flex justify-between items-start gap-4 mb-2">
                               <h3 className="font-bold text-lg truncate group-hover:text-[var(--accent-color)] transition-colors duration-300">
                                 {category.name}
                               </h3>
-                              {/* Sort Order Badge - Tinted */}
                               <Badge
                                 variant="secondary"
                                 className="font-mono text-xs border-0 shrink-0"
@@ -340,8 +327,6 @@ export function StoreCategoriesClient({ slug, sidebar }: StoreCategoriesClientPr
           )}
         </div>
       </DashboardLayout>
-
-      {/* Edit Dialog & Delete Alert */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Edit Category</DialogTitle><DialogDescription>Update details for <span className="font-medium">{editingCategory?.name}</span></DialogDescription></DialogHeader>
           <CategoryFormContent data={formData} onChange={(updates) => setFormData(prev => ({ ...prev, ...updates }))} />
