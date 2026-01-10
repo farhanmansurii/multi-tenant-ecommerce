@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -47,10 +48,24 @@ export const Hero = () => {
       </div>
 
       <div className="absolute bottom-12 left-6 md:left-12 max-w-md hero-sub">
-        <p className="text-lg text-muted-foreground leading-relaxed font-light">
+        <p className="text-lg text-muted-foreground leading-relaxed font-light mb-6">
           The infrastructure for the next generation of digital business.
           Built on <span className="text-foreground">Next.js 16</span> and <span className="text-foreground">Drizzle</span>.
         </p>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/sign-in"
+            className="px-6 py-3 rounded-full border border-foreground/20 bg-foreground/5 hover:bg-foreground hover:text-background transition-all font-mono text-xs uppercase tracking-widest"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/sign-in"
+            className="px-6 py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-mono text-xs uppercase tracking-widest"
+          >
+            Get Started
+          </Link>
+        </div>
       </div>
     </header>
   );
