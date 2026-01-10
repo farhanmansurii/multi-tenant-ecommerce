@@ -20,30 +20,20 @@ import UserDetailsSidebar from "./sidebar-user-details"
 
 const items = [
   {
-    title: "Home",
-    url: "/",
+    title: "Dashboard",
+    url: "/dashboard",
     icon: Home,
     exact: true,
+  },
+  {
+    title: "My Stores",
+    url: "/dashboard/stores",
+    icon: Store,
   },
   {
     title: "Create Store",
     url: "/dashboard/stores/new",
     icon: Store,
-  },
-  {
-    title: "Create Product",
-    url: "#",
-    icon: BoxIcon,
-  },
-  {
-    title: "View My Stores",
-    url: "/dashboard/stores",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
   },
 ]
 

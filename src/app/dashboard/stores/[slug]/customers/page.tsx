@@ -17,7 +17,6 @@ export default async function CustomersPage({ params }: CustomersPageProps) {
       desc="View and manage your store customers"
       icon={<Users />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

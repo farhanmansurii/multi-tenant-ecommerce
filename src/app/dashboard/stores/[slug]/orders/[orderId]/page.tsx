@@ -18,7 +18,6 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       desc="View and manage order information"
       icon={<Package />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Minus, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatPrice } from '@/lib/utils/price';
-import { CartItem as CartItemType } from '@/lib/state/storefront/storefront-store';
+import { CartItem as CartItemType } from '@/lib/state/storefront/types';
 
 interface CartItemProps {
   item: CartItemType;
@@ -83,7 +83,7 @@ export default function CartItem({
             <button
               className="w-8 h-8 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors disabled:opacity-30"
               onClick={() =>
-                updateQuantity(item.productId, item.quantity - 1, item.variantId)
+                updateQuantity(item.productId, item.quantity - 1, item.variantId ?? undefined)
               }
               disabled={item.quantity <= 1}
             >
@@ -95,7 +95,7 @@ export default function CartItem({
             <button
               className="w-8 h-8 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
               onClick={() =>
-                updateQuantity(item.productId, item.quantity + 1, item.variantId)
+                updateQuantity(item.productId, item.quantity + 1, item.variantId ?? undefined)
               }
             >
               <Plus className="w-3 h-3" />
@@ -103,7 +103,7 @@ export default function CartItem({
           </div>
 
           <button
-            onClick={() => removeItem(item.productId, item.variantId)}
+            onClick={() => removeItem(item.productId, item.variantId ?? undefined)}
             className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-red-600 flex items-center gap-1 transition-colors"
           >
             <X className="w-3 h-3" /> Remove

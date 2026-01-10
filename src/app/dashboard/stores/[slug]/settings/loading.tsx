@@ -10,7 +10,6 @@ export default function Loading() {
       desc="Configure your store settings"
       icon={<Settings />}
       breadcrumbs={[
-        { label: "Home", href: "/" },
         { label: "Dashboard", href: "/dashboard" },
         { label: "Stores" },
         { label: "Settings" },

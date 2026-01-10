@@ -260,7 +260,7 @@ export default function DashboardPageClient() {
 
   if (isPending || isLoading) {
     return (
-      <DashboardLayout title="Dashboard" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Overview" }]}>
+      <DashboardLayout title="Dashboard" breadcrumbs={[{ label: "Dashboard" }]}>
         <DashboardSkeleton />
       </DashboardLayout>
     );

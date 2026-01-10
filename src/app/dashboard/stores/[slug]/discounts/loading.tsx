@@ -10,7 +10,6 @@ export default function Loading() {
       desc="Create and manage discount codes"
       icon={<Percent />}
       breadcrumbs={[
-        { label: "Home", href: "/" },
         { label: "Dashboard", href: "/dashboard" },
         { label: "Stores" },
         { label: "Discounts" },

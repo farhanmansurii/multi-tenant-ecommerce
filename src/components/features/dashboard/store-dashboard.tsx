@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { fetchProductStats, fetchStore, fetchStoreAnalytics } from "@/lib/domains/stores/service";
+import type { StoreData } from "@/lib/domains/stores/types";
 import { useRequireAuth } from "@/lib/session";
 import { StoreDashboardSkeleton } from "@/components/skeletons/store-dashboard-skeleton";
 import { SalesChart } from "@/components/features/dashboard/overview/sales-chart";
@@ -58,7 +59,7 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
     queryKey: ["store", slug],
     queryFn: () => fetchStore(slug),
     enabled: !!slug && !paramsLoading,
-    placeholderData: initialStore || undefined,
+    placeholderData: initialStore ? (initialStore as unknown as StoreData) : undefined,
     staleTime: 10 * 60 * 1000, // 10 minutes - store data doesn't change often
     gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
@@ -180,7 +181,7 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
     }
   }
 
-  if (!store) return null;
+  if (!store || !displayStore) return null;
 
   return (
     <DashboardLayout

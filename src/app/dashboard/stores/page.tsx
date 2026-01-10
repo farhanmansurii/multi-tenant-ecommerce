@@ -40,7 +40,6 @@ export default function StoresPage() {
       <DashboardLayout
         title="My Stores"
         breadcrumbs={[
-          { label: "Home", href: "/" },
           { label: "Dashboard", href: "/dashboard" },
           { label: "Stores" },
         ]}
@@ -77,7 +76,6 @@ export default function StoresPage() {
       title="My Stores"
       desc="All your stores in one place"
       breadcrumbs={[
-        { label: "Home", href: "/" },
         { label: "Dashboard", href: "/dashboard" },
         { label: "Stores" },
       ]}

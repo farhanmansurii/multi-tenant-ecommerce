@@ -18,9 +18,8 @@ export default function StoreCreatePage() {
       desc="Set up your store and start selling online."
       icon={<Store />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Stores', href: '/dashboard' },
+        { label: 'Stores', href: '/dashboard/stores' },
         { label: 'New Store' },
       ]}
     >

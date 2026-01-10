@@ -20,7 +20,6 @@ export default async function OrdersPage({ params }: OrdersPageProps) {
       desc="View and manage all customer orders"
       icon={<ClipboardList />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

@@ -18,7 +18,6 @@ export default async function DiscountsPage({ params }: DiscountsPageProps) {
       desc="Create and manage promotional discount codes"
       icon={<Percent />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

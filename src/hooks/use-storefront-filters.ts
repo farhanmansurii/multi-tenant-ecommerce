@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { StorefrontFiltersState } from '@/components/features/storefront/storefront-reusables/filters/storefront-filters';
+import { StorefrontFiltersState } from '@/components/features/storefront/shared/modules/filters/storefront-filters';
 import { ProductData } from '@/lib/domains/products';
 import { Category } from '@/lib/db/schema';
 
@@ -67,7 +67,7 @@ export function useStorefrontFilters({
         const productCategoryIds = Array.isArray(p.categories)
           ? p.categories.map((c) => (typeof c === 'string' ? c : c.id))
           : [];
-        return filtersFromUrl.categories.some((filterCat) => {
+        return filtersFromUrl.categories.some((filterCat: string) => {
           if (productCategoryIds.includes(filterCat)) return true;
           const matchingCategory = categories.find(
             (cat) => cat.slug === filterCat || cat.id === filterCat
@@ -122,7 +122,7 @@ export function useStorefrontFilters({
     if (next.search) url.searchParams.set('q', next.search);
     if (next.sort && next.sort !== 'relevance')
       url.searchParams.set('sort', next.sort);
-    next.categories.forEach((c) => url.searchParams.append('category', c));
+    next.categories.forEach((c: string) => url.searchParams.append('category', c));
     if (next.priceRange?.[0] > 0)
       url.searchParams.set('min', String(next.priceRange[0]));
     if (next.priceRange?.[1] < 100000)

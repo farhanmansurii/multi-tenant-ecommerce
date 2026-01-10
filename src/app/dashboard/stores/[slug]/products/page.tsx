@@ -17,7 +17,6 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
       desc="Manage your store products"
       icon={<Package />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

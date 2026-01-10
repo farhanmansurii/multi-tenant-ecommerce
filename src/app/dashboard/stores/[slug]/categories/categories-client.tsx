@@ -31,6 +31,7 @@ import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireAuth } from "@/lib/session";
 import { fetchStore } from "@/lib/domains/stores/service";
+import type { StoreData } from "@/lib/domains/stores/types";
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from "@/lib/domains/products/category-service";
 import { cn } from "@/lib/utils";
 
@@ -140,7 +141,7 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
     queryKey: ["store", slug],
     queryFn: () => fetchStore(slug),
     enabled: !!slug && isAuthenticated && !!user,
-    placeholderData: initialStore || undefined,
+    placeholderData: initialStore ? (initialStore as unknown as StoreData) : undefined,
     staleTime: 10 * 60 * 1000, // 10 minutes - store data doesn't change often
     gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
@@ -196,7 +197,6 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
         title="Categories"
         desc="Organize your products for a better customer experience."
         breadcrumbs={[
-          { label: 'Home', href: '/' },
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Stores', href: '/dashboard/stores' },
           { label: displayStore?.name || slug, href: `/dashboard/stores/${slug}` },

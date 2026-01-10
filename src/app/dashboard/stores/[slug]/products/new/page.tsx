@@ -30,7 +30,6 @@ export default async function StoreProductCreatePage({ params }: { params: Promi
       desc="Add a new product to your store"
       icon={<Package />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

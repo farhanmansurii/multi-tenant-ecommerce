@@ -46,9 +46,18 @@ export async function createStore(data: CreateStoreData) {
   };
 
   const mergedSettings = {
-    ...defaultSettings,
-    ...data.settings,
-  } satisfies StoreSettings;
+    paymentMethods: (data.settings?.paymentMethods ?? []) as string[],
+    shippingRates: (data.settings?.shippingRates ?? []) as any[],
+    upiId: data.settings?.upiId,
+    codEnabled: data.settings?.codEnabled ?? true,
+    stripeAccountId: data.settings?.stripeAccountId,
+    paypalEmail: data.settings?.paypalEmail,
+    shippingEnabled: data.settings?.shippingEnabled ?? true,
+    freeShippingThreshold: data.settings?.freeShippingThreshold ?? undefined,
+    termsOfService: data.settings?.termsOfService ?? "",
+    privacyPolicy: data.settings?.privacyPolicy ?? "",
+    refundPolicy: data.settings?.refundPolicy ?? "",
+  };
 
   const [store] = await db
     .insert(stores)
@@ -131,12 +140,22 @@ export async function getStoreById(id: string) {
  * Update store
  */
 export async function updateStore(id: string, data: Partial<CreateStoreData>) {
+  const updateData: any = {
+    ...data,
+    updatedAt: new Date(),
+  };
+
+  if (data.settings) {
+    updateData.settings = {
+      paymentMethods: data.settings.paymentMethods ?? [],
+      shippingRates: data.settings.shippingRates ?? [],
+      ...data.settings,
+    };
+  }
+
   const [updatedStore] = await db
     .update(stores)
-    .set({
-      ...data,
-      updatedAt: new Date(),
-    })
+    .set(updateData)
     .where(eq(stores.id, id))
     .returning();
 

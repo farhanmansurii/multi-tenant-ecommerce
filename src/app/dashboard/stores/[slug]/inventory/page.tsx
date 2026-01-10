@@ -18,7 +18,6 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
       desc="Monitor and manage product stock levels"
       icon={<AlertTriangle />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },

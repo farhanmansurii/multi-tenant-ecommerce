@@ -10,7 +10,6 @@ export default function Loading() {
       desc="Monitor and manage product stock levels"
       icon={<AlertTriangle />}
       breadcrumbs={[
-        { label: "Home", href: "/" },
         { label: "Dashboard", href: "/dashboard" },
         { label: "Stores" },
         { label: "Inventory" },

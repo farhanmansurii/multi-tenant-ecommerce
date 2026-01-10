@@ -31,7 +31,6 @@ export default async function StoreProductEditPage({
       desc="Update product details"
       icon={<Package />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
