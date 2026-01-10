@@ -20,7 +20,7 @@ export interface TenantContext {
 export function extractStoreSlug(request: NextRequest): string | null {
   const url = new URL(request.url);
 
-  // Check subdomain first (e.g., mystore.localhost:3000)
+  // Check subdomain first (e.g., mystore.multi-tenant-ecommerce-self.vercel.app)
   const hostname = url.hostname;
   if (hostname.includes('.')) {
     const subdomain = hostname.split('.')[0];

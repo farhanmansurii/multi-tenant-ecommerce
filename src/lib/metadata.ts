@@ -29,7 +29,7 @@ interface ProductMetadataOptions extends BaseMetadataOptions {
   storeSlug: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://multi-tenant-ecommerce-self.vercel.app";
 const appName = "Kiosk";
 const appDescription =
   "Your personal storefront builder. Create, manage, and scale your online business with Kiosk.";

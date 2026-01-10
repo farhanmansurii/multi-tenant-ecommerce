@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = 'http://localhost:3000';
+const DEFAULT_BASE_URL = 'http://multi-tenant-ecommerce-self.vercel.app';
 
 export const resolveBaseUrl = (): string => {
 	const envUrl =
