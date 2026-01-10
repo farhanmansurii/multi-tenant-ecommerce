@@ -9,7 +9,10 @@ const googleClientSecret = process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET;
 
 const hasGoogleConfig = !!(googleClientId && googleClientSecret);
 
+const baseURL = process.env.NEXT_PUBLIC_APP_URL;
+
 const authConfig: Parameters<typeof betterAuth>[0] = {
+	baseURL,
 	database: drizzleAdapter(db, {
 		provider: 'pg',
 		schema: schema,
@@ -26,6 +29,7 @@ if (hasGoogleConfig) {
 		google: {
 			clientId: googleClientId!,
 			clientSecret: googleClientSecret!,
+			redirectURI: `${baseURL}/api/auth/callback/google`,
 		},
 	};
 }
