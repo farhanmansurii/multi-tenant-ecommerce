@@ -76,7 +76,7 @@ export function AuthPage() {
       <div className=" relative hidden h-full flex-col border-r p-10 lg:flex">
         <div className="z-10 flex items-center gap-2 mix-blend-difference">
           <Grid2x2PlusIcon className="w-6 h-6 text-white" />
-          <h2 className="text-xl font-semibold text-white">Sell Your Stuff</h2>
+          <h2 className="text-xl font-semibold text-white">Kiosk</h2>
         </div>
 
         <div className="z-10 mt-auto">

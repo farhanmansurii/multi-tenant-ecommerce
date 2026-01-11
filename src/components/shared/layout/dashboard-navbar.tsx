@@ -14,15 +14,14 @@ import {
   CreditCard,
   Bell,
   Search,
-  ChevronDown,
-  Sparkles
+  Sparkles,
+  MenuIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup
@@ -67,13 +66,9 @@ export const DashboardNavbar = () => {
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
 
-        {/* Left: Sidebar Trigger & Brand */}
         <div className="flex items-center gap-2 md:gap-4">
-          <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" />
-
+          <SidebarTrigger collapsedIcon={MenuIcon} expandedIcon={X} className="-ml-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" />
           <div className="h-6 w-px bg-border/60 hidden md:block" />
-
-          {/* Desktop Navigation (Sliding Pill Style) */}
           <nav className="hidden md:flex items-center gap-1">
             {navigationItems.map((item) => {
               const isActive = pathname === item.href;
@@ -99,13 +94,10 @@ export const DashboardNavbar = () => {
           </nav>
         </div>
 
-        {/* Center Spacer */}
         <div className="flex-1" />
 
-        {/* Right: Actions & User */}
         <div className="flex items-center gap-2 md:gap-4">
 
-          {/* Search / Command Trigger Placeholder */}
           <div className="hidden md:flex items-center">
             <Button
               variant="outline"
@@ -123,12 +115,10 @@ export const DashboardNavbar = () => {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Notifications */}
             <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-full">
               <Bell className="h-4 w-4" />
             </Button>
 
-            {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ml-1">
@@ -138,7 +128,6 @@ export const DashboardNavbar = () => {
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Status Indicator */}
                   <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-green-500" />
                 </Button>
               </DropdownMenuTrigger>
@@ -192,7 +181,6 @@ export const DashboardNavbar = () => {
             </DropdownMenu>
           </div>
 
-          {/* Mobile Toggle */}
           <Button
             variant="ghost"
             size="icon"
@@ -204,7 +192,6 @@ export const DashboardNavbar = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Dropdown */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div

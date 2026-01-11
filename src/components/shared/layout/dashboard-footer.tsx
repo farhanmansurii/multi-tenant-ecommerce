@@ -7,7 +7,7 @@ export const DashboardFooter = () => {
       <div className="w-full px-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <span>© {new Date().getFullYear()} Sell Your Stuff. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} Kiosk. All rights reserved.</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -15,9 +15,7 @@ export const DashboardFooter = () => {
             <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
             <a href="/help" className="hover:text-foreground transition-colors">Help</a>
             <div className="flex items-center gap-1 ml-2">
-              <span>Made with</span>
-              <Heart className="h-3 w-3 text-red-500 fill-red-500" />
-              <span>by the Team</span>
+             Made by Farhan Mansuri
             </div>
           </div>
         </div>

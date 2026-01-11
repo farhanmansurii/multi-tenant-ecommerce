@@ -307,7 +307,6 @@ export default function DashboardPageClient() {
 
         {stores.length > 0 && <MetricsStrip stores={stores} totalRevenue={totalRevenue} />}
 
-        {/* Search & Filter Toolbar */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-0 z-10 bg-background/95 backdrop-blur py-2">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -365,8 +364,7 @@ export default function DashboardPageClient() {
               {!searchQuery && (
                 <Button size="lg" className="rounded-lg" asChild>
                   <Link href="/dashboard/stores/new">
-                    <Sparkles className="w-4 h-4 mr-2 fill-yellow-400 text-yellow-400" />
-                    Create your first store
+                    <Plus className="h-4 w-4 " /> Create your first store
                   </Link>
                 </Button>
               )}

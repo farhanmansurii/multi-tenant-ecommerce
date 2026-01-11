@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BoxIcon, Calendar, ChevronUp, Home, Inbox, Search, Settings, Store, User2 } from "lucide-react"
+import { usePathname, useRouter} from "next/navigation";
+import { Home, LogOut, Store, User2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import {
@@ -15,10 +16,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import UserDetailsSidebar from "./sidebar-user-details"
+} from "@/components/ui/sidebar";
+import { signOut } from "@/lib/auth/client";
+import UserDetailsSidebar from "./sidebar-user-details";
 
-const items = [
+interface NavItem {
+  title: string;
+  url?: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  onClick?: () => void;
+  isLogout?: boolean;
+}
+
+const navigationItems: NavItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -35,47 +46,110 @@ const items = [
     url: "/dashboard/stores/new",
     icon: Store,
   },
-]
+];
+
+const accountItems: NavItem[] = [
+  {
+    title: "Profile",
+    url: "/dashboard/profile",
+    icon: User2,
+  },
+  {
+    title: "Logout",
+    icon: LogOut,
+    isLogout: true,
+  },
+];
+
+function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeof useRouter>) {
+  const isActive = item.url
+    ? item.exact
+      ? pathname === item.url
+      : pathname.startsWith(item.url)
+    : false;
+
+  const handleClick = async () => {
+    if (item.isLogout) {
+      try {
+        await signOut();
+        router.push("/sign-in");
+      } catch (error) {
+        toast.error("Failed to sign out");
+        console.error("Sign out error:", error);
+      }
+    } else if (item.onClick) {
+      item.onClick();
+    }
+  };
+
+  if (item.isLogout || item.onClick) {
+    return (
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton
+          onClick={handleClick}
+          className={cn(
+            "relative transition-colors duration-200 w-full",
+            item.isLogout && "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-700 dark:hover:text-red-400",
+            !item.isLogout && "hover:bg-muted/20"
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span className="text-sm">{item.title}</span>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  return (
+    <SidebarMenuItem key={item.title}>
+      <SidebarMenuButton
+        asChild
+        isActive={isActive}
+        className={cn(
+          "relative transition-colors duration-200",
+          isActive && [
+            "bg-muted/40 text-foreground",
+            "dark:bg-muted/30",
+          ],
+          !isActive && "hover:bg-muted/20"
+        )}
+      >
+        <Link href={item.url!} className="flex items-center gap-2.5">
+          <item.icon className="h-4 w-4 shrink-0" />
+          <span className="text-sm">{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
 
 export function AppSidebar({ className }: { className: string }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <Sidebar variant="floating" side="left" className={className} collapsible="offcanvas">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/70">
-            Kiosk
+            Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
-                const isActive = item.exact
-                  ? pathname === item.url
-                  : pathname.startsWith(item.url);
+              {navigationItems.map((item) => renderNavItem(item, pathname, router))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={cn(
-                        "relative transition-colors duration-200",
-                        isActive && [
-                          "bg-muted/40 text-foreground",
-                          "dark:bg-muted/30",
-                        ],
-                        !isActive && "hover:bg-muted/20"
-                      )}
-                    >
-                      <Link href={item.url} className="flex items-center gap-2.5">
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span className="text-sm">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/70">
+            Account
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {accountItems.map((item) => renderNavItem(item, pathname, router))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -88,5 +162,5 @@ export function AppSidebar({ className }: { className: string }) {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

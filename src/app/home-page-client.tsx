@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { useGSAP } from "@gsap/react";
 import Lenis from "lenis";
 import { Preloader } from "@/components/home-page/preloader";
@@ -18,16 +19,15 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" });
 
 if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger, useGSAP);
+  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
 }
 
 // --- MAIN PAGE ---
 
 export default function KioskPure() {
   const container = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
 
-  // 1. Lenis Smooth Scroll
+  // Lenis Smooth Scroll
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -35,18 +35,26 @@ export default function KioskPure() {
       orientation: "vertical",
       smoothWheel: true,
     });
+
     function raf(time: number) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
     requestAnimationFrame(raf);
+
+    // Sync Lenis with ScrollTrigger
+    lenis.on("scroll", ScrollTrigger.update);
+
+    return () => {
+      lenis.destroy();
+    };
   }, []);
 
   return (
     <div ref={container} className={`${manrope.variable} ${spaceGrotesk.variable} font-sans bg-background text-foreground selection:bg-primary selection:text-primary-foreground overflow-x-hidden`}>
 
       {/* --- PRELOADER --- */}
-      <Preloader onComplete={() => setLoading(false)} />
+      <Preloader onComplete={() => {}} />
 
       {/* --- NAV --- */}
       <Navbar />

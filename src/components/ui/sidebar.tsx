@@ -252,12 +252,22 @@ function Sidebar({
   )
 }
 
+interface SidebarTriggerProps extends React.ComponentProps<typeof Button> {
+  expandedIcon?: React.ComponentType<{ className?: string }>
+  collapsedIcon?: React.ComponentType<{ className?: string }>
+}
+
 function SidebarTrigger({
   className,
   onClick,
+  expandedIcon: ExpandedIcon,
+  collapsedIcon: CollapsedIcon,
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: SidebarTriggerProps) {
   const { toggleSidebar, state } = useSidebar()
+
+  const Expanded = ExpandedIcon || PanelLeftClose
+  const Collapsed = CollapsedIcon || PanelLeftOpen
 
   return (
     <Button
@@ -273,9 +283,9 @@ function SidebarTrigger({
       {...props}
     >
       {state === "expanded" ? (
-        <PanelLeftClose className="h-4 w-4" />
+        <Expanded className="h-4 w-4" />
       ) : (
-        <PanelLeftOpen className="h-4 w-4" />
+        <Collapsed className="h-4 w-4" />
       )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>

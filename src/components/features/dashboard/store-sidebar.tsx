@@ -151,7 +151,6 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
         <SidebarSeparator className="my-2 w-11/12 mx-auto" />
       </SidebarHeader>
 
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -167,7 +166,7 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
       </SidebarContent>
 
       <SidebarFooter className="mt-auto pt-2">
-      <SidebarSeparator className="my-2 w-11/12 mx-auto" />
+        <SidebarSeparator className="my-2 w-11/12 mx-auto" />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
