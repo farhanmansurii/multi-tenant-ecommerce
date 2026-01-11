@@ -75,6 +75,18 @@ export async function POST(request: Request) {
 		);
 	} catch (error) {
 		console.error("Failed to create store", error);
+
+		// Handle duplicate slug error specifically
+		if (error instanceof Error && error.message.includes("duplicate key value violates unique constraint") && error.message.includes("stores_slug_unique")) {
+			return NextResponse.json(
+				{
+					error: "Store URL already exists",
+					message: "A store with this URL already exists. Please choose a different URL."
+				},
+				{ status: 409 },
+			);
+		}
+
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500 },

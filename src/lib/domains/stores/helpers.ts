@@ -59,13 +59,22 @@ export async function createStore(data: CreateStoreData) {
     refundPolicy: data.settings?.refundPolicy ?? "",
   };
 
+  // Ensure slug uniqueness by appending a number if it already exists
+  let uniqueSlug = data.slug;
+  let counter = 1;
+  while (true) {
+    const existingStore = await _getStoreBySlug(uniqueSlug);
+    if (!existingStore) break;
+    uniqueSlug = `${data.slug}-${counter++}`;
+  }
+
   const [store] = await db
     .insert(stores)
     .values({
       id: crypto.randomUUID(),
       ownerUserId: data.ownerUserId,
       name: data.name,
-      slug: data.slug,
+      slug: uniqueSlug,
       description: data.description,
       contactEmail: data.contactEmail,
       businessType: data.businessType,

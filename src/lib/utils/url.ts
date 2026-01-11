@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = 'http://multi-tenant-ecommerce-self.vercel.app';
+const DEFAULT_BASE_URL = 'https://kioskstore.vercel.app';
 
 export const resolveBaseUrl = (): string => {
 	const envUrl =
