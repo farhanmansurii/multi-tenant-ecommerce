@@ -27,6 +27,22 @@ export const fetchStore = async (slug: string): Promise<StoreData> => {
   return data.store;
 };
 
+export async function createStore(data: StoreFormPayload): Promise<StoreData> {
+  const response = await fetch(withBaseUrl("/api/stores"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || errorData?.message || "Failed to create store");
+  }
+
+  const result = await response.json();
+  return result.store;
+}
+
 export async function updateStore(slug: string, data: StoreFormPayload): Promise<StoreData> {
   const response = await fetch(withBaseUrl(`/api/stores/${slug}`), {
     method: "PATCH",

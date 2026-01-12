@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { payments } from "@/lib/db/schema";
-import { ok } from "@/lib/api/responses";
+import { ok, created, badRequest } from "@/lib/api/responses";
 import { withStoreContext } from "@/lib/api/handlers";
 import { createPayment, createPaymentSchema } from "@/lib/domains/payments";
 
@@ -44,17 +44,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const parseResult = createPaymentSchema.safeParse(body);
 
   if (!parseResult.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parseResult.error.flatten() },
-      { status: 400 }
-    );
+    return badRequest("Invalid input");
   }
 
   try {
     const payment = await createPayment(storeId, parseResult.data);
-    return NextResponse.json({ payment }, { status: 201 });
+    return created({ payment });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create payment";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return badRequest(message);
   }
 }

@@ -106,16 +106,15 @@ export function GeneralSelector({
     try {
       const newItem = await createItem(storeSlug, createFormData);
 
-      // Update the query cache
       queryClient.setQueryData<SelectorItem[]>(
         [queryKey, storeSlug],
         (old) => (old ? [...old, newItem] : [newItem])
       );
 
-      // Add the new item to the selection
+      queryClient.refetchQueries({ queryKey: [queryKey, storeSlug] });
+
       onChange([...value, newItem.id]);
 
-      // Reset form
       setCreateFormData({
         name: "",
         description: "",
@@ -245,7 +244,6 @@ export function GeneralSelector({
         </PopoverContent>
       </Popover>
 
-      {/* Create Item Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

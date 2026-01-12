@@ -1,7 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 import { getCustomerByUserId } from "@/lib/domains/customers";
 import { withStoreContext } from "@/lib/api/handlers";
+import { ok, unauthorized, notFound } from "@/lib/api/responses";
 
 interface RouteParams {
   params: Promise<{
@@ -25,14 +26,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { storeId, userId } = ctx as { storeId: string; userId?: string };
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorized();
   }
 
   const customer = await getCustomerByUserId(storeId, userId);
 
   if (!customer) {
-    return NextResponse.json({ error: "Customer profile not found" }, { status: 404 });
+    return notFound("Customer profile not found");
   }
 
-  return NextResponse.json({ customer });
+  return ok({ customer });
 }

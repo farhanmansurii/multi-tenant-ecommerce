@@ -1,51 +1,118 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
 import { db } from '@/lib/db';
 import { categories as categoriesTable } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
+import { ok, notFound, badRequest, serverError } from '@/lib/api/responses';
+import { logger } from '@/lib/api/logger';
 
 interface RouteParams {
-	params: Promise<{
-		slug: string;
-		productSlug: string;
-	}>;
+  params: Promise<{
+    slug: string;
+    productSlug: string;
+  }>;
 }
 
-export async function GET(_request: Request, { params }: RouteParams) {
-	const { slug, productSlug } = await params;
+async function getStoreAndProduct(slug: string, productSlug: string) {
+  const store = await storeHelpers.getStoreBySlug(slug);
+  if (!store) {
+    return { error: notFound('Store not found') };
+  }
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store)
-		return NextResponse.json({ error: 'Store not found' }, { status: 404 });
+  const product = await productHelpers.getProductBySlug(store.id, productSlug);
+  if (!product) {
+    return { error: notFound('Product not found') };
+  }
 
+  return { store, product };
+}
 
-	const product = await productHelpers.getProductBySlug(store.id, productSlug);
-	if (!product)
-		return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+async function enrichProductCategories(product: any) {
+  let enrichedProduct = { ...product, categories: [] as { id: string; name: string }[] };
 
+  if (Array.isArray(product.categories) && product.categories.length > 0) {
+    const categoryIds = product.categories.filter((id: any): id is string => typeof id === 'string');
 
-	// Fetch category names
-	let enrichedProduct = { ...product, categories: [] as { id: string; name: string }[] };
-	if (Array.isArray(product.categories) && product.categories.length > 0) {
-		const categoryIds = product.categories.filter((id): id is string => typeof id === 'string');
-		if (categoryIds.length > 0) {
-			const cats = await db
-				.select({ id: categoriesTable.id, name: categoriesTable.name })
-				.from(categoriesTable)
-				.where(inArray(categoriesTable.id, categoryIds));
+    if (categoryIds.length > 0) {
+      const cats = await db
+        .select({ id: categoriesTable.id, name: categoriesTable.name })
+        .from(categoriesTable)
+        .where(inArray(categoriesTable.id, categoryIds));
 
-			const categoryMap = new Map(cats.map(c => [c.id, c.name]));
+      const categoryMap = new Map(cats.map((c) => [c.id, c.name]));
 
-			enrichedProduct.categories = categoryIds.map(id => ({
-				id,
-				name: categoryMap.get(id) || 'Unknown'
-			}));
-		}
-	}
+      enrichedProduct.categories = categoryIds.map((id: any): { id: string; name: string } => ({
+        id,
+        name: categoryMap.get(id) || 'Unknown',
+      }));
+    }
+  }
 
-	return NextResponse.json({
-		product: enrichedProduct,
-		store: { id: store.id, slug: store.slug, name: store.name },
-	});
+  return enrichedProduct;
+}
+
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+  try {
+    const { slug, productSlug } = await params;
+
+    const result = await getStoreAndProduct(slug, productSlug);
+    if ('error' in result) return result.error;
+
+    const { store, product } = result;
+    const enrichedProduct = await enrichProductCategories(product);
+
+    return ok({
+      product: enrichedProduct,
+      store: { id: store.id, slug: store.slug, name: store.name },
+    });
+  } catch (error) {
+    logger.error('Error fetching product', error, { slug, productSlug });
+    return serverError();
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { slug, productSlug } = await params;
+
+    const result = await getStoreAndProduct(slug, productSlug);
+    if ('error' in result) return result.error;
+
+    const { store, product } = result;
+
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return badRequest('Invalid request body');
+    }
+
+    const updated = await productHelpers.updateProduct(product.id, body);
+    const enrichedProduct = await enrichProductCategories(updated);
+
+    return ok({
+      product: enrichedProduct,
+      store: { id: store.id, slug: store.slug, name: store.name },
+    });
+  } catch (error) {
+    logger.error('Error updating product', error, { slug, productSlug, productId: product.id });
+    return serverError('Failed to update product');
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  try {
+    const { slug, productSlug } = await params;
+
+    const result = await getStoreAndProduct(slug, productSlug);
+    if ('error' in result) return result.error;
+
+    const { product } = result;
+
+    await productHelpers.deleteProduct(product.id);
+
+    return ok({ success: true });
+  } catch (error) {
+    logger.error('Error deleting product', error, { slug, productSlug, productId: product.id });
+    return serverError('Failed to delete product');
+  }
 }

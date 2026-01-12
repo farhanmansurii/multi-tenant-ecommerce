@@ -42,6 +42,10 @@ export const fetchTags = async (storeSlug: string): Promise<Tag[]> => {
   const response = await fetch(`/api/stores/${storeSlug}/tags`);
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return [];
+    }
+
     const errorData = await response.json().catch(() => null);
     throw new Error(errorData?.error || "Failed to fetch tags");
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, XCircle, User, MapPin, CreditCard } from 'lucide-react';
 
@@ -17,7 +17,10 @@ import {
 } from '@/components/ui/select';
 
 import { formatPrice } from '@/lib/utils/price';
-import { toast } from 'sonner';
+import { useOrder } from '@/hooks/queries/use-order';
+import { useUpdateOrderStatus } from '@/hooks/mutations/use-order-mutations';
+import { QuerySkeleton } from '@/lib/ui/query-skeleton';
+import { NotFoundState } from '@/components/shared/common/not-found-state';
 
 type OrderItem = {
   id: string;
@@ -94,73 +97,33 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetailProps) {
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const { data: order, isLoading: loading } = useOrder(storeSlug, orderId);
+  const updateStatusMutation = useUpdateOrderStatus(storeSlug);
 
-  useEffect(() => {
-    fetchOrder();
-  }, [storeSlug, orderId]);
-
-  const fetchOrder = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/stores/${storeSlug}/orders/${orderId}`);
-      if (!res.ok) throw new Error('Failed to fetch order');
-      const data = await res.json();
-      setOrder(data.order);
-    } catch (error) {
-      console.error('Failed to fetch order:', error);
-      toast.error('Failed to load order');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateStatus = async (newStatus: string) => {
-    if (!order) return;
-    setUpdating(true);
-    try {
-      const res = await fetch(`/api/stores/${storeSlug}/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) throw new Error('Failed to update status');
-      toast.success(`Order status updated to ${newStatus}`);
-      fetchOrder();
-    } catch (error) {
-      console.error('Failed to update order:', error);
-      toast.error('Failed to update order status');
-    } finally {
-      setUpdating(false);
-    }
+  const updateStatus = (newStatus: string) => {
+    updateStatusMutation.mutate({ orderId, status: newStatus as any });
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <QuerySkeleton className="py-24" />;
   }
 
   if (!order) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <Package className="h-16 w-16 text-muted-foreground" />
-        <h2 className="mt-4 text-xl font-semibold">Order not found</h2>
-        <Button asChild className="mt-4">
-          <Link href={`/dashboard/stores/${storeSlug}/orders`}>Back to Orders</Link>
-        </Button>
-      </div>
+      <NotFoundState
+        title="Order not found"
+        message="The order you're looking for doesn't exist or has been removed."
+        backHref={`/dashboard/stores/${storeSlug}/orders`}
+        backLabel="Back to Orders"
+        icon={Package}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Order Header Row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-card p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-card p-4 overflow-x-auto">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold">Order #{order.orderNumber}</h2>
@@ -179,10 +142,10 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
             })}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <span className="text-sm text-muted-foreground">Update Status:</span>
-          <Select value={order.status} onValueChange={updateStatus} disabled={updating}>
-            <SelectTrigger className="w-40">
+          <Select value={order.status} onValueChange={(value) => updateStatus(value)} disabled={updateStatusMutation.isPending}>
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Update status" />
             </SelectTrigger>
             <SelectContent>
@@ -197,7 +160,7 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Order Items */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -208,7 +171,7 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
             <CardContent>
               <div className="space-y-4">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                  <div key={item.id} className="flex flex-col sm:flex-row gap-4">
                     <div className="h-16 w-16 rounded-md bg-muted overflow-hidden flex-shrink-0">
                       {item.product?.images?.[0]?.url ? (
                         <img
@@ -222,15 +185,15 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">
                         {item.product?.name || 'Product'}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Qty: {item.qty} × {formatPrice(item.unitPriceCents, order.currency)}
                       </p>
                     </div>
-                    <p className="font-semibold">
+                    <p className="font-semibold flex-shrink-0">
                       {formatPrice(item.totalPriceCents, order.currency)}
                     </p>
                   </div>
@@ -275,7 +238,7 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                 <Badge
                   variant="outline"
                   className={
-                    order.paymentStatus === 'paid'
+                    order.paymentStatus === 'succeeded'
                       ? 'border-green-500 text-green-600'
                       : 'border-yellow-500 text-yellow-600'
                   }

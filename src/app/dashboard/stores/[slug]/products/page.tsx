@@ -1,4 +1,6 @@
-import { Package } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/shared/layout/dashboard-container';
 import ProductManager from '@/components/shared/common/product-manager';
 import { getStoreBySlug } from '@/lib/domains/stores/helpers';
@@ -22,6 +24,14 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
         { label: 'Products' },
       ]}
+      headerActions={
+        <Button asChild className="w-full sm:w-auto">
+          <Link href={`/dashboard/stores/${slug}/products/new`}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Link>
+        </Button>
+      }
     >
       <ProductManager storeSlug={slug} />
     </DashboardLayout>

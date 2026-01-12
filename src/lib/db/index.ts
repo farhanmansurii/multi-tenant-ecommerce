@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import * as schema from "@/lib/db/schema";
+import { logger } from "@/lib/api/logger";
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
@@ -15,6 +16,7 @@ const globalWithDb = globalThis as typeof globalThis & GlobalWithDb;
 function createDb(): DrizzleDb {
 	const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 	if (!connectionString) {
+		logger.error("Database connection failed", new Error("DATABASE_URL or POSTGRES_URL is not set"));
 		throw new Error("DATABASE_URL or POSTGRES_URL is not set");
 	}
 
@@ -30,6 +32,13 @@ function createDb(): DrizzleDb {
 		ssl,
 		prepare: false,
 		max: 10,
+		idle_timeout: 20,
+		max_lifetime: 60 * 30, // 30 minutes
+	});
+
+	logger.info("Database connection established", {
+		ssl: ssl || "disabled",
+		maxConnections: 10,
 	});
 
 	return drizzle(queryClient, { schema });

@@ -14,12 +14,12 @@ export interface ProductData {
   name: string;
   slug: string;
   description: string;
-  shortDescription?: string;
-  sku?: string;
+  shortDescription?: string | null;
+  sku?: string | null;
   type: ProductType;
   status: ProductStatus;
   price: string;
-  compareAtPrice?: string;
+  compareAtPrice?: string | null;
   quantity: string;
   images: ProductImage[];
   categories: { id: string; name: string }[];

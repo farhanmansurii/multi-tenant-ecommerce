@@ -3,9 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
 
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { Button } from "@/components/ui/button";
@@ -18,61 +16,37 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader } from "@/components/shared/common/loader";
-import { StoreData, StoreFormPayload } from "@/lib/domains/stores/types";
 import { StoreFormData } from "@/lib/domains/stores/validation";
 import { storeDataToFormValues, storeFormValuesToPayload } from "@/lib/domains/stores/form";
 
 import EditStoreForm from "@/components/forms/store/edit-store-form";
-import { fetchStore, updateStore } from "@/lib/domains/stores/service";
 import { useRequireAuth } from "@/lib/session";
+import { useStore } from "@/hooks/queries/use-store";
+import { useUpdateStore } from "@/hooks/mutations/use-store-mutations";
 
 interface StoreSettingsProps {
   params: Promise<{ slug: string }>;
 }
 
 import { usePermission } from "@/lib/auth/permissions";
+import { NotFoundState } from "@/components/shared/common/not-found-state";
 
 
 export default function StoreSettings({ params }: StoreSettingsProps) {
   const { isAuthenticated, user, isPending } = useRequireAuth();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { slug, isLoading: paramsLoading } = useDashboardParams(params);
 
-  // Fetch store data
   const {
     data: store,
     isLoading: storeLoading,
     error: storeError,
-  } = useQuery({
-    queryKey: ["store", slug],
-    queryFn: () => fetchStore(slug!),
-    enabled: !!slug && isAuthenticated,
-    retry: 1,
-  });
+  } = useStore(slug && isAuthenticated ? slug : null);
 
-  // Check permissions
   const { can } = usePermission(store, user);
   const hasPermissionError = store && user && !can('manage_settings');
 
-  // Update store mutation
-  const updateMutation = useMutation({
-    mutationFn: (payload: StoreFormPayload) => {
-      if (!store) throw new Error("Store not found");
-      return updateStore(store.slug, payload);
-    },
-    onSuccess: (updatedStore) => {
-      queryClient.setQueryData(["store", slug], updatedStore);
-      queryClient.invalidateQueries({ queryKey: ["stores"] });
-      toast.success("Store updated successfully!");
-      router.refresh();
-    },
-    onError: (error: Error) => {
-      console.error("Error updating store:", error);
-      const errorMessage = error.message || "Failed to update store";
-      toast.error(errorMessage);
-    },
-  });
+  const updateMutation = useUpdateStore(slug || "");
 
   const handleSave = async (values: StoreFormData): Promise<void> => {
     if (!store) {
@@ -112,21 +86,12 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
   if (storeError) {
     const errorMessage = storeError instanceof Error ? storeError.message : "Failed to load store";
     return (
-      <div className="min-h-screen  flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-red-600">
-              {errorMessage.includes("not found") ? "Store Not Found" : "Error Loading Store"}
-            </CardTitle>
-            <CardDescription className="text-center">{errorMessage}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button asChild>
-              <Link href="/dashboard">Go to Dashboard</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NotFoundState
+        title={errorMessage.includes("not found") ? "Store Not Found" : "Error Loading Store"}
+        message={errorMessage}
+        backHref="/dashboard/stores"
+        backLabel="Back to Stores"
+      />
     );
   }
 
@@ -164,19 +129,12 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
 
   if (!store) {
     return (
-      <div className="min-h-screen  flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Store Not Found
-          </h1>
-          <p className=" mb-6">
-            The store you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
-        </div>
-      </div>
+      <NotFoundState
+        title="Store Not Found"
+        message="The store you're looking for doesn't exist."
+        backHref="/dashboard/stores"
+        backLabel="Back to Stores"
+      />
     );
   }
 

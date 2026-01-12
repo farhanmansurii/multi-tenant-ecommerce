@@ -162,7 +162,7 @@ export const StoreImageUploadSection = ({
         )}
 
         {heroImages.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {heroImages.map((file, index) => (
               <div key={`${file.url}-${index}`} className="relative group">
                 <div className="aspect-video bg-muted rounded-lg overflow-hidden">

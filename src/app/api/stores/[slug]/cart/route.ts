@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 import { storeHelpers } from "@/lib/domains/stores";
@@ -8,6 +8,7 @@ import {
 	clearCart,
 	addToCartSchema,
 } from "@/lib/domains/cart";
+import { ok, created, notFound, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -29,18 +30,18 @@ async function getSessionId(): Promise<string> {
 }
 
 // GET /api/stores/[slug]/cart - Get current cart
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const sessionId = await getSessionId();
 	const cart = await getOrCreateCart(store.id, { sessionId });
 
-	const response = NextResponse.json({ cart });
+	const response = ok({ cart });
 
 	// Set session cookie if not already set
 	const cookieStore = await cookies();
@@ -57,22 +58,19 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 // POST /api/stores/[slug]/cart - Add item to cart
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const body = await request.json();
 	const parseResult = addToCartSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	const sessionId = await getSessionId();
@@ -81,7 +79,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 	try {
 		const item = await addItemToCart(store.id, cart.id, parseResult.data);
 
-		const response = NextResponse.json({ item, cartId: cart.id }, { status: 201 });
+		const response = created({ item, cartId: cart.id });
 
 		// Ensure session cookie is set
 		const cookieStore = await cookies();
@@ -97,17 +95,17 @@ export async function POST(request: Request, { params }: RouteParams) {
 		return response;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to add item";
-		return NextResponse.json({ error: message }, { status: 400 });
+		return badRequest(message);
 	}
 }
 
 // DELETE /api/stores/[slug]/cart - Clear cart
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const sessionId = await getSessionId();
@@ -115,5 +113,5 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
 
 	await clearCart(store.id, cart.id);
 
-	return NextResponse.json({ success: true });
+	return ok({ success: true });
 }

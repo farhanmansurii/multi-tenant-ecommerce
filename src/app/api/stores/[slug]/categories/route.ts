@@ -1,10 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { withStoreContext } from '@/lib/api/handlers';
+import { ok, created, badRequest, notFound, serverError } from '@/lib/api/responses';
+import { logger } from '@/lib/api/logger';
 
 interface RouteParams {
 	params: Promise<{
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		.where(and(eq(categories.storeId, storeId), eq(categories.isActive, true)))
 		.orderBy(categories.sortOrder);
 
-	return NextResponse.json({ categories: rows });
+	return ok({ categories: rows });
 }
 
 // POST - Create category
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		const { name, description, image, color, sortOrder } = body;
 
 		if (!name || typeof name !== 'string' || !name.trim()) {
-			return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
+			return badRequest('Category name is required');
 		}
 
 		// Generate slug from name
@@ -74,10 +76,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			.from(categories)
 			.where(eq(categories.id, categoryId));
 
-		return NextResponse.json({ category: newCategory }, { status: 201 });
+		return created({ category: newCategory });
 	} catch (error) {
-		console.error('Failed to create category:', error);
-		return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+		logger.error('Failed to create category', error, { storeId });
+		return serverError('Failed to create category');
 	}
 }
 
@@ -96,11 +98,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const { id, name, description, image, color, sortOrder } = body;
 
 		if (!id) {
-			return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
+			return badRequest('Category ID is required');
 		}
 
 		if (!name || typeof name !== 'string' || !name.trim()) {
-			return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
+			return badRequest('Category name is required');
 		}
 
 		// Verify category belongs to this store
@@ -110,7 +112,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.where(and(eq(categories.id, id), eq(categories.storeId, storeId)));
 
 		if (!existing) {
-			return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+			return notFound('Category not found');
 		}
 
 		await db
@@ -130,10 +132,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.from(categories)
 			.where(eq(categories.id, id));
 
-		return NextResponse.json({ category: updatedCategory });
+		return ok({ category: updatedCategory });
 	} catch (error) {
-		console.error('Failed to update category:', error);
-		return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
+		logger.error('Failed to update category', error, { storeId, categoryId: id });
+		return serverError('Failed to update category');
 	}
 }
 
@@ -152,7 +154,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		const categoryId = url.searchParams.get('id');
 
 		if (!categoryId) {
-			return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
+			return badRequest('Category ID is required');
 		}
 
 		// Verify category belongs to this store
@@ -162,7 +164,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			.where(and(eq(categories.id, categoryId), eq(categories.storeId, storeId)));
 
 		if (!existing) {
-			return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+			return notFound('Category not found');
 		}
 
 		// Soft delete by setting isActive to false
@@ -171,10 +173,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			.set({ isActive: false, updatedAt: new Date() })
 			.where(eq(categories.id, categoryId));
 
-		return NextResponse.json({ success: true });
+		return ok({ success: true });
 	} catch (error) {
-		console.error('Failed to delete category:', error);
-		return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+		logger.error('Failed to delete category', error, { storeId, categoryId });
+		return serverError('Failed to delete category');
 	}
 }
 

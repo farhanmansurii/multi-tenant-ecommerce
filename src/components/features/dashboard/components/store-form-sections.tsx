@@ -13,7 +13,7 @@ interface StoreFormSectionsProps {
 
 export const BasicInformationSection = ({ form }: StoreFormSectionsProps) => (
   <section className="space-y-6">
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       <FormFieldHook
         form={form}
         name="storeName"
@@ -61,7 +61,7 @@ export const BasicInformationSection = ({ form }: StoreFormSectionsProps) => (
 
 export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
   <div className="space-y-6">
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       <FormFieldHook
         form={form}
         name="businessType"
@@ -131,7 +131,7 @@ export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
           placeholder="123 Main Street"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <FormFieldHook
             form={form}
             name="city"
@@ -180,7 +180,7 @@ export const BusinessDetailsSection = ({ form }: StoreFormSectionsProps) => (
 );
 
 export const BrandingSection = ({ form }: StoreFormSectionsProps) => (
-  <div className="grid gap-6 md:grid-cols-2">
+  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
     <FormFieldHook
       form={form}
       name="primaryColor"
@@ -267,7 +267,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
         control={form.control}
         name="paymentMethods"
         render={({ field }) => (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             {[
               { id: "stripe", label: "Stripe" },
               { id: "paypal", label: "PayPal" },
@@ -300,7 +300,7 @@ export const PaymentAndShippingSection = ({ form }: StoreFormSectionsProps) => (
       )}
     </div>
 
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       <FormFieldHook
         form={form}
         name="stripeAccountId"

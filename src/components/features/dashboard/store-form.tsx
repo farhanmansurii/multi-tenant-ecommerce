@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingState } from "./components/loading-state";
 import { ErrorState } from "./components/error-state";
+import { NotFoundState } from "@/components/shared/common/not-found-state";
 import { StoreImageUploadSection } from "./components/store-image-upload-section";
 import { FormValidationErrors } from "./components/form-validation-errors";
 import {
@@ -56,6 +57,21 @@ export default function StoreForm({
 }: StoreFormProps) {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
+  const tabsListRef = React.useRef<HTMLDivElement>(null);
+
+  // Scroll active tab into view on mobile when tab changes
+  useEffect(() => {
+    if (tabsListRef.current) {
+      const activeTabElement = tabsListRef.current.querySelector(`[data-state="active"]`);
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    }
+  }, [activeTab]);
 
   const resolvedDefaults = useMemo(
     () => buildStoreFormState(initialValues),
@@ -223,13 +239,15 @@ export default function StoreForm({
   if (mode === "edit") {
     if (storeError) {
       return (
-        <ErrorState
+        <NotFoundState
           title="Store Not Found"
           message={
             storeError instanceof Error
               ? storeError.message
               : "Failed to load store"
           }
+          backHref="/dashboard/stores"
+          backLabel="Back to Stores"
         />
       );
     }
@@ -273,19 +291,20 @@ export default function StoreForm({
         <FormValidationErrors errors={errors} onErrorClick={handleErrorClick} />
       )}
 
-      <div className="flex items-center justify-between pb-4 border-b">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {description}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
             disabled={isSaving}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -293,7 +312,7 @@ export default function StoreForm({
             type="submit"
             form="store-form"
             disabled={isSaving}
-            className={showSavedMessage ? "bg-green-600 hover:bg-green-700" : ""}
+            className={`w-full sm:w-auto ${showSavedMessage ? "bg-green-600 hover:bg-green-700" : ""}`}
           >
             {isSaving ? (
               <>
@@ -325,47 +344,55 @@ export default function StoreForm({
           }
         })}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-64 flex-shrink-0">
-            <div className="sticky top-24">
-              <TabsList className="flex flex-col h-auto w-full items-stretch p-0 bg-transparent gap-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col lg:flex-row gap-4 lg:gap-8">
+          <aside className="w-full lg:w-64 flex-shrink-0">
+            <div className="sticky top-4 lg:top-24">
+              <div className="relative">
+                {/* Gradient fade indicators for mobile */}
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-10 lg:hidden" />
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 lg:hidden" />
+                <TabsList
+                  ref={tabsListRef}
+                  className="flex flex-row lg:flex-col h-auto w-full items-stretch p-0 bg-transparent gap-1 overflow-x-auto lg:overflow-x-visible scrollbar-hide snap-x snap-mandatory scroll-smooth px-2 lg:px-0"
+                >
                 <TabsTrigger
                   value="basic"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Basic Information
+                  <span className="whitespace-nowrap text-sm">Basic Information</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="media"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Media & Images
+                  <span className="whitespace-nowrap text-sm">Media & Images</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="business"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Business Details
+                  <span className="whitespace-nowrap text-sm">Business Details</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="branding"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Branding
+                  <span className="whitespace-nowrap text-sm">Branding</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="payment"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Payment & Shipping
+                  <span className="whitespace-nowrap text-sm">Payment & Shipping</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="legal"
-                  className="justify-start px-4 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors"
+                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
                 >
-                  Legal Policies
+                  <span className="whitespace-nowrap text-sm">Legal Policies</span>
                 </TabsTrigger>
               </TabsList>
+              </div>
             </div>
           </aside>
 

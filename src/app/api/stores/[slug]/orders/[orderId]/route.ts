@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import {
@@ -7,6 +7,7 @@ import {
 	cancelOrder,
 	updateOrderStatusSchema,
 } from "@/lib/domains/orders";
+import { ok, notFound, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -16,68 +17,62 @@ interface RouteParams {
 }
 
 // GET /api/stores/[slug]/orders/[orderId] - Get order details
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const order = await getOrderById(store.id, orderId);
 
 	if (!order) {
-		return NextResponse.json({ error: "Order not found" }, { status: 404 });
+		return notFound("Order not found");
 	}
 
-	return NextResponse.json({ order });
+	return ok({ order });
 }
 
 // PATCH /api/stores/[slug]/orders/[orderId] - Update order status
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const body = await request.json();
 	const parseResult = updateOrderStatusSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	const order = await updateOrderStatus(store.id, orderId, parseResult.data.status);
 
 	if (!order) {
-		return NextResponse.json({ error: "Order not found" }, { status: 404 });
+		return notFound("Order not found");
 	}
 
-	return NextResponse.json({ order });
+	return ok({ order });
 }
 
 // DELETE /api/stores/[slug]/orders/[orderId] - Cancel order
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const success = await cancelOrder(store.id, orderId);
 
 	if (!success) {
-		return NextResponse.json(
-			{ error: "Order not found or cannot be cancelled" },
-			{ status: 400 }
-		);
+		return badRequest("Order not found or cannot be cancelled");
 	}
 
-	return NextResponse.json({ success: true, message: "Order cancelled" });
+	return ok({ success: true, message: "Order cancelled" });
 }

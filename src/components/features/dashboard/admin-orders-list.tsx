@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Package,
   Search,
@@ -9,14 +10,19 @@ import {
   ChevronDown,
   Eye,
   CheckCircle,
+  CheckCircle2,
   Truck,
   XCircle,
   Clock,
+  ShoppingCart,
+  Loader2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricCard } from '@/components/shared/common/metric-card';
+import { EmptyState } from '@/components/shared/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -41,18 +47,9 @@ import {
 } from '@/components/ui/select';
 
 import { formatPrice } from '@/lib/utils/price';
-import { toast } from 'sonner';
-
-type Order = {
-  id: string;
-  orderNumber: number;
-  status: string;
-  paymentStatus: string;
-  totalAmount: number;
-  currency: string;
-  itemCount: number;
-  createdAt: string;
-};
+import { useOrders } from '@/hooks/queries/use-orders';
+import { useUpdateOrderStatus } from '@/hooks/mutations/use-order-mutations';
+import { QueryListSkeleton } from '@/lib/ui/query-skeleton';
 
 interface AdminOrdersListProps {
   storeSlug: string;
@@ -78,48 +75,20 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOrdersListProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchOrders();
-  }, [storeSlug, statusFilter]);
+  const { data, isLoading: loading } = useOrders(storeSlug, {
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    limit: 50,
+  });
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : '';
-      const res = await fetch(`/api/stores/${storeSlug}/orders?limit=50${statusParam}`);
-      if (!res.ok) throw new Error('Failed to fetch orders');
+  const orders = data?.orders || [];
+  const updateOrderStatusMutation = useUpdateOrderStatus(storeSlug);
 
-      const data = await res.json();
-      setOrders(data.orders || []);
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      toast.error('Failed to load orders');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    try {
-      const res = await fetch(`/api/stores/${storeSlug}/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) throw new Error('Failed to update order');
-
-      toast.success(`Order status updated to ${newStatus}`);
-      fetchOrders(); // Refresh
-    } catch (error) {
-      console.error('Failed to update order:', error);
-      toast.error('Failed to update order status');
-    }
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    updateOrderStatusMutation.mutate({ orderId, status: newStatus as any });
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -138,47 +107,27 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Orders</CardDescription>
-            <CardTitle className="text-2xl">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Pending</CardDescription>
-            <CardTitle className="text-2xl text-yellow-600">{stats.pending}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Processing</CardDescription>
-            <CardTitle className="text-2xl text-purple-600">{stats.processing}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Delivered</CardDescription>
-            <CardTitle className="text-2xl text-green-600">{stats.delivered}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Total Orders" value={stats.total} icon={ShoppingCart} color="blue" />
+        <MetricCard label="Pending" value={stats.pending} icon={Clock} color="yellow" />
+        <MetricCard label="Processing" value={stats.processing} icon={Loader2} color="purple" />
+        <MetricCard label="Delivered" value={stats.delivered} icon={CheckCircle2} color="emerald" />
       </div>
 
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by order #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
+              className="pl-9 w-full sm:w-64"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
@@ -193,7 +142,11 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" onClick={fetchOrders}>
+        <Button
+          variant="outline"
+          onClick={() => queryClient.refetchQueries({ queryKey: ['orders', storeSlug] })}
+          disabled={updateOrderStatusMutation.isPending}
+        >
           Refresh
         </Button>
       </div>
@@ -208,102 +161,235 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
+            <QueryListSkeleton count={5} />
           ) : filteredOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Package className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No orders yet</h3>
-              <p className="text-muted-foreground">
-                When customers place orders, they'll appear here.
-              </p>
-            </div>
+            <EmptyState
+              icon={Package}
+              title="No orders yet"
+              description={
+                searchQuery || statusFilter !== 'all'
+                  ? "No orders match your current filters. Try adjusting your search or filter criteria."
+                  : "When customers place orders, they'll appear here."
+              }
+              variant={searchQuery || statusFilter !== 'all' ? "search" : "default"}
+              secondaryAction={
+                searchQuery || statusFilter !== 'all'
+                  ? {
+                      label: "Clear filters",
+                      onClick: () => {
+                        setSearchQuery("");
+                        setStatusFilter('all');
+                      },
+                    }
+                  : undefined
+              }
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      #{order.orderNumber}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{order.itemCount} items</TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(order.totalAmount, currency)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          order.paymentStatus === 'paid'
-                            ? 'border-green-500 text-green-600'
-                            : 'border-yellow-500 text-yellow-600'
-                        }
-                      >
-                        {order.paymentStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[order.status] || ''}>
-                        <span className="mr-1">{statusIcons[order.status]}</span>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
+                  <Card key={order.id} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="font-semibold text-lg">#{order.orderNumber}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <Badge className={statusColors[order.status] || ''}>
+                          <span className="mr-1">{statusIcons[order.status]}</span>
+                          {order.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Items</div>
+                          <div className="font-medium">{order.itemCount} items</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Total</div>
+                          <div className="font-medium">{formatPrice(order.totalAmount, currency)}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Payment</div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              order.paymentStatus === 'succeeded'
+                                ? 'border-green-500 text-green-600'
+                                : 'border-yellow-500 text-yellow-600'
+                            }
+                          >
+                            {order.paymentStatus}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button variant="outline" size="sm" className="flex-1" asChild>
                           <Link href={`/dashboard/stores/${storeSlug}/orders/${order.id}`}>
-                            <Eye className="h-4 w-4" />
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
                           </Link>
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
                               Update
                               <ChevronDown className="ml-1 h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'confirmed')}>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
                               Mark as Confirmed
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'processing')}>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(order.id, 'processing')}
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
                               Mark as Processing
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'shipped')}>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(order.id, 'shipped')}
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
                               Mark as Shipped
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'delivered')}>
+                            <DropdownMenuItem
+                              onClick={() => updateOrderStatus(order.id, 'delivered')}
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
                               Mark as Delivered
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => updateOrderStatus(order.id, 'cancelled')}
                               className="text-red-600"
+                              disabled={updateOrderStatusMutation.isPending}
                             >
                               Cancel Order
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">
+                          #{order.orderNumber}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>{order.itemCount} items</TableCell>
+                        <TableCell className="font-medium">
+                          {formatPrice(order.totalAmount, currency)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              order.paymentStatus === 'succeeded'
+                                ? 'border-green-500 text-green-600'
+                                : 'border-yellow-500 text-yellow-600'
+                            }
+                          >
+                            {order.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={statusColors[order.status] || ''}>
+                            <span className="mr-1">{statusIcons[order.status]}</span>
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={`/dashboard/stores/${storeSlug}/orders/${order.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Update
+                                  <ChevronDown className="ml-1 h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Mark as Confirmed
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateOrderStatus(order.id, 'processing')}
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Mark as Processing
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateOrderStatus(order.id, 'shipped')}
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Mark as Shipped
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateOrderStatus(order.id, 'delivered')}
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Mark as Delivered
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                                  className="text-red-600"
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  Cancel Order
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

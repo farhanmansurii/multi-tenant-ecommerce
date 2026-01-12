@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import {
@@ -7,6 +7,7 @@ import {
 	deleteCustomer,
 	updateCustomerSchema,
 } from "@/lib/domains/customers";
+import { ok, notFound, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -16,65 +17,62 @@ interface RouteParams {
 }
 
 // GET /api/stores/[slug]/customers/[customerId] - Get customer details
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const customer = await getCustomerById(store.id, customerId);
 
 	if (!customer) {
-		return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+		return notFound("Customer not found");
 	}
 
-	return NextResponse.json({ customer });
+	return ok({ customer });
 }
 
 // PATCH /api/stores/[slug]/customers/[customerId] - Update customer
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const body = await request.json();
 	const parseResult = updateCustomerSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	const customer = await updateCustomer(store.id, customerId, parseResult.data);
 
 	if (!customer) {
-		return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+		return notFound("Customer not found");
 	}
 
-	return NextResponse.json({ customer });
+	return ok({ customer });
 }
 
 // DELETE /api/stores/[slug]/customers/[customerId] - Delete customer
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const success = await deleteCustomer(store.id, customerId);
 
 	if (!success) {
-		return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+		return notFound("Customer not found");
 	}
 
-	return NextResponse.json({ success: true, message: "Customer deleted" });
+	return ok({ success: true, message: "Customer deleted" });
 }

@@ -12,7 +12,7 @@ interface DangerZoneProps {
 export const DangerZone = ({ onDelete, isDeleting }: DangerZoneProps) => (
   <Button
     variant="destructive"
-    className="justify-center"
+    className="justify-center w-full sm:w-auto"
     onClick={onDelete}
     disabled={isDeleting}
   >

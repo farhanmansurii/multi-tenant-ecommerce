@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth/server";
 import { headers } from "next/headers";
 import { getStoreBySlug, isUserMember } from "@/lib/domains/stores/helpers";
 import { getStoreAnalytics } from "@/lib/domains/stores/analytics";
+import { ok, unauthorized, notFound, forbidden, serverError } from "@/lib/api/responses";
+import { logger } from "@/lib/api/logger";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
@@ -14,36 +16,33 @@ export async function GET(
     });
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized();
     }
 
     const { slug } = await params;
     const store = await getStoreBySlug(slug);
 
     if (!store) {
-      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+      return notFound("Store not found");
     }
 
     // Check permissions
     if (store.ownerUserId !== session.user.id) {
       const member = await isUserMember(store.id, session.user.id);
       if (!member || !member.permissions?.canViewAnalytics) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return forbidden();
       }
     }
 
     const analytics = await getStoreAnalytics(store.id);
 
-    return NextResponse.json({
+    return ok({
       analytics,
       currency: store.currency || "INR",
       storeName: store.name,
     });
   } catch (error) {
-    console.error("Error fetching analytics:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    logger.error("Error fetching analytics", error, { slug, storeId: store.id });
+    return serverError();
   }
 }

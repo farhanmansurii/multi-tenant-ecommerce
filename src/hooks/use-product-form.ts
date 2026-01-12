@@ -153,11 +153,11 @@ export const useProductForm = ({
       })
     },
     onSuccess: () => {
-      toast.success('Product created successfully')
-      queryClient.invalidateQueries({ queryKey: ['store', storeSlug] })
-      router.push(`/dashboard/stores/${storeSlug}`)
       toast.success("Product created successfully");
       queryClient.invalidateQueries({ queryKey: ["store", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["productCount", storeSlug] });
+      queryClient.refetchQueries({ queryKey: ["products", storeSlug] });
       router.push(`/dashboard/stores/${storeSlug}`);
     },
     onError: (error: Error) => {
@@ -179,6 +179,9 @@ export const useProductForm = ({
         queryKey: ["product", storeSlug, productSlug],
       });
       queryClient.invalidateQueries({ queryKey: ["store", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["productCount", storeSlug] });
+      queryClient.refetchQueries({ queryKey: ["products", storeSlug] });
       router.push(`/dashboard/stores/${storeSlug}`);
     },
     onError: (error: Error) => {
@@ -192,6 +195,9 @@ export const useProductForm = ({
     onSuccess: () => {
       toast.success("Product deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["store", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
+      queryClient.invalidateQueries({ queryKey: ["productCount", storeSlug] });
+      queryClient.refetchQueries({ queryKey: ["products", storeSlug] });
       router.push(`/dashboard/stores/${storeSlug}`);
     },
     onError: (error: Error) => {

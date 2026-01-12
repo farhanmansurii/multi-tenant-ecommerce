@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
 	listCustomers,
@@ -8,6 +8,7 @@ import {
 	customerQuerySchema,
 } from "@/lib/domains/customers";
 import { withStoreContext } from "@/lib/api/handlers";
+import { ok, created, badRequest, conflict } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -33,15 +34,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 	const parseResult = customerQuerySchema.safeParse(queryParams);
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid query parameters", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid query parameters");
 	}
 
 	const result = await listCustomers(storeId, parseResult.data);
 
-	return NextResponse.json({
+	return ok({
 		customers: result.customers,
 		total: result.total,
 		page: parseResult.data.page,
@@ -63,26 +61,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	const parseResult = createCustomerSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	// Check if customer already exists
 	const existing = await getCustomerByEmail(storeId, parseResult.data.email);
 	if (existing) {
-		return NextResponse.json(
-			{ error: "Customer with this email already exists", customer: existing },
-			{ status: 409 }
-		);
+		return conflict("Customer with this email already exists");
 	}
 
 	try {
 		const customer = await createCustomer(storeId, parseResult.data);
-		return NextResponse.json({ customer }, { status: 201 });
+		return created({ customer });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to create customer";
-		return NextResponse.json({ error: message }, { status: 400 });
+		return badRequest(message);
 	}
 }

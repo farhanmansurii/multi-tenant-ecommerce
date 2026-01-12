@@ -2,15 +2,9 @@
 
 import { Category } from '@/lib/db/schema';
 import { fetchCategories } from '@/lib/domains/products/category-service';
-
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-
-
-
-export const categoriesQueryKey = (storeSlug: string | null | undefined) => [
-	'categories',
-	storeSlug ?? '',
-];
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query/keys';
+import { defaultQueryOptions } from '@/lib/query/defaults';
 
 type UseCategoriesOptions = Omit<
 	UseQueryOptions<Category[], Error>,
@@ -24,15 +18,18 @@ export function useCategories(
 	const enabled = Boolean(storeSlug);
 
 	return useQuery({
-		queryKey: categoriesQueryKey(storeSlug),
+		queryKey: queryKeys.categories.all(storeSlug || ''),
 		queryFn: () => {
 			if (!storeSlug) {
-				throw new Error('Missing store slug for category query');
+				throw new Error('Store slug is required');
 			}
-
 			return fetchCategories(storeSlug);
 		},
 		enabled,
+		...defaultQueryOptions,
 		...options,
 	});
 }
+
+export const categoriesQueryKey = (storeSlug: string | null | undefined) =>
+	queryKeys.categories.all(storeSlug || '');

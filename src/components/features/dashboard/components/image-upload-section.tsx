@@ -42,46 +42,48 @@ export const ImageUploadSection = ({
       </div>
 
       {canUploadMore && (
-        <UploadDropzone
-          endpoint="imageUploader"
-          onClientUploadComplete={(res) => {
-            const newFiles = res.map((file) => ({
-              url: file.url,
-              name: file.name,
-              size: file.size,
-            }));
+        <div className="w-full">
+          <UploadDropzone
+            endpoint="imageUploader"
+            onClientUploadComplete={(res) => {
+              const newFiles = res.map((file) => ({
+                url: file.url,
+                name: file.name,
+                size: file.size,
+              }));
 
-            setUploadedFiles((prev) => {
-              const combined = [...prev, ...newFiles];
-              return combined.slice(0, MAX_UPLOAD_FILES);
-            });
+              setUploadedFiles((prev) => {
+                const combined = [...prev, ...newFiles];
+                return combined.slice(0, MAX_UPLOAD_FILES);
+              });
 
-            toast.success(`${newFiles.length} file(s) uploaded successfully`);
-          }}
-          onUploadError={(error: Error) => {
-            console.error("Upload error:", error);
-            toast.error(`Upload failed: ${error.message}`);
-          }}
-          config={{
-            mode: "auto",
-          }}
-          appearance={{
-            uploadIcon: "text-foreground",
-            label: "text-foreground",
-            allowedContent: "text-foreground text-sm",
-          }}
-          content={{
-            label: canUploadMore
-              ? `Drop files here or click to upload (${
-                  MAX_UPLOAD_FILES - uploadedFiles.length
-                } remaining)`
-              : "Maximum files reached",
-            allowedContent: "Images up to 4MB",
-          }}
-        />
+              toast.success(`${newFiles.length} file(s) uploaded successfully`);
+            }}
+            onUploadError={(error: Error) => {
+              console.error("Upload error:", error);
+              toast.error(`Upload failed: ${error.message}`);
+            }}
+            config={{
+              mode: "auto",
+            }}
+            appearance={{
+              uploadIcon: "text-foreground",
+              label: "text-foreground text-sm sm:text-base",
+              allowedContent: "text-foreground text-xs sm:text-sm",
+            }}
+            content={{
+              label: canUploadMore
+                ? `Drop files or click to upload (${
+                    MAX_UPLOAD_FILES - uploadedFiles.length
+                  } remaining)`
+                : "Maximum files reached",
+              allowedContent: "Images up to 4MB",
+            }}
+          />
+        </div>
       )}
       {uploadedFiles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {uploadedFiles.map((file, index) => (
             <div key={`${file.url}-${index}`} className="relative group">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, VariantProps } from "class-variance-authority"
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -264,10 +264,13 @@ function SidebarTrigger({
   collapsedIcon: CollapsedIcon,
   ...props
 }: SidebarTriggerProps) {
-  const { toggleSidebar, state } = useSidebar()
+  const { toggleSidebar, state, isMobile, openMobile } = useSidebar()
 
   const Expanded = ExpandedIcon || PanelLeftClose
   const Collapsed = CollapsedIcon || PanelLeftOpen
+
+  // On mobile, check openMobile state; on desktop, check state
+  const isOpen = isMobile ? openMobile : state === "expanded"
 
   return (
     <Button
@@ -282,7 +285,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      {state === "expanded" ? (
+      {isOpen ? (
         <Expanded className="h-4 w-4" />
       ) : (
         <Collapsed className="h-4 w-4" />
@@ -345,14 +348,29 @@ function SidebarInput({
   )
 }
 
-function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
+function SidebarHeader({ className, children, ...props }: React.ComponentProps<"div">) {
+  const { isMobile, setOpenMobile } = useSidebar()
+
   return (
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 relative", className)}
       {...props}
-    />
+    >
+      {isMobile && setOpenMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 shrink-0 z-10 hover:bg-muted/50"
+          onClick={() => setOpenMobile(false)}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close sidebar</span>
+        </Button>
+      )}
+      {children}
+    </div>
   )
 }
 

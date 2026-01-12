@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { products, stores } from "@/lib/db/schema";
 import { storeHelpers } from "@/lib/domains/stores";
+import { auth } from "@/lib/auth/server";
+import { ok, notFound, unauthorized, forbidden, serverError } from "@/lib/api/responses";
+import { logger } from "@/lib/api/logger";
 
 interface RouteParams {
   params: Promise<{
@@ -11,53 +14,56 @@ interface RouteParams {
   }>;
 }
 
-import { auth } from "@/lib/auth/server";
 
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { slug } = await params;
 
-export async function GET(request: Request, { params }: RouteParams) {
-  const { slug } = await params;
-
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) {
-    return NextResponse.json({ error: "Store not found" }, { status: 404 });
-  }
-
-  const [productCountResult] = await db
-    .select({ count: sql<number>`COUNT(*)::int`.as("count") })
-    .from(products)
-    .where(eq(products.storeId, store.id));
-
-  // Get current user session to determine role
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  let currentUserRole = null;
-  if (session?.user) {
-    // Check if owner
-    if (store.ownerUserId === session.user.id) {
-      currentUserRole = "owner";
-    } else {
-      // Check member role
-      currentUserRole = await storeHelpers.getUserRole(store.id, session.user.id);
+    const store = await storeHelpers.getStoreBySlug(slug);
+    if (!store) {
+      return notFound("Store not found");
     }
-  }
 
-  return NextResponse.json({
-    store: {
-      ...store,
-      productCount: productCountResult?.count || 0,
-      currentUserRole,
-    },
-  });
+    const [productCountResult] = await db
+      .select({ count: sql<number>`COUNT(*)::int`.as("count") })
+      .from(products)
+      .where(eq(products.storeId, store.id));
+
+    // Get current user session to determine role
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    let currentUserRole = null;
+    if (session?.user) {
+      // Check if owner
+      if (store.ownerUserId === session.user.id) {
+        currentUserRole = "owner";
+      } else {
+        // Check member role
+        currentUserRole = await storeHelpers.getUserRole(store.id, session.user.id);
+      }
+    }
+
+    return ok({
+      store: {
+        ...store,
+        productCount: productCountResult?.count || 0,
+        currentUserRole,
+      },
+    });
+  } catch (error) {
+    logger.error("Error fetching store", error, { slug });
+    return serverError();
+  }
 }
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug } = await params;
     const existing = await storeHelpers.getStoreBySlug(slug);
     if (!existing) {
-      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+      return notFound("Store not found");
     }
 
     // Check authentication
@@ -66,32 +72,32 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     });
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized();
     }
 
     // Check if user is owner
     if (existing.ownerUserId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return forbidden();
     }
 
     const body = await request.json();
 
-  // Construct the settings object by merging existing settings with new values
-  const currentSettings = (existing.settings as any) || {};
-  const newSettings = {
-    ...currentSettings,
-    paymentMethods: body.paymentMethods ?? currentSettings.paymentMethods,
-    shippingRates: body.shippingRates ?? currentSettings.shippingRates,
-    upiId: body.upiId ?? currentSettings.upiId,
-    codEnabled: body.codEnabled ?? currentSettings.codEnabled,
-    stripeAccountId: body.stripeAccountId ?? currentSettings.stripeAccountId,
-    paypalEmail: body.paypalEmail ?? currentSettings.paypalEmail,
-    shippingEnabled: body.shippingEnabled ?? currentSettings.shippingEnabled,
-    freeShippingThreshold: body.freeShippingThreshold ?? currentSettings.freeShippingThreshold,
-    termsOfService: body.termsOfService ?? currentSettings.termsOfService,
-    privacyPolicy: body.privacyPolicy ?? currentSettings.privacyPolicy,
-    refundPolicy: body.refundPolicy ?? currentSettings.refundPolicy,
-  };
+    // Construct the settings object by merging existing settings with new values
+    const currentSettings = (existing.settings as any) || {};
+    const newSettings = {
+      ...currentSettings,
+      paymentMethods: body.paymentMethods ?? currentSettings.paymentMethods,
+      shippingRates: body.shippingRates ?? currentSettings.shippingRates,
+      upiId: body.upiId ?? currentSettings.upiId,
+      codEnabled: body.codEnabled ?? currentSettings.codEnabled,
+      stripeAccountId: body.stripeAccountId ?? currentSettings.stripeAccountId,
+      paypalEmail: body.paypalEmail ?? currentSettings.paypalEmail,
+      shippingEnabled: body.shippingEnabled ?? currentSettings.shippingEnabled,
+      freeShippingThreshold: body.freeShippingThreshold ?? currentSettings.freeShippingThreshold,
+      termsOfService: body.termsOfService ?? currentSettings.termsOfService,
+      privacyPolicy: body.privacyPolicy ?? currentSettings.privacyPolicy,
+      refundPolicy: body.refundPolicy ?? currentSettings.refundPolicy,
+    };
 
     const [updated] = await db
       .update(stores)
@@ -123,15 +129,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       .where(eq(stores.id, existing.id))
       .returning();
 
-    return NextResponse.json({ store: updated });
+    return ok({ store: updated });
   } catch (error) {
-    console.error("Error updating store:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to update store",
-        message: error instanceof Error ? error.message : "An unexpected error occurred"
-      },
-      { status: 500 }
-    );
+    logger.error("Error updating store", error, { slug, storeId: existing.id });
+    return serverError("Failed to update store");
   }
 }

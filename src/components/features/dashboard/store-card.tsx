@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,12 +11,11 @@ import {
 } from "@/components/ui/card";
 import { StoreData } from "@/lib/domains/stores/types";
 import { formatDate, sanitizeText } from "@/lib/utils";
-import { cn } from "@/lib/utils"; // Ensure you have this utility
+import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   CheckCircle2,
   ExternalLink,
-  MoreHorizontal,
   Package,
   PauseCircle,
   Settings,
@@ -23,7 +23,6 @@ import {
   Store,
   ArrowRight,
   Globe,
-  TrendingUp
 } from "lucide-react";
 import {
   Tooltip,
@@ -31,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CompactMetric } from "@/components/shared/common/compact-metric";
 
 interface StoreCardProps {
   store: StoreData;
@@ -76,111 +76,116 @@ export default function StoreCard({ store }: StoreCardProps) {
   const primaryColor = store.primaryColor || "#6366f1"; // Default Indigo
 
   return (
-    <Card className="group relative flex flex-col overflow-hidden border border-border/50 bg-card transition-all duration-200 hover:border-border/70 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-0.5">
-
-
-      <CardHeader className="p-5 pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex gap-3 min-w-0">
-            <div
-              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/30 transition-transform duration-200 group-hover:scale-[1.02]"
-              style={{
-                background: `linear-gradient(135deg, ${primaryColor}12, ${primaryColor}25)`,
-                color: primaryColor
-              }}
+    <Link href={`/dashboard/stores/${store.slug}`} className="block h-full">
+      <Card className="group relative flex flex-col overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 hover:-translate-y-1.5 cursor-pointer h-full">
+        <CardHeader className="p-6 pb-5 relative">
+          <div className="absolute top-6 right-6 z-10">
+            <Badge
+              variant="outline"
+              className={cn("px-2.5 py-1 text-[10px] font-semibold capitalize border shadow-sm", statusConfig.className)}
             >
-              <Store className="h-5 w-5" />
-              <span className={cn("absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background", statusConfig.dot)} />
-            </div>
+              {statusConfig.label}
+            </Badge>
+          </div>
 
-            <div className="space-y-1 min-w-0">
-              <h3 className="font-semibold leading-none tracking-tight text-foreground group-hover:text-foreground/90 transition-colors truncate">
+          <div className="flex items-start gap-4 mb-5">
+            {store.logo ? (
+              <div className="relative h-16 w-16 rounded-2xl overflow-hidden shrink-0 border-2 border-border/50 bg-muted shadow-md group-hover:shadow-lg transition-shadow">
+                <Image
+                  src={store.logo}
+                  alt={store.name}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              </div>
+            ) : (
+              <div
+                className="relative h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 border-2 border-border/50 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor}20, ${primaryColor}30)`,
+                  borderColor: `${primaryColor}40`
+                }}
+              >
+                <Store className="h-8 w-8" style={{ color: primaryColor }} />
+                <span className={cn("absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-background shadow-sm", statusConfig.dot)} />
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0 pt-1">
+              <h3 className="font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-1">
                 {store.name}
               </h3>
-
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Globe className="h-3 w-3 opacity-60" />
-                <span className="font-mono opacity-70">/{store.slug}</span>
+                <Globe className="h-3.5 w-3.5 opacity-70" />
+                <span className="font-mono opacity-80">/{store.slug}</span>
               </div>
             </div>
           </div>
 
-          <Badge
-            variant="outline"
-            className={cn("px-2 py-0.5 text-[10px] font-medium capitalize border shrink-0", statusConfig.className)}
-          >
-            {statusConfig.label}
-          </Badge>
-        </div>
-      </CardHeader>
+          <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed min-h-[2.75rem]">
+            {sanitizeText(store.description) || "No description provided. Add a description to help customers understand your store."}
+          </p>
+        </CardHeader>
 
-      <CardContent className="flex-1 p-5 pt-0">
-        <p className="line-clamp-2 text-sm text-muted-foreground min-h-[2.5rem] mb-5 leading-relaxed">
-          {sanitizeText(store.description) || "No description provided. Add a description to help customers understand your store."}
-        </p>
-
-        <div className="grid grid-cols-2 gap-px bg-border/30 rounded-md overflow-hidden border border-border/40">
-          <div className="bg-muted/5 p-3 hover:bg-muted/15 transition-colors">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Package className="h-3.5 w-3.5 text-muted-foreground opacity-70" />
-              <span className="text-xs font-medium text-muted-foreground">Products</span>
-            </div>
-            <span className="text-base font-semibold text-foreground">{store.productCount || 0}</span>
+        <CardContent className="flex-1 p-6 pt-0">
+          <div className="grid grid-cols-2 gap-3">
+            <CompactMetric
+              label="Products"
+              value={store.productCount || 0}
+              icon={Package}
+              color="purple"
+            />
+            <CompactMetric
+              label="Created"
+              value={new Date(store.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              icon={CalendarDays}
+              color="blue"
+            />
           </div>
+        </CardContent>
 
-          <div className="bg-muted/5 p-3 hover:bg-muted/15 transition-colors">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground opacity-70" />
-              <span className="text-xs font-medium text-muted-foreground">Created</span>
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              {new Date(store.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
-            </span>
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-5 pt-4 gap-2 border-t border-transparent group-hover:border-border/30 transition-colors mt-auto">
-        <TooltipProvider>
-          <Button asChild className="flex-1" variant="default">
-            <Link href={`/dashboard/stores/${store.slug}`}>
+        <CardFooter className="p-6 pt-5 gap-2 border-t border-border/40 bg-muted/20 mt-auto">
+          <Button asChild className="flex-1 rounded-lg h-10 font-medium" variant="default">
+            <span className="flex items-center justify-center">
               Manage Store
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </span>
           </Button>
 
-          {/* Secondary Actions */}
-          <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="hover:bg-muted hover:text-foreground" asChild>
-                  <Link href={`/dashboard/stores/${store.slug}/settings`}>
-                    <Settings className="h-4 w-4 text-muted-foreground" />
-                    <span className="sr-only">Settings</span>
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Settings</TooltipContent>
-            </Tooltip>
+          <TooltipProvider>
+            <div className="flex gap-1.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50" asChild onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/dashboard/stores/${store.slug}/settings`}>
+                      <Settings className="h-4 w-4" />
+                      <span className="sr-only">Settings</span>
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Settings</TooltipContent>
+              </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="hover:bg-muted hover:text-foreground" asChild>
-                  <Link
-                    href={`/stores/${store.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    <span className="sr-only">Visit Store</span>
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View Live Store</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
-      </CardFooter>
-    </Card>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50" asChild onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/stores/${store.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="sr-only">Visit Store</span>
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Live Store</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 }

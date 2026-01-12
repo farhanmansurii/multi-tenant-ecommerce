@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter} from "next/navigation";
 import { Home, LogOut, Store, User2 } from "lucide-react";
@@ -13,9 +14,11 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { signOut } from "@/lib/auth/client";
 import UserDetailsSidebar from "./sidebar-user-details";
@@ -61,7 +64,7 @@ const accountItems: NavItem[] = [
   },
 ];
 
-function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeof useRouter>) {
+function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeof useRouter>, setOpenMobile?: (open: boolean) => void) {
   const isActive = item.url
     ? item.exact
       ? pathname === item.url
@@ -69,6 +72,11 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
     : false;
 
   const handleClick = async () => {
+    // Close mobile sidebar when navigating
+    if (setOpenMobile) {
+      setOpenMobile(false);
+    }
+
     if (item.isLogout) {
       try {
         await signOut();
@@ -116,7 +124,19 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
           !isActive && "hover:bg-muted/20"
         )}
       >
-        <Link href={item.url!} className="flex items-center gap-2.5">
+        <Link
+          href={item.url!}
+          onClick={(e) => {
+            handleClick();
+            // Small delay to ensure navigation happens
+            setTimeout(() => {
+              if (setOpenMobile) {
+                setOpenMobile(false);
+              }
+            }, 100);
+          }}
+          className="flex items-center gap-2.5"
+        >
           <item.icon className="h-4 w-4 shrink-0" />
           <span className="text-sm">{item.title}</span>
         </Link>
@@ -128,9 +148,22 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
 export function AppSidebar({ className }: { className: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  // Close sidebar on mobile when pathname changes
+  useEffect(() => {
+    if (isMobile && setOpenMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
 
   return (
     <Sidebar variant="floating" side="left" className={className} collapsible="offcanvas">
+      <SidebarHeader className="border-b border-border/40 pb-0">
+        <div className="px-2 py-3 pr-10">
+          <h2 className="text-sm font-semibold text-foreground">Menu</h2>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/70">
@@ -138,7 +171,7 @@ export function AppSidebar({ className }: { className: string }) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => renderNavItem(item, pathname, router))}
+              {navigationItems.map((item) => renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -149,7 +182,7 @@ export function AppSidebar({ className }: { className: string }) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {accountItems.map((item) => renderNavItem(item, pathname, router))}
+              {accountItems.map((item) => renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Users, Search, Mail, Calendar, ShoppingBag, Eye } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Users, Search, Mail, Calendar, ShoppingBag, Eye, UserPlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricCard } from '@/components/shared/common/metric-card';
+import { EmptyState } from '@/components/shared/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -17,50 +20,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { toast } from 'sonner';
-
-type Customer = {
-  id: string;
-  email: string;
-  name?: string;
-  orderCount: number;
-  createdAt: string;
-};
+import { useCustomers } from '@/hooks/queries/use-customers';
+import { QueryListSkeleton } from '@/lib/ui/query-skeleton';
 
 interface AdminCustomersListProps {
   storeSlug: string;
 }
 
 export default function AdminCustomersList({ storeSlug }: AdminCustomersListProps) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [storeSlug]);
+  const { data, isLoading: loading } = useCustomers(storeSlug, searchQuery || undefined);
 
-  const fetchCustomers = async () => {
-    setLoading(true);
-    try {
-      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const res = await fetch(`/api/stores/${storeSlug}/customers?limit=50${searchParam}`);
-      if (!res.ok) throw new Error('Failed to fetch customers');
-
-      const data = await res.json();
-      setCustomers(data.customers || []);
-      setTotal(data.total || 0);
-    } catch (error) {
-      console.error('Failed to fetch customers:', error);
-      toast.error('Failed to load customers');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const customers = data?.customers || [];
+  const total = data?.total || 0;
 
   const handleSearch = () => {
-    fetchCustomers();
+    queryClient.refetchQueries({ queryKey: ['customers', storeSlug, searchQuery] });
   };
 
   const stats = {
@@ -76,30 +53,15 @@ export default function AdminCustomersList({ storeSlug }: AdminCustomersListProp
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Customers</CardDescription>
-            <CardTitle className="text-2xl">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>New This Month</CardDescription>
-            <CardTitle className="text-2xl text-green-600">{stats.newThisMonth}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>With Orders</CardDescription>
-            <CardTitle className="text-2xl text-blue-600">{stats.withOrders}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <MetricCard label="Total Customers" value={stats.total} icon={Users} color="blue" />
+        <MetricCard label="New This Month" value={stats.newThisMonth} icon={UserPlus} color="emerald" />
+        <MetricCard label="With Orders" value={stats.withOrders} icon={ShoppingBag} color="indigo" />
       </div>
 
       {/* Search */}
-      <div className="flex gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by email or name..."
@@ -109,10 +71,19 @@ export default function AdminCustomersList({ storeSlug }: AdminCustomersListProp
             className="pl-9"
           />
         </div>
-        <Button onClick={handleSearch}>Search</Button>
-        <Button variant="outline" onClick={() => { setSearchQuery(''); fetchCustomers(); }}>
-          Reset
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleSearch} className="flex-1 sm:flex-initial">Search</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery('');
+              queryClient.refetchQueries({ queryKey: ['customers', storeSlug, ''] });
+            }}
+            className="flex-1 sm:flex-initial"
+          >
+            Reset
+          </Button>
+        </div>
       </div>
 
       {/* Customers Table */}
@@ -125,69 +96,129 @@ export default function AdminCustomersList({ storeSlug }: AdminCustomersListProp
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
+            <QueryListSkeleton count={5} />
           ) : customers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No customers yet</h3>
-              <p className="text-muted-foreground">
-                When customers sign up or place orders, they'll appear here.
-              </p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No customers yet"
+              description={
+                searchQuery
+                  ? "No customers match your search criteria. Try adjusting your search terms."
+                  : "When customers sign up or place orders, they'll appear here."
+              }
+              variant={searchQuery ? "search" : "default"}
+              secondaryAction={
+                searchQuery
+                  ? {
+                      label: "Clear search",
+                      onClick: () => setSearchQuery(""),
+                    }
+                  : undefined
+              }
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Orders</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
                 {customers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>
+                  <Card key={customer.id} className="p-4">
+                    <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-medium flex-shrink-0">
                           {(customer.name?.[0] || customer.email[0]).toUpperCase()}
                         </div>
-                        <span className="font-medium">{customer.name || 'Guest'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{customer.name || 'Guest'}</div>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground truncate">
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{customer.email}</span>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        {customer.email}
+                      <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t">
+                        <div>
+                          <div className="text-muted-foreground">Orders</div>
+                          <Badge variant={customer.orderCount > 0 ? 'default' : 'secondary'} className="mt-1">
+                            <ShoppingBag className="mr-1 h-3 w-3" />
+                            {customer.orderCount}
+                          </Badge>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Joined</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span>{new Date(customer.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={customer.orderCount > 0 ? 'default' : 'secondary'}>
-                        <ShoppingBag className="mr-1 h-3 w-3" />
-                        {customer.orderCount} orders
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(customer.createdAt).toLocaleDateString()}
+                      <div className="pt-2 border-t">
+                        <Button variant="outline" size="sm" className="w-full" asChild>
+                          <Link href={`/dashboard/stores/${storeSlug}/customers/${customer.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </Link>
+                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/stores/${storeSlug}/customers/${customer.id}`}>
-                          <Eye className="mr-1 h-4 w-4" />
-                          View
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Orders</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
+                              {(customer.name?.[0] || customer.email[0]).toUpperCase()}
+                            </div>
+                            <span className="font-medium">{customer.name || 'Guest'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Mail className="h-4 w-4" />
+                            {customer.email}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={customer.orderCount > 0 ? 'default' : 'secondary'}>
+                            <ShoppingBag className="mr-1 h-3 w-3" />
+                            {customer.orderCount} orders
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(customer.createdAt).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/dashboard/stores/${storeSlug}/customers/${customer.id}`}>
+                              <Eye className="mr-1 h-4 w-4" />
+                              View
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

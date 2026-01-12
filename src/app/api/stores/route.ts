@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
@@ -8,27 +8,25 @@ import { storeHelpers } from "@/lib/domains/stores";
 import { requireAuthOrNull } from "@/lib/session/helpers";
 import { storeSchema } from "@/lib/domains/stores/validation";
 import { storeFormValuesToPayload } from "@/lib/domains/stores/form";
+import { ok, created, unauthorized, badRequest, serverError, conflict } from "@/lib/api/responses";
+import { logger } from "@/lib/api/logger";
 
 const MAX_STORES_PER_USER = 3;
 const CACHE_DURATION = 30;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
 	const session = await requireAuthOrNull();
 
 	if (!session) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		return unauthorized();
 	}
 
 	try {
 		const userStores = await storeHelpers.getStoresByOwner(session.user.id);
 
 		if (userStores.length >= MAX_STORES_PER_USER) {
-			return NextResponse.json(
-				{
-					error: "Store limit reached",
-					message: `You can only create up to ${MAX_STORES_PER_USER} stores. Please delete an existing store to create a new one.`
-				},
-				{ status: 400 }
+			return badRequest(
+				`You can only create up to ${MAX_STORES_PER_USER} stores. Please delete an existing store to create a new one.`
 			);
 		}
 
@@ -69,28 +67,18 @@ export async function POST(request: Request) {
 			},
 		});
 
-		return NextResponse.json(
-			{ store: createdStore },
-			{ status: 201 },
-		);
+		return created({ store: createdStore });
 	} catch (error) {
-		console.error("Failed to create store", error);
+		logger.error("Failed to create store", error, {
+			userId: session.user.id,
+		});
 
 		// Handle duplicate slug error specifically
 		if (error instanceof Error && error.message.includes("duplicate key value violates unique constraint") && error.message.includes("stores_slug_unique")) {
-			return NextResponse.json(
-				{
-					error: "Store URL already exists",
-					message: "A store with this URL already exists. Please choose a different URL."
-				},
-				{ status: 409 },
-			);
+			return conflict("A store with this URL already exists. Please choose a different URL.");
 		}
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return serverError();
 	}
 }
 
@@ -98,14 +86,14 @@ export async function GET() {
 	const session = await requireAuthOrNull();
 
 	if (!session) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		return unauthorized();
 	}
 
 	try {
 		const userStores = await storeHelpers.getStoresByOwner(session.user.id);
 
 		if (userStores.length === 0) {
-			return NextResponse.json(
+			return ok(
 				{
 					stores: [],
 					count: 0,
@@ -155,7 +143,7 @@ export async function GET() {
 			revenue: revenueMap.get(store.id) || 0,
 		}));
 
-		return NextResponse.json(
+		return ok(
 			{
 				stores: storesWithData,
 				count: userStores.length,
@@ -170,10 +158,9 @@ export async function GET() {
 			}
 		);
 	} catch (error) {
-		console.error("Failed to fetch stores", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 }
-		);
+		logger.error("Failed to fetch stores", error, {
+			userId: session.user.id,
+		});
+		return serverError();
 	}
 }

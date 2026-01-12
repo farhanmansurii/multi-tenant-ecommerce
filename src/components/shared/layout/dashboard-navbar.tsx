@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Menu,
-  X,
   User,
   LogOut,
   LayoutDashboard,
@@ -15,7 +13,8 @@ import {
   Bell,
   Search,
   Sparkles,
-  MenuIcon
+  MenuIcon,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,8 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSessionContext } from "@/lib/session";
 import { signOut } from "@/lib/auth/client";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { motion, AnimatePresence } from "framer-motion";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { SearchCommand } from "@/components/features/dashboard/search-command";
 
@@ -49,7 +47,6 @@ const navigationItems = [
 ];
 
 export const DashboardNavbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useSessionContext();
@@ -81,12 +78,7 @@ export const DashboardNavbar = () => {
                     {item.label}
                   </span>
                   {isActive && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-0 rounded-md bg-muted"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
+                    <div className="absolute inset-0 rounded-md bg-muted" />
                   )}
                 </Link>
               );
@@ -180,69 +172,8 @@ export const DashboardNavbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-muted-foreground"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
         </div>
       </div>
-
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-border/40 overflow-hidden bg-background"
-          >
-            <div className="px-4 py-6 space-y-4">
-              <div className="space-y-1">
-                {navigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all",
-                        isActive
-                          ? "bg-muted text-foreground"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="h-px bg-border/40" />
-
-              <div className="px-3">
-                <Button
-                  className="w-full justify-start text-muted-foreground"
-                  variant="outline"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setIsSearchOpen(true);
-                  }}
-                >
-                  <Search className="mr-2 h-4 w-4" /> Search...
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   );
 };

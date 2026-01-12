@@ -10,6 +10,7 @@ import { PageCard } from "@/components/shared/layout/page-card";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { LoadingState } from "./components/loading-state";
 import { ErrorState } from "./components/error-state";
+import { NotFoundState } from "@/components/shared/common/not-found-state";
 import { ImageUploadSection } from "./components/image-upload-section";
 import { SwitchField } from "./components/switch-field";
 import {
@@ -95,26 +96,30 @@ export default function ProductForm({
   if (mode === "edit") {
     if (storeError) {
       return (
-        <ErrorState
+        <NotFoundState
           title="Store Not Found"
           message={
             storeError instanceof Error
               ? storeError.message
               : "Failed to load store"
           }
+          backHref="/dashboard/stores"
+          backLabel="Back to Stores"
         />
       );
     }
 
     if (productError) {
       return (
-        <ErrorState
+        <NotFoundState
           title="Product Not Found"
           message={
             productError instanceof Error
               ? productError.message
               : "Failed to load product"
           }
+          backHref={`/dashboard/stores/${storeSlug}/products`}
+          backLabel="Back to Products"
         />
       );
     }
@@ -131,9 +136,11 @@ export default function ProductForm({
 
     if (!store || !product) {
       return (
-        <ErrorState
+        <NotFoundState
           title="Data Not Found"
           message="Store or product information is not available"
+          backHref={`/dashboard/stores/${storeSlug}/products`}
+          backLabel="Back to Products"
         />
       );
     }
@@ -151,8 +158,8 @@ export default function ProductForm({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {!isCreateMode && (
             <DangerZone
               onDelete={handleDelete}
@@ -164,6 +171,7 @@ export default function ProductForm({
             variant="outline"
             onClick={() => router.back()}
             disabled={currentMutation.isPending}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -171,6 +179,7 @@ export default function ProductForm({
             type="submit"
             form="product-form"
             disabled={currentMutation.isPending}
+            className="w-full sm:w-auto"
           >
             {currentMutation.isPending ? (
               <>
@@ -198,7 +207,7 @@ export default function ProductForm({
         <BasicInformationSection form={form} storeSlug={storeSlug} />
         <ProductDetailsSection form={form} storeSlug={storeSlug} />
         <section className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <SwitchField
               name="requiresShipping"
               label="Requires Shipping"

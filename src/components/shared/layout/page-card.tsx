@@ -115,8 +115,8 @@ export const PageCard = forwardRef<HTMLDivElement, PageCardProps>(
       >
         {(title || description || headerActions) && (
           <CardHeader className={cn(noPadding && "px-0 pt-0")}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1.5 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="space-y-1.5 min-w-0 flex-1">
                 {title && (
                   <CardTitle className="text-base font-semibold tracking-tight">
                     {title}

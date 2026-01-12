@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import { requireAuthOrNull } from "@/lib/session/helpers";
+import { ok, unauthorized, notFound, forbidden, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
   params: Promise<{
@@ -15,52 +16,52 @@ const updateRoleSchema = z.object({
   role: z.enum(["admin", "member"]).optional(),
 });
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const session = await requireAuthOrNull();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return unauthorized();
 
   const { slug, userId } = await params;
   const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  if (!store) return notFound("Store not found");
 
   const actorRole = await storeHelpers.getUserRole(store.id, session.user.id);
   if (actorRole !== "owner" && actorRole !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return forbidden();
   }
 
   if (userId === session.user.id) {
-    return NextResponse.json({ error: "Cannot modify your own membership" }, { status: 400 });
+    return badRequest("Cannot modify your own membership");
   }
 
   const payload = await request.json().catch(() => null);
   const parsed = updateRoleSchema.safeParse(payload);
   if (!parsed.success || !parsed.data.role) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return badRequest("Invalid payload");
   }
 
   const updated = await storeHelpers.updateStoreMemberRole(store.id, userId, parsed.data.role);
-  return NextResponse.json({ member: updated });
+  return ok({ member: updated });
 }
 
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await requireAuthOrNull();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return unauthorized();
 
   const { slug, userId } = await params;
   const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  if (!store) return notFound("Store not found");
 
   const actorRole = await storeHelpers.getUserRole(store.id, session.user.id);
   if (actorRole !== "owner" && actorRole !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return forbidden();
   }
 
   if (userId === session.user.id) {
-    return NextResponse.json({ error: "Cannot remove yourself" }, { status: 400 });
+    return badRequest("Cannot remove yourself");
   }
 
   const deleted = await storeHelpers.removeStoreMember(store.id, userId);
-  return NextResponse.json({ member: deleted });
+  return ok({ member: deleted });
 }
 
 

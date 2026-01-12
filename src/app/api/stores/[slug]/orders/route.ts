@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
 	listOrders,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/domains/orders";
 import { getCustomerByUserId } from "@/lib/domains/customers";
 import { withStoreContext } from "@/lib/api/handlers";
-import { forbidden } from "@/lib/api/responses";
+import { ok, created, badRequest, forbidden } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			customerId = customer.id;
 		} else {
 			// No customer found for this user, return empty
-			return NextResponse.json({
+			return ok({
 				orders: [],
 				total: 0,
 				page: 1,
@@ -68,15 +68,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 	const parseResult = orderQuerySchema.safeParse(queryParams);
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid query parameters", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid query parameters");
 	}
 
 	const result = await listOrders(storeId, parseResult.data);
 
-	return NextResponse.json({
+	return ok({
 		orders: result.orders,
 		total: result.total,
 		page: parseResult.data.page,
@@ -97,17 +94,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	const parseResult = createOrderSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	try {
 		const order = await createOrder(storeId, parseResult.data);
-		return NextResponse.json({ order }, { status: 201 });
+		return created({ order });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to create order";
-		return NextResponse.json({ error: message }, { status: 400 });
+		return badRequest(message);
 	}
 }

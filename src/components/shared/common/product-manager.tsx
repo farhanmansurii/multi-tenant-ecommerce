@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
 
 import ProductCard, { ProductTable } from "./product-manager/product-card";
 import ProductEmptyState from "./product-manager/product-empty-state";
 import ProductToolbar from "./product-manager/product-toolbar";
 import { ProductData, ProductViewMode } from "./product-manager/types";
-import { Loader } from "@/components/shared/common/loader";
+import { QueryListSkeleton } from "@/lib/ui/query-skeleton";
+import { useProducts } from "@/hooks/queries/use-products";
+import { useDeleteProduct } from "@/hooks/mutations/use-product-mutations";
 
 import { toast } from "sonner";
 import {
@@ -21,48 +23,68 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteProduct } from "@/lib/domains/products/service";
-
+import { EmptyState } from "@/components/shared/common/empty-state";
+import { Search } from "lucide-react";
+import type { ProductData as DomainProductData } from "@/lib/domains/products/types";
 
 interface ProductManagerProps {
   storeSlug: string;
   onProductsChange?: (products: ProductData[]) => void;
 }
 
-async function fetchProducts(storeSlug: string): Promise<ProductData[]> {
-  const res = await fetch(`/api/stores/${storeSlug}/products`);
-  if (!res.ok) throw new Error("Failed to fetch products");
-  const data: { products?: ProductData[] } = await res.json();
-  const products = Array.isArray(data.products) ? data.products : [];
-  return products;
+// Adapter function to convert domain ProductData to local ProductData
+function adaptProduct(domainProduct: DomainProductData): ProductData {
+  return {
+    id: domainProduct.id,
+    name: domainProduct.name,
+    slug: domainProduct.slug,
+    description: domainProduct.description,
+    shortDescription: domainProduct.shortDescription ?? undefined,
+    sku: domainProduct.sku ?? undefined,
+    type: domainProduct.type,
+    status: domainProduct.status,
+    price: String(domainProduct.price ?? "0"),
+    compareAtPrice: domainProduct.compareAtPrice ? String(domainProduct.compareAtPrice) : undefined,
+    quantity: String(domainProduct.quantity ?? "0"),
+    images: domainProduct.images,
+    categories: domainProduct.categories,
+    tags: domainProduct.tags,
+    featured: domainProduct.featured,
+    createdAt: domainProduct.createdAt instanceof Date ? domainProduct.createdAt.toISOString() : String(domainProduct.createdAt),
+    updatedAt: domainProduct.updatedAt instanceof Date ? domainProduct.updatedAt.toISOString() : String(domainProduct.updatedAt),
+  };
 }
 
 const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ProductViewMode>("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [productToDelete, setProductToDelete] = useState<ProductData | null>(null);
 
-  const { data: products = [], isLoading, isError } = useQuery<ProductData[], Error>({
-    queryKey: ["products", storeSlug],
-    queryFn: () => fetchProducts(storeSlug),
-  });
+  const { data: domainProducts = [], isLoading, isError } = useProducts(storeSlug);
+  const deleteProductMutation = useDeleteProduct(storeSlug);
 
-  // Delete product mutation
-  const deleteProductMutation = useMutation({
-    mutationFn: (product: ProductData) => deleteProduct(storeSlug, product!.slug),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products", storeSlug] });
-      toast.success("Product deleted successfully");
-      setProductToDelete(null);
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to delete product");
-    },
-  });
+  // Convert domain products to local format
+  const products = useMemo(() => domainProducts.map(adaptProduct), [domainProducts]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = searchQuery
+        ? product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+
+      const matchesStatus = statusFilter === "all" || product.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [products, searchQuery, statusFilter]);
 
   const handleDeleteProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (product) {
       setProductToDelete(product);
     }
@@ -70,7 +92,12 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
 
   const confirmDelete = () => {
     if (productToDelete) {
-      deleteProductMutation.mutate(productToDelete);
+      deleteProductMutation.mutate(productToDelete.slug, {
+        onSuccess: () => {
+          toast.success("Product deleted successfully");
+          setProductToDelete(null);
+        },
+      });
     }
   };
 
@@ -82,51 +109,108 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
   }, [products, onProductsChange]);
 
   if (isLoading) {
-    return <Loader text="Loading products..." className="py-8" />;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-7 w-32 bg-muted animate-pulse rounded mb-2" />
+            <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          </div>
+        </div>
+        <QueryListSkeleton count={8} />
+      </div>
+    );
   }
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-500">
-        Failed to load products
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-full bg-destructive/10 p-3 mb-4">
+          <svg
+            className="h-6 w-6 text-destructive"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Failed to load products</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          There was an error loading your products. Please try again.
+        </p>
+        <button
+          onClick={() => queryClient.refetchQueries({ queryKey: ["products", storeSlug] })}
+          className="text-sm text-primary hover:underline"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-
-    <div className="space-y-4">
-      <div className="flex items-center justify-between px-1">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold tracking-tight">Products</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your store inventory ({products.length} items)
+          <h2 className="text-2xl font-bold tracking-tight">Products</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {products.length === 0
+              ? "No products yet"
+              : `${filteredProducts.length} of ${products.length} product${products.length !== 1 ? "s" : ""}`}
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-        <div className="p-4 border-b">
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="p-4 sm:p-6 border-b">
           <ProductToolbar
             productCount={products.length}
             viewMode={viewMode}
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
             onViewModeChange={setViewMode}
+            onSearchChange={setSearchQuery}
+            onStatusFilterChange={setStatusFilter}
             onCreateProduct={() =>
               router.push(`/dashboard/stores/${storeSlug}/products/new`)
             }
           />
         </div>
 
-        <div className="p-6 bg-muted/5 min-h-[400px]">
+        <div className="p-4 sm:p-6 min-h-[400px]">
           {products.length === 0 ? (
             <ProductEmptyState
               onCreateProduct={() =>
                 router.push(`/dashboard/stores/${storeSlug}/products/new`)
               }
             />
+          ) : filteredProducts.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="No products found"
+              description="Try adjusting your search or filter criteria."
+              variant="search"
+              secondaryAction={
+                searchQuery || statusFilter !== "all"
+                  ? {
+                      label: "Clear filters",
+                      onClick: () => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                      },
+                    }
+                  : undefined
+              }
+            />
           ) : viewMode === "list" ? (
             <ProductTable
-              products={products}
+              products={filteredProducts}
               onEdit={(p: ProductData) =>
                 router.push(
                   `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
@@ -134,15 +218,14 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
               }
               onDelete={handleDeleteProduct}
               onView={(p: ProductData) => {
-                // Navigate to product detail page
+                router.push(`/stores/${storeSlug}/products/${p.slug}`);
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((p: ProductData) => {
-                // Ensure p is a valid ProductData object
-                if (!p || typeof p !== 'object' || !p.id) {
-                  console.error('Invalid product data:', p);
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {filteredProducts.map((p: ProductData) => {
+                if (!p || typeof p !== "object" || !p.id) {
+                  console.error("Invalid product data:", p);
                   return null;
                 }
 
@@ -158,7 +241,7 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
                     }
                     onDelete={handleDeleteProduct}
                     onView={(cur: ProductData) => {
-                      // Navigate to product detail page
+                      router.push(`/stores/${storeSlug}/products/${cur.slug}`);
                     }}
                   />
                 );
@@ -168,20 +251,20 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the product &quot;{productToDelete?.name}&quot; and remove all associated images.
+              This will permanently delete &quot;{productToDelete?.name}&quot; and remove all
+              associated images. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90 w-full sm:w-auto"
               disabled={deleteProductMutation.isPending}
             >
               {deleteProductMutation.isPending ? "Deleting..." : "Delete Product"}

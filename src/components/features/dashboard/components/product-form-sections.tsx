@@ -17,7 +17,7 @@ interface ProductFormSectionsProps {
 
 export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
   <section className="space-y-6">
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor="name">Product Name *</Label>
         <Input
@@ -81,7 +81,7 @@ export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
 
 export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
   <section className="space-y-6">
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       <div className="space-y-2">
         <Label>Product Type *</Label>
         <Controller
@@ -199,7 +199,7 @@ export const CategoriesAndTagsSection = ({ form, storeSlug }: ProductFormSection
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <div className="space-y-2">
           <Label>Categories</Label>
           <Controller

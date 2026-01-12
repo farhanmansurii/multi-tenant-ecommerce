@@ -12,13 +12,15 @@ import {
   Search,
   LayoutGrid,
   LayoutList,
+  LayoutDashboard,
   MoreHorizontal,
   Package,
   ExternalLink,
   Settings,
   TrendingUp,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Globe,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -83,7 +85,7 @@ const ViewSwitcher = ({ viewMode, filteredStores }: { viewMode: "grid" | "list";
     <>
       <div
         ref={gridRef}
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
         style={{ display: viewMode === "grid" ? "grid" : "none" }}
       >
         {filteredStores.map((store) => (
@@ -92,7 +94,7 @@ const ViewSwitcher = ({ viewMode, filteredStores }: { viewMode: "grid" | "list";
       </div>
       <div
         ref={listRef}
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
         style={{ display: viewMode === "list" ? "flex" : "none" }}
       >
         {filteredStores.map((store) => (
@@ -123,111 +125,150 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
   }[store.status] || "bg-muted text-muted-foreground";
 
   return (
-    <div
-      ref={itemRef}
-      className="group flex items-center justify-between p-4 bg-card border border-border/50 hover:border-border/70 rounded-lg transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
-    >
-      <div className="flex items-center gap-4 min-w-0">
-        <div
-          className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border border-white/5 shadow-sm"
-          style={{ background: store.primaryColor ? `${store.primaryColor}20` : "hsl(var(--muted))" }}
-        >
-          <Store className="h-5 w-5" style={{ color: store.primaryColor || "hsl(var(--muted-foreground))" }} />
-        </div>
+    <Link href={`/dashboard/stores/${store.slug}`} className="block">
+      <div
+        ref={itemRef}
+        className="group flex items-center justify-between p-6 bg-card/50 backdrop-blur-sm border border-border/50 hover:border-border rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 hover:-translate-y-1 cursor-pointer"
+      >
+        <div className="flex items-center gap-5 min-w-0 flex-1">
+          {store.logo ? (
+            <div className="relative h-14 w-14 rounded-xl overflow-hidden shrink-0 border-2 border-border/50 bg-muted shadow-md group-hover:shadow-lg transition-shadow">
+              <Image
+                src={store.logo}
+                alt={store.name}
+                fill
+                className="object-cover"
+                sizes="56px"
+              />
+            </div>
+          ) : (
+            <div
+              className="h-14 w-14 rounded-xl flex items-center justify-center shrink-0 border-2 border-border/50 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
+              style={{
+                background: store.primaryColor
+                  ? `linear-gradient(135deg, ${store.primaryColor}20, ${store.primaryColor}30)`
+                  : "hsl(var(--muted))",
+                borderColor: store.primaryColor
+                  ? `${store.primaryColor}40`
+                  : "hsl(var(--border))"
+              }}
+            >
+              <Store
+                className="h-7 w-7"
+                style={{ color: store.primaryColor || "hsl(var(--muted-foreground))" }}
+              />
+            </div>
+          )}
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground truncate">{store.name}</h3>
-            <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 h-5 font-medium capitalize shadow-none border", statusColors)}>
-              {store.status}
-            </Badge>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                {store.name}
+              </h3>
+              <Badge
+                variant="secondary"
+                className={cn("text-[10px] px-2.5 py-1 h-5 font-semibold capitalize shadow-sm border", statusColors)}
+              >
+                {store.status}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Globe className="h-3.5 w-3.5 opacity-70" />
+              <span className="font-mono opacity-80">/{store.slug}</span>
+              <span className="opacity-50">•</span>
+              <span>{formatDate(store.createdAt)}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-            <span className="font-mono opacity-80">/{store.slug}</span>
-            <span>•</span>
-            <span>{formatDate(store.createdAt)}</span>
-          </div>
         </div>
-      </div>
 
-      <div className="hidden md:flex items-center gap-8 mr-8">
-        <div className="flex flex-col items-end">
-          <span className="text-xs text-muted-foreground font-medium">Products</span>
-          <span className="text-sm font-bold">{store.productCount || 0}</span>
+        <div className="hidden lg:flex items-center gap-4 mr-6">
+          <CompactMetric
+            label="Products"
+            value={store.productCount || 0}
+            icon={Package}
+            color="purple"
+            className="min-w-[100px]"
+          />
+          <CompactMetric
+            label="Revenue"
+            value={formatCurrency((store as any).revenue || 0, store.currency || "INR")}
+            icon={TrendingUp}
+            color="emerald"
+            className="min-w-[120px]"
+          />
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-xs text-muted-foreground font-medium">Revenue</span>
-          <span className="text-sm font-bold">{formatCurrency((store as any).revenue || 0, store.currency || "INR")}</span>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline" className="hidden sm:flex" asChild>
-          <Link href={`/dashboard/stores/${store.slug}`}>Manage</Link>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/stores/${store.slug}/settings`}>
-                <Settings className="mr-2 h-4 w-4" /> Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/stores/${store.slug}`} target="_blank">
-                <ExternalLink className="mr-2 h-4 w-4" /> View Live
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="hidden md:flex rounded-lg h-9 font-medium"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = `/dashboard/stores/${store.slug}`;
+            }}
+          >
+            Manage
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/stores/${store.slug}`} className="cursor-pointer">
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/stores/${store.slug}/settings`} className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" /> Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/stores/${store.slug}`} target="_blank" className="cursor-pointer">
+                  <ExternalLink className="mr-2 h-4 w-4" /> View Live
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
-// --- Sub-Component: Metrics Strip ---
+import { MetricCard } from "@/components/shared/common/metric-card";
+import { CompactMetric } from "@/components/shared/common/compact-metric";
+import { EmptyState } from "@/components/shared/common/empty-state";
+import Image from "next/image";
+
 const MetricsStrip = ({ stores, totalRevenue }: { stores: StoreData[]; totalRevenue: number }) => {
   const activeCount = stores.filter(s => s.status === "active").length;
   const totalProducts = stores.reduce((acc, s) => acc + (s.productCount || 0), 0);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      {[
-        { label: "Total Stores", value: stores.length, icon: Store },
-        { label: "Active Stores", value: activeCount, icon: TrendingUp },
-        { label: "Total Products", value: totalProducts, icon: Package },
-        { label: "Total Revenue", value: formatCurrency(totalRevenue, "INR"), icon: TrendingUp },
-      ].map((stat, i) => (
-        <div key={i} className="flex flex-col p-5 rounded-lg border border-border/50 bg-card shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset]">
-          <div className="flex items-center gap-2 text-muted-foreground mb-3">
-            <stat.icon className="h-4 w-4" />
-            <span className="text-xs font-medium uppercase tracking-wider">{stat.label}</span>
-          </div>
-          <span className="text-2xl font-bold tracking-tight">
-            {stat.value}
-          </span>
-        </div>
-      ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <MetricCard label="Total Stores" value={stores.length} icon={Store} color="blue" />
+      <MetricCard label="Active Stores" value={activeCount} icon={TrendingUp} color="emerald" />
+      <MetricCard label="Total Products" value={totalProducts} icon={Package} color="purple" />
+      <MetricCard label="Total Revenue" value={formatCurrency(totalRevenue, "INR")} icon={Sparkles} color="amber" />
     </div>
   )
 }
 
-// --- Helper: Get Greeting ---
 const getGreeting = (name: string) => {
   const hour = new Date().getHours();
   const timeGreeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   return `${timeGreeting}, ${name}!`;
 };
 
-// --- Main Page Component ---
 export default function DashboardPageClient() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [searchQuery, setSearchQuery] = useState("");
-  const [greeting, setGreeting] = useState("Welcome back"); // Client-side hydration safety
+  const [greeting, setGreeting] = useState("Welcome back");
 
   const { isAuthenticated, user, isPending } = useSessionContext();
   const { data, isLoading, isError, error } = useQuery({
@@ -236,7 +277,6 @@ export default function DashboardPageClient() {
     enabled: isAuthenticated,
   });
 
-  // Calculate greeting only on client to avoid hydration mismatch
   useEffect(() => {
     if (user?.name) {
       setGreeting(getGreeting(user.name.split(" ")[0]));
@@ -266,7 +306,6 @@ export default function DashboardPageClient() {
     );
   }
 
-  // --- Unauthenticated View ---
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -284,12 +323,9 @@ export default function DashboardPageClient() {
     );
   }
 
-  // --- Authenticated Dashboard ---
   return (
     <DashboardLayout
-      // 1. RE-ADDED IMAGE PROP HERE
       image={typeof user?.image === "string" ? user.image : undefined}
-      // 2. Personalized Title
       title={greeting}
       desc="Here is what is happening with your stores today."
       breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }]}
@@ -307,18 +343,18 @@ export default function DashboardPageClient() {
 
         {stores.length > 0 && <MetricsStrip stores={stores} totalRevenue={totalRevenue} />}
 
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-0 z-10 bg-background/95 backdrop-blur py-2">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search stores..."
-              className="pl-9 rounded-lg"
+              placeholder="Search stores by name or slug..."
+              className="pl-10 h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-1 bg-card/50 p-1 rounded-lg border border-border/50">
+          <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-lg border border-border/50 backdrop-blur-sm">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -326,9 +362,15 @@ export default function DashboardPageClient() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setViewMode("list")}
-                    className={cn("h-7 px-2 rounded-md transition-all", viewMode === "list" ? "bg-background shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/30")}
+                    className={cn(
+                      "h-8 px-3 rounded-md transition-all duration-200",
+                      viewMode === "list"
+                        ? "bg-background text-foreground shadow-sm border border-border/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
                   >
-                    <LayoutList className="h-4 w-4" />
+                    <LayoutList className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs font-medium">List</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>List View</TooltipContent>
@@ -339,9 +381,15 @@ export default function DashboardPageClient() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setViewMode("grid")}
-                    className={cn("h-7 px-2 rounded-md transition-all", viewMode === "grid" ? "bg-background shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/30")}
+                    className={cn(
+                      "h-8 px-3 rounded-md transition-all duration-200",
+                      viewMode === "grid"
+                        ? "bg-background text-foreground shadow-sm border border-border/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs font-medium">Grid</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Grid View</TooltipContent>
@@ -350,25 +398,35 @@ export default function DashboardPageClient() {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="min-h-[400px]">
           {filteredStores.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border/50 rounded-lg bg-card/30">
-              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Store className="h-8 w-8 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-lg font-semibold">No stores found</h3>
-              <p className="text-muted-foreground text-sm max-w-sm text-center mb-6">
-                {searchQuery ? "Try adjusting your search terms." : "You haven't created any stores yet."}
-              </p>
-              {!searchQuery && (
-                <Button size="lg" className="rounded-lg" asChild>
-                  <Link href="/dashboard/stores/new">
-                    <Plus className="h-4 w-4 " /> Create your first store
-                  </Link>
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={Store}
+              title={searchQuery ? "No stores found" : "No stores yet"}
+              description={
+                searchQuery
+                  ? "Try adjusting your search terms or create a new store."
+                  : "Get started by creating your first store and start selling your products."
+              }
+              variant={searchQuery ? "search" : "default"}
+              action={
+                !searchQuery
+                  ? {
+                      label: "Create your first store",
+                      href: "/dashboard/stores/new",
+                      icon: Plus,
+                    }
+                  : undefined
+              }
+              secondaryAction={
+                searchQuery
+                  ? {
+                      label: "Clear search",
+                      onClick: () => setSearchQuery(""),
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <ViewSwitcher viewMode={viewMode} filteredStores={filteredStores} />
           )}

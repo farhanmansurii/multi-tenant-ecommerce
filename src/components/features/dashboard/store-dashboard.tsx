@@ -26,13 +26,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MetricCard } from "@/components/shared/common/metric-card";
 import ProductManager from "@/components/shared/common/product-manager";
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 
-import { useQuery } from "@tanstack/react-query";
-
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
-import { fetchProductStats, fetchStore, fetchStoreAnalytics } from "@/lib/domains/stores/service";
+import { fetchProductStats, fetchStoreAnalytics } from "@/lib/domains/stores/service";
 import type { StoreData } from "@/lib/domains/stores/types";
 import { useRequireAuth } from "@/lib/session";
 import { StoreDashboardSkeleton } from "@/components/skeletons/store-dashboard-skeleton";
@@ -40,6 +39,9 @@ import { SalesChart } from "@/components/features/dashboard/overview/sales-chart
 import { RecentActivity } from "@/components/features/dashboard/overview/recent-activity";
 import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { useStore } from "@/hooks/queries/use-store";
+import { useQuery } from "@tanstack/react-query";
+import { NotFoundState } from "@/components/shared/common/not-found-state";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;
@@ -55,13 +57,8 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
     data: store,
     error: storeError,
     isLoading: storeLoading,
-  } = useQuery({
-    queryKey: ["store", slug],
-    queryFn: () => fetchStore(slug),
-    enabled: !!slug && !paramsLoading,
+  } = useStore(slug && !paramsLoading ? slug : null, {
     placeholderData: initialStore ? (initialStore as unknown as StoreData) : undefined,
-    staleTime: 10 * 60 * 1000, // 10 minutes - store data doesn't change often
-    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 
   // Use store from query or fallback to initialStore
@@ -132,19 +129,12 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
   if (storeError instanceof Error) {
     if (storeError.message === "NOT_FOUND") {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Store Not Found
-            </h1>
-            <p className="mb-6">
-              The store you&apos;re looking for doesn&apos;t exist.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard">Go to Dashboard</Link>
-            </Button>
-          </div>
-        </div>
+        <NotFoundState
+          title="Store Not Found"
+          message="The store you're looking for doesn't exist or has been removed."
+          backHref="/dashboard/stores"
+          backLabel="Back to Stores"
+        />
       );
     }
     if (!isOwner) {
@@ -193,14 +183,14 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
         { label: displayStore.name },
       ]}
       headerActions={
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button variant="outline" asChild className="hidden sm:flex">
             <Link href={`/stores/${displayStore.slug}`} target="_blank">
               <ShoppingBag className="mr-2 h-4 w-4" />
               View Storefront
             </Link>
           </Button>
-          <Button onClick={handleCreateProduct} className="bg-primary hover:bg-primary/90">
+          <Button onClick={handleCreateProduct} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
@@ -209,88 +199,35 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
     >
       <div className="space-y-8 pb-8">
         {/* Metric Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Revenue
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">
-                {formatCurrency(analytics?.revenue.total || 0, currency)}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                {analytics?.revenue.growth === 0 ? (
-                  <span className="text-muted-foreground">No change</span>
-                ) : (
-                  <span className={`flex items-center ${analytics?.revenue.growth > 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                    {analytics?.revenue.growth > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                    {Math.abs(analytics?.revenue.growth || 0).toFixed(1)}%
-                  </span>
-                )}
-                <span className="ml-1">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Orders
-              </CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">+{analytics?.orders.total || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                {analytics?.orders.growth === 0 ? (
-                  <span className="text-muted-foreground">No change</span>
-                ) : (
-                  <span className={`flex items-center ${analytics?.orders.growth > 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                    {analytics?.orders.growth > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                    {Math.abs(analytics?.orders.growth || 0).toFixed(1)}%
-                  </span>
-                )}
-                <span className="ml-1">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Customers
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">+{analytics?.customers.total || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total registered customers
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card/50 hover:bg-card transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Active Products
-              </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">{productCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Products currently listed
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            label="Total Revenue"
+            value={formatCurrency(analytics?.revenue.total || 0, currency)}
+            icon={DollarSign}
+            color="amber"
+          />
+          <MetricCard
+            label="Orders"
+            value={`+${analytics?.orders.total || 0}`}
+            icon={CreditCard}
+            color="blue"
+          />
+          <MetricCard
+            label="Customers"
+            value={`+${analytics?.customers.total || 0}`}
+            icon={Users}
+            color="emerald"
+          />
+          <MetricCard
+            label="Active Products"
+            value={productCount}
+            icon={Package}
+            color="purple"
+          />
         </div>
 
         {/* Charts and Activity */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
           <SalesChart data={analytics?.salesOverTime || []} currency={currency} />
           <RecentActivity data={analytics?.recentActivity || []} currency={currency} />
         </div>

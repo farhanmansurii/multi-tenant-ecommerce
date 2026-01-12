@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import { requireAuthOrNull } from "@/lib/session/helpers";
+import { ok, created, unauthorized, notFound, forbidden, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
   params: Promise<{
@@ -15,42 +16,42 @@ const addMemberSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
   const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  if (!store) return notFound("Store not found");
 
   const members = await storeHelpers.listStoreMembers(store.id);
-  return NextResponse.json({ members });
+  return ok({ members });
 }
 
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const session = await requireAuthOrNull();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return unauthorized();
 
   const { slug } = await params;
   const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  if (!store) return notFound("Store not found");
 
   const userRole = await storeHelpers.getUserRole(store.id, session.user.id);
   if (userRole !== "owner" && userRole !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return forbidden();
   }
 
   const payload = await request.json().catch(() => null);
   const parsed = addMemberSchema.safeParse(payload);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return badRequest("Invalid payload");
   }
 
   const { userId, role } = parsed.data;
 
   if (userId === session.user.id) {
-    return NextResponse.json({ error: "Cannot add yourself" }, { status: 400 });
+    return badRequest("Cannot add yourself");
   }
 
-  const created = await storeHelpers.addStoreMember(store.id, userId, role);
-  return NextResponse.json({ member: created }, { status: 201 });
+  const createdMember = await storeHelpers.addStoreMember(store.id, userId, role);
+  return created({ member: createdMember });
 }
 
 

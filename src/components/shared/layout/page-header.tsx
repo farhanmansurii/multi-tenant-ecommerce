@@ -55,36 +55,51 @@ export function PageHeader({
     >
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav
-          className="flex items-center gap-1 text-xs text-muted-foreground mb-5"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 overflow-x-auto scrollbar-hide -mx-1 px-1"
           aria-label="Breadcrumb"
         >
-          {breadcrumbs.map((crumb, index) => (
-            <div key={index} className="flex items-center">
-              {index > 0 && (
-                <ChevronRight className="h-3 w-3 mx-1.5 text-border opacity-50" />
-              )}
-              {crumb.href ? (
-                <Link
-                  href={crumb.href}
-                  className={cn(
-                    "py-0.5 transition-colors duration-200",
-                    "hover:text-foreground"
-                  )}
-                >
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span
-                  className={cn(
-                    "font-medium",
-                    index === breadcrumbs.length - 1 && "text-foreground"
-                  )}
-                >
-                  {crumb.label}
-                </span>
-              )}
-            </div>
-          ))}
+          {breadcrumbs.map((crumb, index) => {
+            const isLast = index === breadcrumbs.length - 1;
+            const isFirst = index === 0;
+            const shouldTruncate = breadcrumbs.length > 4 && !isFirst && !isLast;
+
+            return (
+              <div key={index} className="flex items-center flex-shrink-0 gap-1.5">
+                {index > 0 && (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0" />
+                )}
+                {crumb.href ? (
+                  <Link
+                    href={crumb.href}
+                    className={cn(
+                      "px-2 py-1 rounded-md transition-all duration-200",
+                      "hover:text-foreground hover:bg-muted/50",
+                      "active:bg-muted",
+                      shouldTruncate
+                        ? "max-w-[100px] sm:max-w-[150px] md:max-w-none truncate"
+                        : "max-w-[150px] sm:max-w-[200px] md:max-w-none truncate"
+                    )}
+                    title={crumb.label}
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span
+                    className={cn(
+                      "px-2 py-1 rounded-md",
+                      isLast && "font-semibold text-foreground bg-muted/30",
+                      shouldTruncate
+                        ? "max-w-[100px] sm:max-w-[150px] md:max-w-none truncate"
+                        : "max-w-[150px] sm:max-w-[200px] md:max-w-none truncate"
+                    )}
+                    title={crumb.label}
+                  >
+                    {crumb.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </nav>
       )}
 

@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { discounts } from "@/lib/db/schema/ecommerce/discounts";
 import { storeHelpers } from "@/lib/domains/stores";
+import { ok, notFound, badRequest, serverError } from "@/lib/api/responses";
+import { logger } from "@/lib/api/logger";
 
 interface RouteParams {
 	params: Promise<{
@@ -10,19 +12,19 @@ interface RouteParams {
 	}>;
 }
 
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	try {
 		const { code, cartTotal } = await request.json();
 
 		if (!code) {
-			return NextResponse.json({ error: "Discount code is required" }, { status: 400 });
+			return badRequest("Discount code is required");
 		}
 
 		const [discountRecord] = await db
@@ -37,7 +39,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 			);
 
 		if (!discountRecord) {
-			return NextResponse.json({ error: "Invalid discount code" }, { status: 404 });
+			return notFound("Invalid discount code");
 		}
 
 		const now = new Date();
@@ -45,21 +47,20 @@ export async function POST(request: Request, { params }: RouteParams) {
 		const expiresAt = discountRecord.expiresAt ? new Date(discountRecord.expiresAt) : null;
 
 		if (startsAt && startsAt > now) {
-			return NextResponse.json({ error: "Discount code is not yet active" }, { status: 400 });
+			return badRequest("Discount code is not yet active");
 		}
 
 		if (expiresAt && expiresAt < now) {
-			return NextResponse.json({ error: "Discount code has expired" }, { status: 400 });
+			return badRequest("Discount code has expired");
 		}
 
 		if (discountRecord.usageLimit && discountRecord.usedCount >= discountRecord.usageLimit) {
-			return NextResponse.json({ error: "Discount usage limit reached" }, { status: 400 });
+			return badRequest("Discount usage limit reached");
 		}
 
 		if (discountRecord.minOrderAmount && cartTotal < discountRecord.minOrderAmount) {
-			return NextResponse.json(
-				{ error: `Minimum order amount of ${(discountRecord.minOrderAmount / 100).toFixed(2)} required` },
-				{ status: 400 }
+			return badRequest(
+				`Minimum order amount of ${(discountRecord.minOrderAmount / 100).toFixed(2)} required`
 			);
 		}
 
@@ -73,14 +74,14 @@ export async function POST(request: Request, { params }: RouteParams) {
 			discountAmount = Math.min(discountRecord.value, cartTotal);
 		}
 
-		return NextResponse.json({
+		return ok({
 			code: discountRecord.code,
 			amount: discountAmount,
 			type: discountRecord.type,
 			value: discountRecord.value,
 		});
 	} catch (error) {
-		console.error("Failed to verify discount:", error);
-		return NextResponse.json({ error: "Failed to verify discount" }, { status: 500 });
+		logger.error("Failed to verify discount", error, { slug, code });
+		return serverError("Failed to verify discount");
 	}
 }

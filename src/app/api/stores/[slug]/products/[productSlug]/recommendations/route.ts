@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
+import { ok, notFound, serverError } from '@/lib/api/responses';
+import { logger } from '@/lib/api/logger';
 
 interface RouteParams {
 	params: Promise<{
@@ -12,18 +14,19 @@ interface RouteParams {
 	}>;
 }
 
-export async function GET(_request: Request, { params }: RouteParams) {
-	const { slug, productSlug } = await params;
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+	try {
+		const { slug, productSlug } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return NextResponse.json({ error: 'Store not found' }, { status: 404 });
-	}
+		const store = await storeHelpers.getStoreBySlug(slug);
+		if (!store) {
+			return notFound('Store not found');
+		}
 
-	const current = await productHelpers.getProductBySlug(store.id, productSlug);
-	if (!current) {
-		return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-	}
+		const current = await productHelpers.getProductBySlug(store.id, productSlug);
+		if (!current) {
+			return notFound('Product not found');
+		}
 
 	const currentCategories = Array.isArray(current.categories)
 		? (current.categories as string[])
@@ -75,5 +78,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
 		};
 	});
 
-	return NextResponse.json({ products });
+	return ok({ products });
+	} catch (error) {
+		logger.error('Error fetching product recommendations', error, { slug, productSlug });
+		return serverError();
+	}
 }

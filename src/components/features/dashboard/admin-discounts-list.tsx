@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import * as z from 'zod';
 import {
   Percent,
@@ -17,6 +18,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricCard } from '@/components/shared/common/metric-card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -50,20 +52,29 @@ import { Form } from '@/components/ui/form';
 import { FormFieldHook } from '@/components/ui/form-field';
 
 import { toast } from 'sonner';
+import { useDiscounts } from '@/hooks/queries/use-discounts';
+import {
+  useCreateDiscount,
+  useUpdateDiscount,
+  useDeleteDiscount,
+  useToggleDiscountActive,
+} from '@/hooks/mutations/use-discount-mutations';
+import { QueryListSkeleton } from '@/lib/ui/query-skeleton';
+import { EmptyState } from '@/components/shared/common/empty-state';
 
 type Discount = {
   id: string;
   code: string;
   type: 'percentage' | 'fixed';
   value: number;
-  minOrderAmount?: number;
-  maxDiscountAmount?: number;
-  usageLimit?: number;
+  minOrderAmount?: number | null;
+  maxDiscountAmount?: number | null;
+  usageLimit?: number | null;
   usedCount: number;
-  startsAt?: string;
-  expiresAt?: string;
+  startsAt?: string | null;
+  expiresAt?: string | null;
   isActive: boolean;
-  description?: string;
+  description?: string | null;
   createdAt: string;
 };
 
@@ -111,13 +122,12 @@ const defaultValues: DiscountFormValues = {
   description: '',
 };
 
+
 export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: AdminDiscountsListProps) {
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const form = useForm<DiscountFormValues>({
     resolver: zodResolver(discountFormSchema) as any,
@@ -127,11 +137,12 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
   const { reset, watch, setValue } = form;
   const type = watch('type');
 
-  useEffect(() => {
-    fetchDiscounts();
-  }, [storeSlug]);
+  const { data: discounts = [], isLoading: loading } = useDiscounts(storeSlug);
+  const createDiscountMutation = useCreateDiscount(storeSlug);
+  const updateDiscountMutation = useUpdateDiscount(storeSlug);
+  const deleteDiscountMutation = useDeleteDiscount(storeSlug);
+  const toggleActiveMutation = useToggleDiscountActive(storeSlug);
 
-  // Auto-uppercase code
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'code' && value.code) {
@@ -144,64 +155,22 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
 
-  const fetchDiscounts = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/stores/${storeSlug}/discounts`);
-      if (!res.ok) throw new Error('Failed to fetch discounts');
-      const data = await res.json();
-      setDiscounts(data.discounts || []);
-    } catch (error) {
-      console.error('Failed to fetch discounts:', error);
-      toast.error('Failed to load discounts');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onSubmit = async (data: DiscountFormValues) => {
-    setSaving(true);
-    try {
-      const payload = {
-        ...data,
-        // For percentage: use as-is. For fixed: convert rupees to cents
-        value: data.type === 'percentage' ? data.value : data.value * 100,
-        minOrderAmount: data.minOrderAmount ? data.minOrderAmount * 100 : null,
-        maxDiscountAmount: data.maxDiscountAmount ? data.maxDiscountAmount * 100 : null,
-        usageLimit: data.usageLimit || null,
-        startsAt: data.startsAt || null,
-        expiresAt: data.expiresAt || null,
-        description: data.description || null,
-      };
-
-      const url = editingId
-        ? `/api/stores/${storeSlug}/discounts`
-        : `/api/stores/${storeSlug}/discounts`;
-
-      const method = editingId ? 'PUT' : 'POST';
-      const body = editingId ? { id: editingId, ...payload } : payload;
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+    if (editingId) {
+      updateDiscountMutation.mutate({ discountId: editingId, data }, {
+        onSuccess: () => {
+          setIsEditOpen(false);
+          setEditingId(null);
+          reset(defaultValues);
+        },
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed');
-      }
-
-      toast.success(editingId ? 'Discount updated' : 'Discount created');
-      setIsCreateOpen(false);
-      setIsEditOpen(false);
-      setEditingId(null);
-      reset(defaultValues);
-      fetchDiscounts();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Operation failed');
-    } finally {
-      setSaving(false);
+    } else {
+      createDiscountMutation.mutate(data, {
+        onSuccess: () => {
+          setIsCreateOpen(false);
+          reset(defaultValues);
+        },
+      });
     }
   };
 
@@ -222,32 +191,16 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
     setIsEditOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/stores/${storeSlug}/discounts?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed');
-      toast.success('Discount deleted');
-      fetchDiscounts();
-    } catch {
-      toast.error('Failed to delete discount');
-    }
+  const handleDelete = (id: string) => {
+    deleteDiscountMutation.mutate(id);
   };
 
-  const toggleActive = async (discount: Discount) => {
-    try {
-      await fetch(`/api/stores/${storeSlug}/discounts`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: discount.id, isActive: !discount.isActive }),
-      });
-      fetchDiscounts();
-    } catch {
-      toast.error('Failed to update status');
-    }
+  const handleToggleActive = (discount: Discount) => {
+    toggleActiveMutation.mutate({ id: discount.id, isActive: discount.isActive });
   };
 
-  const isExpired = (d: Discount) => d.expiresAt && new Date(d.expiresAt) < new Date();
-  const activeCount = discounts.filter((d) => d.isActive && !isExpired(d)).length;
+  const isExpired = (d: Discount | any) => d.expiresAt && new Date(d.expiresAt) < new Date();
+  const activeCount = discounts.filter((d: any) => d.isActive && !isExpired(d)).length;
 
   const DiscountFormContent = () => (
     <div className="grid gap-4 py-4">
@@ -338,27 +291,25 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Discounts</CardDescription>
-            <CardTitle className="text-2xl">{discounts.length}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Active</CardDescription>
-            <CardTitle className="text-2xl text-green-600">{activeCount}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Redemptions</CardDescription>
-            <CardTitle className="text-2xl text-blue-600">
-              {discounts.reduce((sum, d) => sum + d.usedCount, 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <MetricCard
+          label="Total Discounts"
+          value={discounts.length}
+          icon={Percent}
+          color="blue"
+        />
+        <MetricCard
+          label="Active"
+          value={activeCount}
+          icon={CheckCircle}
+          color="emerald"
+        />
+        <MetricCard
+          label="Total Redemptions"
+          value={discounts.reduce((sum, d) => sum + d.usedCount, 0)}
+          icon={Tag}
+          color="purple"
+        />
       </div>
 
       {/* Actions */}
@@ -368,7 +319,7 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
           if (!open) reset(defaultValues);
         }}>
           <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Create Discount</Button>
+            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" /> Create Discount</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
@@ -380,8 +331,8 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
                 <DiscountFormContent />
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving ? 'Creating...' : 'Create'}
+                  <Button type="submit" disabled={createDiscountMutation.isPending}>
+                    {createDiscountMutation.isPending ? 'Creating...' : 'Create'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -402,76 +353,105 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           ) : discounts.length === 0 ? (
-            <div className="flex flex-col items-center py-12">
-              <Percent className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 font-semibold">No discounts yet</h3>
-              <p className="text-muted-foreground">Create your first discount code.</p>
-            </div>
+            <EmptyState
+              icon={Percent}
+              title="No discounts yet"
+              description="Create your first discount code to attract more customers and boost sales."
+              action={{
+                label: "Create Discount",
+                onClick: () => setIsCreateOpen(true),
+                icon: Plus,
+              }}
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {discounts.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono font-medium">{d.code}</span>
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {discounts.map((d: any) => (
+                  <Card key={d.id} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="font-mono font-medium truncate">{d.code}</span>
+                        </div>
+                        {isExpired(d) ? (
+                          <Badge variant="secondary">Expired</Badge>
+                        ) : d.isActive ? (
+                          <Badge className="bg-green-500/10 text-green-600">
+                            <CheckCircle className="mr-1 h-3 w-3" /> Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <XCircle className="mr-1 h-3 w-3" /> Inactive
+                          </Badge>
+                        )}
                       </div>
-                    </TableCell>
-                    <TableCell className="capitalize">{d.type}</TableCell>
-                    <TableCell className="font-medium">
-                      {d.type === 'percentage' ? `${d.value}%` : `₹${d.value / 100}`}
-                    </TableCell>
-                    <TableCell>
-                      {d.usedCount}{d.usageLimit ? `/${d.usageLimit}` : ''}
-                    </TableCell>
-                    <TableCell>
-                      {isExpired(d) ? (
-                        <Badge variant="secondary">Expired</Badge>
-                      ) : d.isActive ? (
-                        <Badge className="bg-green-500/10 text-green-600">
-                          <CheckCircle className="mr-1 h-3 w-3" /> Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <XCircle className="mr-1 h-3 w-3" /> Inactive
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {d.expiresAt ? (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(d.expiresAt).toLocaleDateString()}
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => toggleActive(d)}>
-                          {d.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                      <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t">
+                        <div>
+                          <div className="text-muted-foreground">Type</div>
+                          <div className="font-medium capitalize mt-1">{d.type}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Value</div>
+                          <div className="font-medium mt-1">
+                            {d.type === 'percentage' ? `${d.value}%` : `₹${d.value / 100}`}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Usage</div>
+                          <div className="mt-1">
+                            {d.usedCount}{d.usageLimit ? `/${d.usageLimit}` : ''}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Expires</div>
+                          <div className="mt-1">
+                            {d.expiresAt ? (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(d.expiresAt).toLocaleDateString()}
+                              </span>
+                            ) : 'Never'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleToggleActive(d as Discount)}
+                          disabled={toggleActiveMutation.isPending}
+                        >
+                          {d.isActive ? (
+                            <>
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Activate
+                            </>
+                          )}
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(d)}>
-                          <Edit className="h-4 w-4" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEdit(d as Discount)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="outline" size="sm" className="px-3">
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-[95vw]">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Discount?</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -487,11 +467,99 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Usage</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {discounts.map((d: any) => (
+                      <TableRow key={d.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono font-medium">{d.code}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="capitalize">{d.type}</TableCell>
+                        <TableCell className="font-medium">
+                          {d.type === 'percentage' ? `${d.value}%` : `₹${d.value / 100}`}
+                        </TableCell>
+                        <TableCell>
+                          {d.usedCount}{d.usageLimit ? `/${d.usageLimit}` : ''}
+                        </TableCell>
+                        <TableCell>
+                          {isExpired(d) ? (
+                            <Badge variant="secondary">Expired</Badge>
+                          ) : d.isActive ? (
+                            <Badge className="bg-green-500/10 text-green-600">
+                              <CheckCircle className="mr-1 h-3 w-3" /> Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">
+                              <XCircle className="mr-1 h-3 w-3" /> Inactive
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {d.expiresAt ? (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(d.expiresAt).toLocaleDateString()}
+                            </span>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleToggleActive(d as Discount)} disabled={toggleActiveMutation.isPending}>
+                              {d.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(d as Discount)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-[95vw]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Discount?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete "{d.code}".
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(d.id)} className="bg-red-600">
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -514,8 +582,8 @@ export default function AdminDiscountsList({ storeSlug, currency = 'INR' }: Admi
               <DiscountFormContent />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => { setIsEditOpen(false); setEditingId(null); }}>Cancel</Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
+                <Button type="submit" disabled={updateDiscountMutation.isPending}>
+                  {updateDiscountMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </DialogFooter>
             </form>

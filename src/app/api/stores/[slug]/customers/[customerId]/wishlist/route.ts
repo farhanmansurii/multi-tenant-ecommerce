@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import {
@@ -6,6 +6,7 @@ import {
 	addToWishlist,
 	addToWishlistSchema,
 } from "@/lib/domains/customers";
+import { ok, created, notFound, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -15,47 +16,44 @@ interface RouteParams {
 }
 
 // GET /api/stores/[slug]/customers/[customerId]/wishlist - Get wishlist
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	try {
 		const wishlist = await getWishlist(store.id, customerId);
-		return NextResponse.json({ wishlist });
+		return ok({ wishlist });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to get wishlist";
-		return NextResponse.json({ error: message }, { status: 404 });
+		return notFound(message);
 	}
 }
 
 // POST /api/stores/[slug]/customers/[customerId]/wishlist - Add to wishlist
-export async function POST(request: Request, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
 	const store = await storeHelpers.getStoreBySlug(slug);
 	if (!store) {
-		return NextResponse.json({ error: "Store not found" }, { status: 404 });
+		return notFound("Store not found");
 	}
 
 	const body = await request.json();
 	const parseResult = addToWishlistSchema.safeParse(body);
 
 	if (!parseResult.success) {
-		return NextResponse.json(
-			{ error: "Invalid input", details: parseResult.error.flatten() },
-			{ status: 400 }
-		);
+		return badRequest("Invalid input");
 	}
 
 	try {
 		const wishlist = await addToWishlist(store.id, customerId, parseResult.data);
-		return NextResponse.json({ wishlist }, { status: 201 });
+		return created({ wishlist });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to add to wishlist";
-		return NextResponse.json({ error: message }, { status: 400 });
+		return badRequest(message);
 	}
 }

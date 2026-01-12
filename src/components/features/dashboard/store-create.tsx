@@ -1,12 +1,8 @@
 "use client";
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useRequireAuth } from '@/lib/session';
-import { fetchStores } from '@/lib/domains/stores/service';
 
 import EditStoreForm from '@/components/forms/store/edit-store-form';
 import { Loader } from '@/components/shared/common/loader';
@@ -14,21 +10,14 @@ import { PageCard } from '@/components/shared/layout/page-card';
 import { AlertCircle, Info } from 'lucide-react';
 import { StoreFormData } from '@/lib/domains/stores';
 import { storeFormValuesToPayload } from '@/lib/domains/stores/form';
+import { useStores } from '@/hooks/queries/use-stores';
+import { useCreateStore } from '@/hooks/mutations/use-store-mutations';
 
 export default function StoreCreate() {
   const { isAuthenticated, user, isPending } = useRequireAuth();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  // Use React Query to fetch stores (will deduplicate with other components using same query key)
-  const { data: storesData } = useQuery({
-    queryKey: ["stores"],
-    queryFn: fetchStores,
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const { data: storesData } = useStores();
+  const createStoreMutation = useCreateStore();
 
   const storeLimit = storesData
     ? {
@@ -40,60 +29,24 @@ export default function StoreCreate() {
 
   const handleSave = async (values: StoreFormData): Promise<void> => {
     if (!isAuthenticated || !user) {
-      toast.error('You must be logged in to create a store');
       throw new Error('Authentication required');
     }
 
     if (storeLimit && !storeLimit.canCreateMore) {
-      toast.error('You have reached the maximum number of stores');
       throw new Error('Store limit reached');
     }
 
-    setIsSaving(true);
-    setIsSuccess(false);
+    const payload = storeFormValuesToPayload(values);
+    const store = await createStoreMutation.mutateAsync(payload);
 
-    try {
-      const payload = storeFormValuesToPayload(values);
-      const response = await fetch('/api/stores', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-        // Invalidate stores query to refetch updated list
-        await queryClient.invalidateQueries({ queryKey: ["stores"] });
-        setIsSuccess(true);
-        toast.success('Store created successfully!');
-
-        // Show success state briefly before redirecting
-        setTimeout(() => {
-          const targetSlug = result.store?.slug ?? '';
-          if (targetSlug) {
-            router.push(`/dashboard/stores/${targetSlug}`);
-          } else {
-            router.push('/dashboard');
-          }
-          router.refresh();
-        }, 1500);
+    setTimeout(() => {
+      const targetSlug = store?.slug ?? '';
+      if (targetSlug) {
+        router.push(`/dashboard/stores/${targetSlug}`);
       } else {
-        setIsSuccess(false);
-        const errorMessage = result.message || result.error || 'Failed to create store';
-        toast.error(errorMessage);
-        throw new Error(errorMessage);
+        router.push('/dashboard');
       }
-    } catch (error) {
-      console.error('Error creating store:', error);
-      setIsSuccess(false);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the store';
-      toast.error(errorMessage);
-      throw error; // Re-throw to let form know submission failed
-    } finally {
-      setIsSaving(false);
-    }
+    }, 1500);
   };
 
   const handleCancel = () => {
@@ -165,8 +118,8 @@ export default function StoreCreate() {
         mode="create"
         onSave={handleSave}
         onCancel={handleCancel}
-        isSaving={isSaving}
-        isSuccess={isSuccess}
+        isSaving={createStoreMutation.isPending}
+        isSuccess={createStoreMutation.isSuccess}
       />
     </div>
   );

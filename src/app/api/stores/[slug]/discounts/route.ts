@@ -1,10 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import { and, eq, desc } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
 import { db } from '@/lib/db';
 import { discounts } from '@/lib/db/schema';
 import { withStoreContext } from '@/lib/api/handlers';
+import { ok, created, badRequest, notFound, serverError } from '@/lib/api/responses';
+import { logger } from '@/lib/api/logger';
 
 interface RouteParams {
 	params: Promise<{
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		.where(eq(discounts.storeId, storeId))
 		.orderBy(desc(discounts.createdAt));
 
-	return NextResponse.json({ discounts: rows });
+	return ok({ discounts: rows });
 }
 
 // POST - Create discount
@@ -54,15 +56,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		} = body;
 
 		if (!code || typeof code !== 'string' || !code.trim()) {
-			return NextResponse.json({ error: 'Discount code is required' }, { status: 400 });
+			return badRequest('Discount code is required');
 		}
 
 		if (!value || value <= 0) {
-			return NextResponse.json({ error: 'Discount value must be positive' }, { status: 400 });
+			return badRequest('Discount value must be positive');
 		}
 
 		if (type === 'percentage' && value > 100) {
-			return NextResponse.json({ error: 'Percentage discount cannot exceed 100%' }, { status: 400 });
+			return badRequest('Percentage discount cannot exceed 100%');
 		}
 
 		// Check if code already exists for this store
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			.where(and(eq(discounts.storeId, storeId), eq(discounts.code, code.toUpperCase())));
 
 		if (existing) {
-			return NextResponse.json({ error: 'Discount code already exists' }, { status: 400 });
+			return badRequest('Discount code already exists');
 		}
 
 		const discountId = createId();
@@ -99,10 +101,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			.from(discounts)
 			.where(eq(discounts.id, discountId));
 
-		return NextResponse.json({ discount: newDiscount }, { status: 201 });
+		return created({ discount: newDiscount });
 	} catch (error) {
-		console.error('Failed to create discount:', error);
-		return NextResponse.json({ error: 'Failed to create discount' }, { status: 500 });
+		logger.error('Failed to create discount', error, { storeId });
+		return serverError('Failed to create discount');
 	}
 }
 
@@ -119,7 +121,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const { id, ...updateData } = body;
 
 		if (!id) {
-			return NextResponse.json({ error: 'Discount ID is required' }, { status: 400 });
+			return badRequest('Discount ID is required');
 		}
 
 		const [existing] = await db
@@ -128,14 +130,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.where(and(eq(discounts.id, id), eq(discounts.storeId, storeId)));
 
 		if (!existing) {
-			return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
+			return notFound('Discount not found');
 		}
 
 		const newType = updateData.type || existing.type;
 		const newValue = updateData.value !== undefined ? updateData.value : existing.value;
 
 		if (newType === 'percentage' && newValue > 100) {
-			return NextResponse.json({ error: 'Percentage discount cannot exceed 100%' }, { status: 400 });
+			return badRequest('Percentage discount cannot exceed 100%');
 		}
 
 		await db
@@ -154,10 +156,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.from(discounts)
 			.where(eq(discounts.id, id));
 
-		return NextResponse.json({ discount: updated });
+		return ok({ discount: updated });
 	} catch (error) {
-		console.error('Failed to update discount:', error);
-		return NextResponse.json({ error: 'Failed to update discount' }, { status: 500 });
+		logger.error('Failed to update discount', error, { storeId, discountId: id });
+		return serverError('Failed to update discount');
 	}
 }
 
@@ -174,7 +176,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		const discountId = url.searchParams.get('id');
 
 		if (!discountId) {
-			return NextResponse.json({ error: 'Discount ID is required' }, { status: 400 });
+			return badRequest('Discount ID is required');
 		}
 
 		const [existing] = await db
@@ -183,14 +185,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			.where(and(eq(discounts.id, discountId), eq(discounts.storeId, storeId)));
 
 		if (!existing) {
-			return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
+			return notFound('Discount not found');
 		}
 
 		await db.delete(discounts).where(eq(discounts.id, discountId));
 
-		return NextResponse.json({ success: true });
+		return ok({ success: true });
 	} catch (error) {
-		console.error('Failed to delete discount:', error);
-		return NextResponse.json({ error: 'Failed to delete discount' }, { status: 500 });
+		logger.error('Failed to delete discount', error, { storeId, discountId });
+		return serverError('Failed to delete discount');
 	}
 }

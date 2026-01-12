@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Package, TrendingDown, Edit } from 'lucide-react';
+import { AlertTriangle, Package, TrendingDown, Edit, CheckCircle2, CheckCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricCard } from '@/components/shared/common/metric-card';
+import { EmptyState } from '@/components/shared/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -76,37 +78,11 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardDescription>Total Products</CardDescription>
-            <CardTitle className="text-2xl">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className={stats.outOfStock > 0 ? 'border-red-500/50' : ''}>
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              Out of Stock
-            </CardDescription>
-            <CardTitle className="text-2xl text-red-600">{stats.outOfStock}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className={stats.lowStock > 0 ? 'border-yellow-500/50' : ''}>
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-yellow-500" />
-              Low Stock
-            </CardDescription>
-            <CardTitle className="text-2xl text-yellow-600">{stats.lowStock}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Healthy Stock</CardDescription>
-            <CardTitle className="text-2xl text-green-600">{stats.healthy}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+        <MetricCard label="Total Products" value={stats.total} icon={Package} color="blue" />
+        <MetricCard label="Out of Stock" value={stats.outOfStock} icon={AlertTriangle} color="red" />
+        <MetricCard label="Low Stock" value={stats.lowStock} icon={TrendingDown} color="yellow" />
+        <MetricCard label="Healthy Stock" value={stats.healthy} icon={CheckCircle2} color="green" />
       </div>
 
       {/* Threshold Setting */}
@@ -146,11 +122,12 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           ) : lowStockProducts.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Package className="h-12 w-12 text-green-500" />
-              <h3 className="mt-4 font-semibold text-green-600">All products are well stocked!</h3>
-              <p className="text-muted-foreground">No inventory alerts at this time.</p>
-            </div>
+            <EmptyState
+              icon={CheckCircle}
+              title="All products are well stocked!"
+              description="No inventory alerts at this time. Your products have sufficient stock levels."
+              variant="success"
+            />
           ) : (
             <Table>
               <TableHeader>

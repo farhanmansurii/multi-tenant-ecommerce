@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +13,7 @@ import {
   ClipboardList,
   Tags,
   ArrowLeft,
+  Store,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -21,20 +23,21 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
   SidebarSeparator,
-  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import Image from "next/image";
 
 interface StoreSidebarProps {
   slug: string;
   storeName?: string;
+  storeLogo?: string | null;
   className?: string;
 }
 
@@ -46,8 +49,16 @@ type NavItem = {
   badge?: string | number;
 };
 
-export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) {
+export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSidebarProps) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  // Close sidebar on mobile when pathname changes
+  useEffect(() => {
+    if (isMobile && setOpenMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
 
   const primaryItems: NavItem[] = [
     {
@@ -94,6 +105,15 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
   const renderNavItem = (item: NavItem) => {
     const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
+    const handleLinkClick = () => {
+      if (isMobile && setOpenMobile) {
+        // Close sidebar on mobile when clicking a link
+        setTimeout(() => {
+          setOpenMobile(false);
+        }, 100);
+      }
+    };
+
     return (
       <SidebarMenuItem key={item.href}>
         <SidebarMenuButton
@@ -105,7 +125,7 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
             !isActive && "hover:bg-muted/20",
           )}
         >
-          <Link href={item.href} className="flex items-center gap-2.5">
+          <Link href={item.href} onClick={handleLinkClick} className="flex items-center gap-2.5">
             <item.icon className="h-4 w-4 shrink-0" />
             <span className="text-sm">{item.label}</span>
             {item.badge && (
@@ -123,35 +143,40 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
     <Sidebar
       variant="floating"
       side="left"
-      collapsible="icon"
+      collapsible={isMobile ? "offcanvas" : "icon"}
       className={cn("border-r-0", className)}
     >
-      <SidebarHeader className="pb-2 ">
-        <div className="flex items-center gap-2 px-2 group-data-[collapsible=icon]:justify-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 hover:bg-muted/50 transition-colors"
-                asChild
-              >
-                <Link href="/dashboard/stores">
-                  <ArrowLeft className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Back to stores</TooltipContent>
-          </Tooltip>
-
-          <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-medium truncate text-foreground">{storeName || slug}</p>
+      
+      <SidebarHeader className="border-b border-border/40 pb-0">
+        <div className="flex items-center gap-3 px-2 py-3 pr-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:pr-2 group-data-[collapsible=icon]:gap-0">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+            {storeLogo ? (
+              <div className="relative h-8 w-8 shrink-0 rounded-md overflow-hidden bg-muted border border-border/50">
+                <Image
+                  src={storeLogo}
+                  alt={storeName || slug}
+                  fill
+                  className="object-cover"
+                  sizes="32px"
+                />
+              </div>
+            ) : (
+              <div className="h-8 w-8 shrink-0 rounded-md bg-gradient-to-br from-primary/20 to-primary/10 border border-border/50 flex items-center justify-center">
+                <Store className="h-4 w-4 text-primary" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate text-foreground leading-tight">
+                {storeName || slug}
+              </p>
+            </div>
           </div>
         </div>
-        <SidebarSeparator className="my-2 w-11/12 mx-auto" />
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="w-full overflow-hidden">
+
+        <SidebarSeparator className="my-1" />
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>{primaryItems.map(renderNavItem)}</SidebarMenu>
@@ -164,7 +189,33 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
+      <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  className="transition-colors duration-200 hover:bg-muted/20"
+                >
+                  <Link
+                    href="/dashboard/stores"
+                    onClick={() => {
+                      if (isMobile && setOpenMobile) {
+                        setTimeout(() => {
+                          setOpenMobile(false);
+                        }, 100);
+                      }
+                    }}
+                    className="flex items-center gap-2.5"
+                  >
+                    <ArrowLeft className="h-4 w-4 shrink-0" />
+                    <span className="text-sm">Back to Stores</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       <SidebarFooter className="mt-auto pt-2">
         <SidebarSeparator className="my-2 w-11/12 mx-auto" />
         <SidebarMenu>
@@ -183,6 +234,13 @@ export function StoreSidebar({ slug, storeName, className }: StoreSidebarProps) 
             >
               <Link
                 href={`/dashboard/stores/${slug}/settings`}
+                onClick={() => {
+                  if (isMobile && setOpenMobile) {
+                    setTimeout(() => {
+                      setOpenMobile(false);
+                    }, 100);
+                  }
+                }}
                 className="flex items-center gap-2.5"
               >
                 <Settings className="h-4 w-4 shrink-0" />
