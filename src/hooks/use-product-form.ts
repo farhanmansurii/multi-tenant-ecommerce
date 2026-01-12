@@ -85,9 +85,10 @@ export const useProductForm = ({
     },
   });
 
-  // Reset form when product data changes (edit mode only)
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    if (mode === "edit" && product) {
+    if (mode === "edit" && product && !hasInitialized) {
       form.reset({
         name: product.name || "",
         description: product.description || "",
@@ -138,8 +139,17 @@ export const useProductForm = ({
           })
         );
       }
+
+      setHasInitialized(true);
     }
-  }, [mode, product, form]);
+  }, [mode, product, form, hasInitialized]);
+
+  // Reset initialization flag when switching products
+  useEffect(() => {
+    if (mode === "edit" && productSlug) {
+      setHasInitialized(false);
+    }
+  }, [mode, productSlug]);
 
   // Mutations
   const createMutation = useMutation({
@@ -216,6 +226,7 @@ export const useProductForm = ({
   // Handlers
   const onSubmit = useCallback(
     (values: ProductFormValues) => {
+      console.log("onSubmit", values);
       if (mode === "create") {
         createMutation.mutate(values);
       } else {

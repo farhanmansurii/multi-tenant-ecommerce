@@ -23,15 +23,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return notFound("Store not found");
     }
 
-    const [productCountResult] = await db
-      .select({ count: sql<number>`COUNT(*)::int`.as("count") })
-      .from(products)
-      .where(eq(products.storeId, store.id));
-
-    // Get current user session to determine role
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    // Get current user session to determine role (run in parallel with product count)
+    const [productCountResult, session] = await Promise.all([
+      db
+        .select({ count: sql<number>`COUNT(*)::int`.as("count") })
+        .from(products)
+        .where(eq(products.storeId, store.id)),
+      auth.api.getSession({
+        headers: request.headers,
+      }),
+    ]);
 
     let currentUserRole = null;
     if (session?.user) {
@@ -44,13 +45,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    return ok({
-      store: {
-        ...store,
-        productCount: productCountResult?.count || 0,
-        currentUserRole,
+    return ok(
+      {
+        store: {
+          ...store,
+          productCount: productCountResult[0]?.count || 0,
+          currentUserRole,
+        },
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error) {
     await logRouteError("Error fetching store", error, params);
     return serverError();

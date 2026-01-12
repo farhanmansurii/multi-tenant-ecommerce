@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, desc, sql, count, sum } from "drizzle-orm";
+import { eq, and, gte, lte, sql, count, sum, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { analyticsEvents } from "@/lib/db/schema/shopify";
 import { orders, orderItems } from "@/lib/db/schema/ecommerce/orders";
@@ -17,8 +17,14 @@ export interface AnalyticsSummary {
   totalAddToCarts: number;
   totalPurchases: number;
   totalRevenue: number;
-  conversionRate: number; // purchases / views
+  conversionRate: number;
   averageOrderValue: number;
+  trends?: {
+    views: number;
+    addToCarts: number;
+    purchases: number;
+    revenue: number;
+  };
 }
 
 export interface ProductAnalytics {
@@ -41,7 +47,7 @@ export class AnalyticsService {
     variantId?: string;
     orderId?: string;
     quantity?: number;
-    value?: number; // in cents
+    value?: number;
     currency?: string;
     metadata?: Record<string, any>;
     userAgent?: string;
@@ -58,38 +64,97 @@ export class AnalyticsService {
 
   async getAnalyticsSummary(query: AnalyticsQuery): Promise<AnalyticsSummary> {
     const dateFilter = this.buildDateFilter(query);
+    const orderDateFilter = query.startDate && query.endDate
+      ? and(
+          eq(orders.storeId, query.storeId),
+          gte(orders.createdAt, query.startDate),
+          lte(orders.createdAt, query.endDate)
+        )
+      : eq(orders.storeId, query.storeId);
 
-    // Get event counts
-    const eventCounts = await db
-      .select({
-        eventType: analyticsEvents.eventType,
-        count: count(),
-        totalValue: sum(analyticsEvents.value),
-      })
-      .from(analyticsEvents)
-      .where(and(
-        eq(analyticsEvents.storeId, query.storeId),
-        dateFilter
-      ))
-      .groupBy(analyticsEvents.eventType);
+    let previousPeriodStart: Date | undefined;
+    let previousPeriodEnd: Date | undefined;
 
-    // Get order data for revenue
-    const orderRevenue = await db
-      .select({
-        totalRevenue: sum(sql`(${orders.amounts}->>'total')::numeric`),
-        orderCount: count(),
-      })
-      .from(orders)
-      .where(and(
-        eq(orders.storeId, query.storeId),
-        query.startDate ? gte(orders.createdAt, query.startDate) : undefined,
-        query.endDate ? lte(orders.createdAt, query.endDate) : undefined
-      ));
+    if (query.startDate && query.endDate) {
+      const periodDuration = query.endDate.getTime() - query.startDate.getTime();
+      previousPeriodEnd = new Date(query.startDate.getTime() - 1);
+      previousPeriodStart = new Date(previousPeriodEnd.getTime() - periodDuration);
+    }
+
+    const previousOrderFilter = previousPeriodStart && previousPeriodEnd
+      ? and(
+          eq(orders.storeId, query.storeId),
+          gte(orders.createdAt, previousPeriodStart),
+          lte(orders.createdAt, previousPeriodEnd)
+        )
+      : undefined;
+
+    const [eventCounts, orderRevenue, previousEventCounts, previousOrderRevenue] = await Promise.all([
+      db
+        .select({
+          eventType: analyticsEvents.eventType,
+          count: count(),
+          totalValue: sum(analyticsEvents.value),
+        })
+        .from(analyticsEvents)
+        .where(and(eq(analyticsEvents.storeId, query.storeId), dateFilter))
+        .groupBy(analyticsEvents.eventType),
+      db
+        .select({
+          totalRevenue: sum(sql`(${orders.amounts}->>'total')::numeric`),
+          orderCount: count(),
+        })
+        .from(orders)
+        .where(orderDateFilter),
+      previousPeriodStart && previousPeriodEnd
+        ? db
+            .select({
+              eventType: analyticsEvents.eventType,
+              count: count(),
+            })
+            .from(analyticsEvents)
+            .where(and(
+              eq(analyticsEvents.storeId, query.storeId),
+              gte(analyticsEvents.timestamp, previousPeriodStart),
+              lte(analyticsEvents.timestamp, previousPeriodEnd)
+            ))
+            .groupBy(analyticsEvents.eventType)
+        : Promise.resolve([]),
+      previousOrderFilter
+        ? db
+            .select({
+              totalRevenue: sum(sql`(${orders.amounts}->>'total')::numeric`),
+              orderCount: count(),
+            })
+            .from(orders)
+            .where(previousOrderFilter)
+        : Promise.resolve([]),
+    ]);
 
     const views = eventCounts.find(e => e.eventType === 'view_product')?.count || 0;
     const addToCarts = eventCounts.find(e => e.eventType === 'add_to_cart')?.count || 0;
     const purchases = orderRevenue[0]?.orderCount || 0;
     const revenue = parseFloat(orderRevenue[0]?.totalRevenue || '0');
+
+    let trends: AnalyticsSummary['trends'] | undefined;
+    if (previousPeriodStart && previousPeriodEnd) {
+      const prevViews = previousEventCounts.find(e => e.eventType === 'view_product')?.count || 0;
+      const prevAddToCarts = previousEventCounts.find(e => e.eventType === 'add_to_cart')?.count || 0;
+      const prevPurchases = previousOrderRevenue[0]?.orderCount || 0;
+      const prevRevenue = parseFloat(previousOrderRevenue[0]?.totalRevenue || '0');
+
+      const calculateTrend = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+
+      trends = {
+        views: calculateTrend(views, prevViews),
+        addToCarts: calculateTrend(addToCarts, prevAddToCarts),
+        purchases: calculateTrend(purchases, prevPurchases),
+        revenue: calculateTrend(revenue, prevRevenue),
+      };
+    }
 
     return {
       totalViews: views,
@@ -98,13 +163,13 @@ export class AnalyticsService {
       totalRevenue: revenue,
       conversionRate: views > 0 ? (purchases / views) * 100 : 0,
       averageOrderValue: purchases > 0 ? revenue / purchases : 0,
+      trends,
     };
   }
 
   async getTopProducts(query: AnalyticsQuery, limit = 10): Promise<ProductAnalytics[]> {
     const dateFilter = this.buildDateFilter(query);
 
-    // Get product performance data
     const productStats = await db
       .select({
         productId: analyticsEvents.productId,
@@ -120,7 +185,6 @@ export class AnalyticsService {
       ))
       .groupBy(analyticsEvents.productId, analyticsEvents.eventType);
 
-    // Aggregate by product
     const productMap = new Map<string, {
       views: number;
       addToCarts: number;
@@ -129,7 +193,6 @@ export class AnalyticsService {
 
     for (const stat of productStats) {
       if (!stat.productId) continue;
-
       const existing = productMap.get(stat.productId) || { views: 0, addToCarts: 0, revenue: 0 };
 
       switch (stat.eventType) {
@@ -147,35 +210,39 @@ export class AnalyticsService {
       productMap.set(stat.productId, existing);
     }
 
-    // Get product details and calculate conversion rates
-    const productAnalytics: ProductAnalytics[] = [];
+    const productIds = Array.from(productMap.keys());
+    if (productIds.length === 0) return [];
 
-    for (const [productId, stats] of productMap) {
-      const product = await db
-        .select({
-          name: products.name,
-        })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
+    const productDetails = await db
+      .select({
+        id: products.id,
+        name: products.name,
+      })
+      .from(products)
+      .where(inArray(products.id, productIds));
 
-      if (product[0]) {
-        productAnalytics.push({
+    const productNameMap = new Map(productDetails.map(p => [p.id, p.name]));
+
+    const productAnalytics: ProductAnalytics[] = Array.from(productMap.entries())
+      .map(([productId, stats]) => {
+        const productName = productNameMap.get(productId);
+        if (!productName) return null;
+
+        return {
           productId,
-          productName: product[0].name,
+          productName,
           views: stats.views,
           addToCarts: stats.addToCarts,
-          purchases: 0, // We'll need to calculate this from orders
+          purchases: 0,
           revenue: stats.revenue,
           conversionRate: stats.views > 0 ? (stats.addToCarts / stats.views) * 100 : 0,
-        });
-      }
-    }
-
-    // Sort by revenue and return top products
-    return productAnalytics
+        };
+      })
+      .filter((p): p is ProductAnalytics => p !== null)
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, limit);
+
+    return productAnalytics;
   }
 
   async getConversionFunnel(query: AnalyticsQuery) {

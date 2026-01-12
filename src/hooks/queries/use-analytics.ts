@@ -11,37 +11,30 @@ export function useAnalytics(
   params: AnalyticsQueryParams = {}
 ) {
   return useQuery({
-    queryKey: ["analytics", storeSlug, params],
+    queryKey: ["analytics", storeSlug, params.startDate?.toISOString(), params.endDate?.toISOString(), params.period],
     queryFn: async () => {
       if (!storeSlug) {
         throw new Error("Store slug is required");
       }
 
       const searchParams = new URLSearchParams();
-
-      if (params.startDate) {
-        searchParams.set("startDate", params.startDate.toISOString());
-      }
-
-      if (params.endDate) {
-        searchParams.set("endDate", params.endDate.toISOString());
-      }
-
-      if (params.period) {
-        searchParams.set("period", params.period);
-      }
+      if (params.startDate) searchParams.set("startDate", params.startDate.toISOString());
+      if (params.endDate) searchParams.set("endDate", params.endDate.toISOString());
+      if (params.period) searchParams.set("period", params.period);
 
       const response = await fetch(`/api/stores/${storeSlug}/analytics?${searchParams}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch analytics data");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to fetch analytics data");
       }
 
       return response.json();
     },
     enabled: !!storeSlug,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -56,13 +49,15 @@ export function useRecentActivity(storeSlug: string | null, limit = 10) {
       const response = await fetch(`/api/stores/${storeSlug}/analytics/recent-activity?limit=${limit}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch recent activity");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to fetch recent activity");
       }
 
       return response.json();
     },
     enabled: !!storeSlug,
-    staleTime: 60 * 1000, // 1 minute - more frequent updates for activity
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

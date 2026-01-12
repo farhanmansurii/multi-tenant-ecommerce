@@ -66,40 +66,41 @@ export async function findCart(
 	return getCartById(storeId, result[0].id);
 }
 
-// Get cart by ID with items
+// Get cart by ID with items (optimized)
 export async function getCartById(storeId: string, cartId: string): Promise<Cart | null> {
-	const cartResult = await db
-		.select()
-		.from(carts)
-		.where(and(eq(carts.id, cartId), eq(carts.storeId, storeId)))
-		.limit(1);
+	// Fetch cart and items in parallel for better performance
+	const [cartResult, itemsResult] = await Promise.all([
+		db
+			.select()
+			.from(carts)
+			.where(and(eq(carts.id, cartId), eq(carts.storeId, storeId)))
+			.limit(1),
+		db
+			.select({
+				item: cartItems,
+				product: {
+					id: products.id,
+					name: products.name,
+					slug: products.slug,
+					images: products.images,
+				},
+				variant: {
+					id: productVariants.id,
+					sku: productVariants.sku,
+					attributes: productVariants.attributes,
+				},
+			})
+			.from(cartItems)
+			.leftJoin(products, eq(cartItems.productId, products.id))
+			.leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
+			.where(eq(cartItems.cartId, cartId)),
+	]);
 
 	if (cartResult.length === 0) return null;
 
 	const cart = cartResult[0];
 
-	// Get cart items with product info
-	const items = await db
-		.select({
-			item: cartItems,
-			product: {
-				id: products.id,
-				name: products.name,
-				slug: products.slug,
-				images: products.images,
-			},
-			variant: {
-				id: productVariants.id,
-				sku: productVariants.sku,
-				attributes: productVariants.attributes,
-			},
-		})
-		.from(cartItems)
-		.leftJoin(products, eq(cartItems.productId, products.id))
-		.leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
-		.where(eq(cartItems.cartId, cartId));
-
-	const cartItemsWithProducts: CartItem[] = items.map((row) => ({
+	const cartItemsWithProducts: CartItem[] = itemsResult.map((row) => ({
 		...row.item,
 		product: row.product
 			? {

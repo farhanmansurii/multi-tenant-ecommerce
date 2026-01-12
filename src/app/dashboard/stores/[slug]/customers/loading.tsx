@@ -17,7 +17,7 @@ export default function Loading() {
       disableAnimation={true}
     >
       <div className="space-y-6">
-        {/* Search & Filter */}
+          {/* Search & Filter */}
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-72 rounded-lg" />
           <Skeleton className="h-10 w-28" />

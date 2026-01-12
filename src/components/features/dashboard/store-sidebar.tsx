@@ -153,7 +153,7 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
       className={cn("border-r-0", className)}
     >
 
-      <SidebarHeader className="border-b border-border/40 pb-0">
+      <SidebarHeader className="pb-0">
         <div className="flex items-center gap-3 px-2 py-3 pr-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:pr-2 group-data-[collapsible=icon]:gap-0">
           <div className="flex items-center gap-2.5 flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
             {storeLogo ? (
@@ -181,8 +181,6 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
       </SidebarHeader>
 
       <SidebarContent className="w-full overflow-hidden">
-
-        <SidebarSeparator className="my-1" />
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>{primaryItems.map(renderNavItem)}</SidebarMenu>

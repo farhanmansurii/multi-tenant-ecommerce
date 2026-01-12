@@ -28,27 +28,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			return notFound('Store not found');
 		}
 
-		// Get total count efficiently
-		const [countResult] = await db
-			.select({ count: sql<number>`COUNT(*)::int` })
-			.from(productsTable)
-			.where(eq(productsTable.storeId, store.id));
-
-		const total = countResult?.count || 0;
-
-		// Get paginated products
+		// Run count and products query in parallel for better performance
 		type ProductRow = typeof productsTable.$inferSelect;
-		const products: ProductRow[] = await db
-			.select()
-			.from(productsTable)
-			.where(eq(productsTable.storeId, store.id))
-			.orderBy(desc(productsTable.createdAt))
-			.limit(limit)
-			.offset(offset);
+		const [countResult, products] = await Promise.all([
+			db
+				.select({ count: sql<number>`COUNT(*)::int` })
+				.from(productsTable)
+				.where(eq(productsTable.storeId, store.id)),
+			db
+				.select()
+				.from(productsTable)
+				.where(eq(productsTable.storeId, store.id))
+				.orderBy(desc(productsTable.createdAt))
+				.limit(limit)
+				.offset(offset),
+		]);
 
-		// Fetch category names
+		const total = countResult[0]?.count || 0;
+		const productsArray: ProductRow[] = products;
+
+		// Collect category IDs from products
 		const categoryIds = new Set<string>();
-		products.forEach((p) => {
+		productsArray.forEach((p) => {
 			if (Array.isArray(p.categories)) {
 				p.categories.forEach((id) => {
 					if (typeof id === 'string') categoryIds.add(id);
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			}
 		});
 
+		// Fetch category names only if needed
 		const categoryMap = new Map<string, string>();
 		if (categoryIds.size > 0) {
 			const cats = await db
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			cats.forEach((c) => categoryMap.set(c.id, c.name));
 		}
 
-		const enrichedProducts = products.map((p) => ({
+		const enrichedProducts = productsArray.map((p) => ({
 			...p,
 			categories: Array.isArray(p.categories)
 				? p.categories.map((id) => ({
@@ -75,14 +77,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 				: [],
 		}));
 
-		return ok({
-			store: { id: store.id, slug: store.slug, name: store.name },
-			products: enrichedProducts,
-			total,
-			page,
-			limit,
-			totalPages: Math.ceil(total / limit),
-		});
+		return ok(
+			{
+				store: { id: store.id, slug: store.slug, name: store.name },
+				products: enrichedProducts,
+				total,
+				page,
+				limit,
+				totalPages: Math.ceil(total / limit),
+			},
+			{
+				headers: {
+					'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+				},
+			}
+		);
 	} catch (error) {
 		await logRouteError('Error fetching products', error, params);
 		return serverError();

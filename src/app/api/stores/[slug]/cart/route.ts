@@ -16,10 +16,11 @@ interface RouteParams {
 	}>;
 }
 
-// Generate or get session ID for guest carts
-async function getSessionId(): Promise<string> {
+// Generate or get session ID for guest carts (store-specific)
+async function getSessionId(storeSlug: string): Promise<string> {
 	const cookieStore = await cookies();
-	let sessionId = cookieStore.get("cart_session")?.value;
+	const cookieName = `cart_session_${storeSlug}`;
+	let sessionId = cookieStore.get(cookieName)?.value;
 
 	if (!sessionId) {
 		sessionId = crypto.randomUUID();
@@ -38,15 +39,23 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		return notFound("Store not found");
 	}
 
-	const sessionId = await getSessionId();
+	const sessionId = await getSessionId(slug);
 	const cart = await getOrCreateCart(store.id, { sessionId });
 
-	const response = ok({ cart });
+	const response = ok(
+		{ cart },
+		{
+			headers: {
+				'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+			},
+		}
+	);
 
-	// Set session cookie if not already set
+	// Set session cookie if not already set (store-specific)
 	const cookieStore = await cookies();
-	if (!cookieStore.get("cart_session")) {
-		response.cookies.set("cart_session", sessionId, {
+	const cookieName = `cart_session_${slug}`;
+	if (!cookieStore.get(cookieName)) {
+		response.cookies.set(cookieName, sessionId, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === "production",
 			sameSite: "lax",
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		return badRequest("Invalid input");
 	}
 
-	const sessionId = await getSessionId();
+	const sessionId = await getSessionId(slug);
 	const cart = await getOrCreateCart(store.id, { sessionId });
 
 	try {
@@ -81,10 +90,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 		const response = created({ item, cartId: cart.id });
 
-		// Ensure session cookie is set
+		// Ensure session cookie is set (store-specific)
 		const cookieStore = await cookies();
-		if (!cookieStore.get("cart_session")) {
-			response.cookies.set("cart_session", sessionId, {
+		const cookieName = `cart_session_${slug}`;
+		if (!cookieStore.get(cookieName)) {
+			response.cookies.set(cookieName, sessionId, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
@@ -108,7 +118,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 		return notFound("Store not found");
 	}
 
-	const sessionId = await getSessionId();
+	const sessionId = await getSessionId(slug);
 	const cart = await getOrCreateCart(store.id, { sessionId });
 
 	await clearCart(store.id, cart.id);

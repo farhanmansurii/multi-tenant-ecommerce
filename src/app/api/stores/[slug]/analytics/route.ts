@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { stores } from "@/lib/db/schema/core/stores";
+import { NextRequest } from "next/server";
 import { requireAuthOrNull } from "@/lib/session/helpers";
+import { storeHelpers } from "@/lib/domains/stores";
 import { analyticsService } from "@/lib/analytics/service";
 import { unauthorized, notFound, serverError, ok, badRequest } from "@/lib/api/responses";
 
@@ -17,15 +15,9 @@ export async function GET(
     }
 
     const { slug } = await params;
+    const store = await storeHelpers.getStoreBySlug(slug);
 
-    // Verify store ownership
-    const store = await db
-      .select()
-      .from(stores)
-      .where(eq(stores.slug, slug))
-      .limit(1);
-
-    if (!store[0] || store[0].ownerUserId !== session.user.id) {
+    if (!store || store.ownerUserId !== session.user.id) {
       return notFound("Store not found or access denied");
     }
 
@@ -34,42 +26,38 @@ export async function GET(
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
     const period = (searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
 
-    // Get analytics data in parallel
+    const queryParams = { storeId: store.id, startDate, endDate };
+
     const [summary, topProducts, funnel, revenueByPeriod] = await Promise.all([
-      analyticsService.getAnalyticsSummary({ storeId: store[0].id, startDate, endDate }),
-      analyticsService.getTopProducts({ storeId: store[0].id, startDate, endDate }, 10),
-      analyticsService.getConversionFunnel({ storeId: store[0].id, startDate, endDate }),
-      analyticsService.getRevenueByPeriod({ storeId: store[0].id, startDate, endDate }, period),
+      analyticsService.getAnalyticsSummary(queryParams),
+      analyticsService.getTopProducts(queryParams, 10),
+      analyticsService.getConversionFunnel(queryParams),
+      analyticsService.getRevenueByPeriod(queryParams, period),
     ]);
 
-    return ok({
-      summary,
-      topProducts,
-      funnel,
-      revenueByPeriod,
-    });
+    return ok(
+      { summary, topProducts, funnel, revenueByPeriod },
+      {
+        headers: {
+          'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching analytics:", error);
     return serverError();
   }
 }
 
-// POST endpoint for tracking events (can be called from frontend)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params;
+    const store = await storeHelpers.getStoreBySlug(slug);
 
-    // Verify store exists (don't require auth for event tracking)
-    const store = await db
-      .select()
-      .from(stores)
-      .where(eq(stores.slug, slug))
-      .limit(1);
-
-    if (!store[0]) {
+    if (!store) {
       return notFound("Store not found");
     }
 
@@ -87,12 +75,10 @@ export async function POST(
       metadata,
     } = body;
 
-    // Basic validation
     if (!eventType || !sessionId) {
       return badRequest("eventType and sessionId are required");
     }
 
-    // Get client info from request
     const userAgent = request.headers.get('user-agent') || undefined;
     const ipAddress = request.headers.get('x-forwarded-for') ||
                      request.headers.get('x-real-ip') ||
@@ -101,7 +87,7 @@ export async function POST(
     const url = request.headers.get('x-url') || undefined;
 
     await analyticsService.trackEvent({
-      storeId: store[0].id,
+      storeId: store.id,
       eventType,
       userId,
       sessionId,
@@ -109,8 +95,8 @@ export async function POST(
       variantId,
       orderId,
       quantity,
-      value: value ? Math.round(value * 100) : undefined, // Convert to cents
-      currency: currency || store[0].currency,
+      value: value ? Math.round(value * 100) : undefined,
+      currency: currency || store.currency,
       metadata,
       userAgent,
       ipAddress,

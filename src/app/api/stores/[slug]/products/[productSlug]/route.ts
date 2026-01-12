@@ -61,10 +61,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const { store, product } = result;
     const enrichedProduct = await enrichProductCategories(product);
 
-    return ok({
-      product: enrichedProduct,
-      store: { id: store.id, slug: store.slug, name: store.name },
-    });
+    return ok(
+      {
+        product: enrichedProduct,
+        store: { id: store.id, slug: store.slug, name: store.name },
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error) {
     await logRouteError('Error fetching product', error, params);
     return serverError();

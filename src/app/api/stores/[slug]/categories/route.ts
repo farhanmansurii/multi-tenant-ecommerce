@@ -30,7 +30,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		.where(and(eq(categories.storeId, storeId), eq(categories.isActive, true)))
 		.orderBy(categories.sortOrder);
 
-	return ok({ categories: rows });
+	return ok(
+		{ categories: rows },
+		{
+			headers: {
+				'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+			},
+		}
+	);
 }
 
 // POST - Create category

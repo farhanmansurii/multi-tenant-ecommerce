@@ -84,7 +84,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return acc;
     }, []);
 
-    return ok({ activities: activityItems.slice(0, 20) });
+    return ok(
+      { activities: activityItems.slice(0, 20) },
+      {
+        headers: {
+          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching recent activity:", error);
     return serverError();

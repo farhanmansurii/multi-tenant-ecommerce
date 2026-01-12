@@ -1,19 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import React, { useState, useMemo, useCallback } from "react";
+import { subDays } from "date-fns";
 import {
-  CalendarDays,
   TrendingUp,
+  TrendingDown,
   ShoppingCart,
-  Users,
   DollarSign,
   Eye,
   Target,
-  BarChart3,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -21,23 +18,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { useAnalytics, useRecentActivity } from "@/hooks/queries/use-analytics";
-import { MetricCard } from "./components/metric-card";
+import { MetricCard } from "@/components/shared/common/metric-card";
 import { ConversionFunnelChart } from "./components/conversion-funnel-chart";
 import { RevenueChart } from "./components/revenue-chart";
 import { TopProductsTable } from "./components/top-products-table";
 import { AnalyticsFilters } from "./components/analytics-filters";
 import { RecentActivity } from "./components/recent-activity";
+import { AnalyticsSkeleton } from "./components/analytics-skeleton";
 
 interface AnalyticsDashboardProps {
   params: Promise<{ slug: string }>;
@@ -45,83 +35,31 @@ interface AnalyticsDashboardProps {
 
 export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
   const { slug } = useDashboardParams(params);
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
-  }>({
+  const [dateRange, setDateRange] = useState(() => ({
     from: subDays(new Date(), 30),
     to: new Date(),
-  });
+  }));
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
 
-  const { data: analytics, isLoading, error } = useAnalytics(slug, {
+  const analyticsParams = useMemo(() => ({
     startDate: dateRange.from,
     endDate: dateRange.to,
     period,
-  });
+  }), [dateRange.from, dateRange.to, period]);
 
+  const { data: analytics, isLoading, error } = useAnalytics(slug, analyticsParams);
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(slug, 10);
 
+  const handleDateRangeChange = useCallback((range: { from: Date; to: Date }) => {
+    setDateRange(range);
+  }, []);
+
+  const handlePeriodChange = useCallback((newPeriod: "day" | "week" | "month") => {
+    setPeriod(newPeriod);
+  }, []);
+
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="h-10 w-48 bg-muted rounded animate-pulse" />
-          <div className="h-10 w-32 bg-muted rounded animate-pulse" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-20" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-64 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Top products table skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 border rounded">
-                  <div className="flex items-center space-x-3">
-                    <Skeleton className="h-8 w-8 rounded" />
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-6 w-16" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   if (error || !analytics) {
@@ -143,45 +81,46 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
 
   const { summary, topProducts, funnel, revenueByPeriod } = analytics;
 
+  const metrics = useMemo(() => [
+    { label: "Total Views", value: summary.totalViews.toLocaleString(), icon: Eye, color: "blue" as const, trend: summary.trends?.views },
+    { label: "Add to Cart", value: summary.totalAddToCarts.toLocaleString(), icon: ShoppingCart, color: "emerald" as const, trend: summary.trends?.addToCarts },
+    { label: "Total Orders", value: summary.totalPurchases.toLocaleString(), icon: Target, color: "purple" as const, trend: summary.trends?.purchases },
+    { label: "Revenue", value: `$${summary.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "amber" as const, trend: summary.trends?.revenue },
+  ], [summary]);
+
   return (
     <div className="space-y-6">
-      {/* Filters */}
       <AnalyticsFilters
         dateRange={dateRange}
-        onDateRangeChange={setDateRange}
+        onDateRangeChange={handleDateRangeChange}
         period={period}
-        onPeriodChange={setPeriod}
+        onPeriodChange={handlePeriodChange}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Views"
-          value={summary.totalViews.toLocaleString()}
-          icon={Eye}
-          trend="+12.5%"
-          description="Product page views"
-        />
-        <MetricCard
-          title="Add to Cart"
-          value={summary.totalAddToCarts.toLocaleString()}
-          icon={ShoppingCart}
-          trend="+8.2%"
-          description="Items added to cart"
-        />
-        <MetricCard
-          title="Total Orders"
-          value={summary.totalPurchases.toLocaleString()}
-          icon={Target}
-          trend="+15.3%"
-          description="Completed purchases"
-        />
-        <MetricCard
-          title="Revenue"
-          value={`$${summary.totalRevenue.toFixed(2)}`}
-          icon={DollarSign}
-          trend="+18.7%"
-          description="Total sales revenue"
-        />
+        {metrics.map((metric, index) => (
+          <div key={index} className="relative">
+            <MetricCard
+              label={metric.label}
+              value={metric.value}
+              icon={metric.icon}
+              color={metric.color}
+            />
+            {metric.trend !== undefined && (
+              <div className="absolute top-3 right-3 text-xs flex items-center gap-1">
+                {metric.trend >= 0 ? (
+                  <span className="text-emerald-600 font-medium">
+                    <TrendingUp className="h-3 w-3 inline" /> +{metric.trend.toFixed(1)}%
+                  </span>
+                ) : (
+                  <span className="text-red-600 font-medium">
+                    <TrendingDown className="h-3 w-3 inline" /> {metric.trend.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

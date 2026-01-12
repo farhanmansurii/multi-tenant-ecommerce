@@ -18,7 +18,6 @@ export default function Loading() {
       disableAnimation={true}
     >
       <div className="space-y-6">
-        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="border-border/40">
@@ -32,13 +31,11 @@ export default function Loading() {
           ))}
         </div>
 
-        {/* Filters */}
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-64 rounded-lg" />
           <Skeleton className="h-10 w-28" />
         </div>
 
-        {/* Discounts Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="border-border/40">
