@@ -172,7 +172,7 @@ export function RecentActivity({ activities, isLoading }: RecentActivityProps) {
           Recent Activity
         </CardTitle>
         <CardDescription>
-          Latest customer interactions and events from the last 24 hours
+          Latest customer interactions and events from the last 7 days
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -212,7 +212,7 @@ export function RecentActivity({ activities, isLoading }: RecentActivityProps) {
             <div className="text-center space-y-2">
               <Activity className="h-8 w-8 text-muted-foreground mx-auto" />
               <p className="text-sm text-muted-foreground">
-                No recent activity in the last 24 hours
+                No recent activity in the last 7 days
               </p>
               <p className="text-xs text-muted-foreground">
                 Activity will appear here as customers interact with your store
