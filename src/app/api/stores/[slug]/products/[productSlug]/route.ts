@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
+import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
 import { db } from '@/lib/db';
 import { categories as categoriesTable } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
@@ -15,20 +15,20 @@ interface RouteParams {
   }>;
 }
 
-export const revalidate = CACHE_CONFIG.PRODUCT.revalidate;
+export const revalidate = 120;
 
-async function getStoreAndProduct(slug: string, productSlug: string) {
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) {
-    return { error: notFound('Store not found') };
+async function getStoreAndProduct(ctx: Awaited<ReturnType<typeof getApiContextOrNull>>, productSlug: string) {
+  if (ctx instanceof Response || !ctx) {
+    return { error: ctx || notFound('Store not found') };
   }
 
-  const product = await productHelpers.getProductBySlug(store.id, productSlug);
+  const product = await productHelpers.getProductBySlug(ctx.storeId, productSlug);
   if (!product) {
-    return { error: notFound('Product not found') };
+    console.error('Product not found:', { storeId: ctx.storeId, productSlug, storeSlug: ctx.store.slug });
+    return { error: notFound(`Product not found: ${productSlug} in store ${ctx.store.slug}`) };
   }
 
-  return { store, product };
+  return { store: ctx.store, product };
 }
 
 async function enrichProductCategories(product: any) {
@@ -55,11 +55,12 @@ async function enrichProductCategories(product: any) {
   return enrichedProduct;
 }
 
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug, productSlug } = await params;
 
-    const result = await getStoreAndProduct(slug, productSlug);
+    const ctx = await getApiContextOrNull(request, slug);
+    const result = await getStoreAndProduct(ctx, productSlug);
     if ('error' in result) return result.error;
 
     const { store, product } = result;
@@ -89,7 +90,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug, productSlug } = await params;
 
-    const result = await getStoreAndProduct(slug, productSlug);
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
+
+    const result = await getStoreAndProduct(ctx, productSlug);
     if ('error' in result) return result.error;
 
     const { store, product } = result;
@@ -100,6 +104,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const updated = await productHelpers.updateProduct(product.id, body);
+
+    if (!updated) {
+      return notFound('Product not found or update failed');
+    }
+
     const enrichedProduct = await enrichProductCategories(updated);
 
     revalidateProductCache(slug, productSlug);
@@ -121,14 +130,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug, productSlug } = await params;
 
-    const result = await getStoreAndProduct(slug, productSlug);
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
+
+    const result = await getStoreAndProduct(ctx, productSlug);
     if ('error' in result) return result.error;
 
-    const { product } = result;
+    const { store, product } = result;
 
     await productHelpers.deleteProduct(product.id);
 

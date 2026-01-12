@@ -125,6 +125,10 @@ export async function updateProduct(id: string, data: Partial<CreateProductData>
     .where(eq(products.id, id))
     .returning();
 
+  if (!updatedProduct) {
+    throw new Error('Product not found or update failed');
+  }
+
   return updatedProduct;
 }
 

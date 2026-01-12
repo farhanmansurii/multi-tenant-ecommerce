@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContextOrNull } from "@/lib/api/context";
 import {
 	initiateCheckout,
 	initiateCheckoutSchema,
@@ -17,10 +17,9 @@ interface RouteParams {
 export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const body = await request.json();
 	const parseResult = initiateCheckoutSchema.safeParse(body);
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	}
 
 	try {
-		const session = await initiateCheckout(store.id, parseResult.data);
+		const session = await initiateCheckout(ctx.storeId, parseResult.data);
 		return created({ session });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to initiate checkout";

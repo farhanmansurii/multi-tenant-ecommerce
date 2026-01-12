@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { unstable_cache } from 'next/cache';
 
-import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
+import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
 import { db } from '@/lib/db';
 import { products as productsTable, categories as categoriesTable } from '@/lib/db/schema';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
@@ -16,7 +16,7 @@ interface RouteParams {
 	}>;
 }
 
-export const revalidate = CACHE_CONFIG.PRODUCTS.revalidate;
+export const revalidate = 60;
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	try {
@@ -27,16 +27,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
 		const offset = (page - 1) * limit;
 
-		const store = await storeHelpers.getStoreBySlug(slug);
-		if (!store) {
-			return notFound('Store not found');
-		}
+		const ctx = await getApiContextOrNull(request, slug);
+		if (ctx instanceof Response) return ctx;
+		if (!ctx) return notFound('Store not found');
 
 		const [countResult, products] = await Promise.all([
 			db
 				.select({ count: sql<number>`COUNT(*)::int` })
 				.from(productsTable)
-				.where(eq(productsTable.storeId, store.id)),
+				.where(eq(productsTable.storeId, ctx.storeId)),
 			db
 				.select({
 					id: productsTable.id,
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 					updatedAt: productsTable.updatedAt,
 				})
 				.from(productsTable)
-				.where(eq(productsTable.storeId, store.id))
+				.where(eq(productsTable.storeId, ctx.storeId))
 				.orderBy(desc(productsTable.createdAt))
 				.limit(limit)
 				.offset(offset),
@@ -96,7 +95,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 		const response = ok(
 			{
-				store: { id: store.id, slug: store.slug, name: store.name },
+				store: { id: ctx.store.id, slug: ctx.store.slug, name: ctx.store.name },
 				products: enrichedProducts,
 				total,
 				page,
@@ -122,12 +121,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	let storeId: string | undefined;
 	try {
 		const { slug } = await params;
-		const store = await storeHelpers.getStoreBySlug(slug);
-		if (!store) {
-			return notFound('Store not found');
-		}
+		const ctx = await getApiContext(request, slug, { requireOwner: true });
+		if (ctx instanceof Response) return ctx;
 
-		storeId = store.id;
+		storeId = ctx.storeId;
 
 		const body = await request.json();
 
@@ -151,14 +148,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			let unique = candidate;
 			let i = 1;
 			while (true) {
-				const exists = await productHelpers.getProductBySlug(store.id, unique);
+				const exists = await productHelpers.getProductBySlug(ctx.storeId, unique);
 				if (!exists) break;
 				unique = `${candidate}-${++i}`;
 			}
 			finalSlug = unique;
 		}
 
-		const product = await productHelpers.createProduct(store.id, { ...body, slug: finalSlug });
+		const product = await productHelpers.createProduct(ctx.storeId, { ...body, slug: finalSlug });
 
 		revalidateProductCache(slug);
 

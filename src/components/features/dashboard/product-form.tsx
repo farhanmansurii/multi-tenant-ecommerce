@@ -10,9 +10,9 @@ import { ProductFormValues } from "@/lib/validations/product-form";
 import { Button } from "@/components/ui/button";
 import { PageCard } from "@/components/shared/layout/page-card";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
-import { LoadingState } from "./components/loading-state";
 import { ErrorState } from "./components/error-state";
 import { NotFoundState } from "@/components/shared/common/not-found-state";
+import { ProductFormSkeleton } from "./components/product-form-skeleton";
 import { ImageUploadSection } from "./components/image-upload-section";
 import { SwitchField } from "./components/switch-field";
 import {
@@ -67,15 +67,7 @@ export default function ProductForm({
 
   // Loading and error states
   if (isPending || storeLoading || (mode === "edit" && productLoading)) {
-    return (
-      <LoadingState
-        message={
-          mode === "create"
-            ? "Preparing product creation..."
-            : "Preparing product details..."
-        }
-      />
-    );
+    return <ProductFormSkeleton />;
   }
 
   if (!isAuthenticated) {

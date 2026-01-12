@@ -1,28 +1,22 @@
 import { NextRequest } from "next/server";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContext } from "@/lib/api/context";
 import { analyticsEvents } from "@/lib/db/schema/shopify";
 import { products } from "@/lib/db/schema/ecommerce/products";
-import { requireAuthOrNull } from "@/lib/session/helpers";
-import { serverError, ok, notFound, unauthorized } from "@/lib/api/responses";
+import { serverError, ok } from "@/lib/api/responses";
 import { CACHE_CONFIG } from "@/lib/api/cache-config";
 
-export const revalidate = CACHE_CONFIG.RECENT_ACTIVITY.revalidate;
+export const revalidate = 30;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const session = await requireAuthOrNull();
-    if (!session) return unauthorized();
-
     const { slug } = await params;
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
+
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
-
-    const store = await storeHelpers.getStoreBySlug(slug);
-    if (!store || store.ownerUserId !== session.user.id) {
-      return notFound("Store not found or access denied");
-    }
 
     const recentEvents = await db
       .select({
@@ -43,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .leftJoin(products, eq(analyticsEvents.productId, products.id))
       .where(
         and(
-          eq(analyticsEvents.storeId, store.id),
+          eq(analyticsEvents.storeId, ctx.storeId),
           gte(analyticsEvents.timestamp, new Date(Date.now() - 24 * 60 * 60 * 1000)),
         ),
       )

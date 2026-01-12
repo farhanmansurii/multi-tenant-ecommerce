@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContextOrNull } from "@/lib/api/context";
 import {
 	getOrCreateCart,
 	addItemToCart,
@@ -31,16 +31,15 @@ async function getSessionId(storeSlug: string): Promise<string> {
 }
 
 // GET /api/stores/[slug]/cart - Get current cart
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const sessionId = await getSessionId(slug);
-	const cart = await getOrCreateCart(store.id, { sessionId });
+	const cart = await getOrCreateCart(ctx.storeId, { sessionId });
 
 	const response = ok(
 		{ cart },
@@ -70,10 +69,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const body = await request.json();
 	const parseResult = addToCartSchema.safeParse(body);
@@ -83,10 +81,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	}
 
 	const sessionId = await getSessionId(slug);
-	const cart = await getOrCreateCart(store.id, { sessionId });
+	const cart = await getOrCreateCart(ctx.storeId, { sessionId });
 
 	try {
-		const item = await addItemToCart(store.id, cart.id, parseResult.data);
+		const item = await addItemToCart(ctx.storeId, cart.id, parseResult.data);
 
 		const response = created({ item, cartId: cart.id });
 
@@ -110,18 +108,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/stores/[slug]/cart - Clear cart
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const sessionId = await getSessionId(slug);
-	const cart = await getOrCreateCart(store.id, { sessionId });
+	const cart = await getOrCreateCart(ctx.storeId, { sessionId });
 
-	await clearCart(store.id, cart.id);
+	await clearCart(ctx.storeId, cart.id);
 
 	return ok({ success: true });
 }

@@ -7,8 +7,8 @@ import {
 	createCustomerSchema,
 	customerQuerySchema,
 } from "@/lib/domains/customers";
-import { withStoreContext } from "@/lib/api/handlers";
-import { ok, created, badRequest, conflict } from "@/lib/api/responses";
+import { getApiContext, getApiContextOrNull } from "@/lib/api/context";
+import { ok, created, badRequest, conflict, notFound } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -20,9 +20,8 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug, undefined, { enforceOwner: true });
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContext(request, slug, { requireOwner: true });
+	if (ctx instanceof Response) return ctx;
 
 	// Parse query params
 	const url = new URL(request.url);
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		return badRequest("Invalid query parameters");
 	}
 
-	const result = await listCustomers(storeId, parseResult.data);
+	const result = await listCustomers(ctx.storeId, parseResult.data);
 
 	return ok({
 		customers: result.customers,
@@ -52,10 +51,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	// Public access for customer creation (signup/checkout)
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug);
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const body = await request.json();
 	const parseResult = createCustomerSchema.safeParse(body);
@@ -65,13 +63,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	}
 
 	// Check if customer already exists
-	const existing = await getCustomerByEmail(storeId, parseResult.data.email);
+	const existing = await getCustomerByEmail(ctx.storeId, parseResult.data.email);
 	if (existing) {
 		return conflict("Customer with this email already exists");
 	}
 
 	try {
-		const customer = await createCustomer(storeId, parseResult.data);
+		const customer = await createCustomer(ctx.storeId, parseResult.data);
 		return created({ customer });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to create customer";

@@ -4,8 +4,8 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, stores } from "@/lib/db/schema";
 import { storeHelpers } from "@/lib/domains/stores";
-import { auth } from "@/lib/auth/server";
-import { ok, notFound, unauthorized, forbidden, serverError, logRouteError } from "@/lib/api/responses";
+import { getApiContext, getApiContextOrNull } from "@/lib/api/context";
+import { ok, serverError, logRouteError, notFound } from "@/lib/api/responses";
 import { CACHE_CONFIG } from "@/lib/api/cache-config";
 import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
 
@@ -15,40 +15,32 @@ interface RouteParams {
   }>;
 }
 
-export const revalidate = CACHE_CONFIG.STORE.revalidate;
+export const revalidate = 120;
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug } = await params;
 
-    const store = await storeHelpers.getStoreBySlug(slug);
-    if (!store) {
-      return notFound("Store not found");
-    }
+    const ctx = await getApiContextOrNull(request, slug);
+    if (ctx instanceof Response) return ctx;
+    if (!ctx) return notFound("Store not found");
 
-    const [productCountResult, session] = await Promise.all([
+    const [productCountResult, currentUserRole] = await Promise.all([
       db
         .select({ count: sql<number>`COUNT(*)::int`.as("count") })
         .from(products)
-        .where(eq(products.storeId, store.id)),
-      auth.api.getSession({
-        headers: request.headers,
-      }),
+        .where(eq(products.storeId, ctx.storeId)),
+      ctx.userId
+        ? ctx.store.ownerUserId === ctx.userId
+          ? Promise.resolve("owner" as const)
+          : storeHelpers.getUserRole(ctx.storeId, ctx.userId)
+        : Promise.resolve(null),
     ]);
-
-    let currentUserRole = null;
-    if (session?.user) {
-      if (store.ownerUserId === session.user.id) {
-        currentUserRole = "owner";
-      } else {
-        currentUserRole = await storeHelpers.getUserRole(store.id, session.user.id);
-      }
-    }
 
     const response = ok(
       {
         store: {
-          ...store,
+          ...ctx.store,
           productCount: productCountResult[0]?.count || 0,
           currentUserRole,
         },
@@ -72,24 +64,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   let storeId: string | undefined;
   try {
     const { slug } = await params;
-    const existing = await storeHelpers.getStoreBySlug(slug);
-    if (!existing) {
-      return notFound("Store not found");
-    }
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
 
-    storeId = existing.id;
-
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return unauthorized();
-    }
-
-    if (existing.ownerUserId !== session.user.id) {
-      return forbidden();
-    }
+    storeId = ctx.storeId;
+    const existing = ctx.store;
 
     const body = await request.json();
 
@@ -136,7 +115,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         settings: newSettings,
         updatedAt: new Date(),
       })
-      .where(eq(stores.id, existing.id))
+      .where(eq(stores.id, ctx.storeId))
       .returning();
 
     revalidateStoreCache(slug);

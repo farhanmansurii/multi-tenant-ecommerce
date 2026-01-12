@@ -4,9 +4,8 @@ import { createId } from '@paralleldrive/cuid2';
 
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
-import { withStoreContext } from '@/lib/api/handlers';
+import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
 import { ok, created, badRequest, notFound, serverError, logRouteError } from '@/lib/api/responses';
-import { logger } from '@/lib/api/logger';
 import { CACHE_CONFIG } from '@/lib/api/cache-config';
 import { revalidateCategoryCache } from '@/lib/api/cache-revalidation';
 
@@ -16,20 +15,18 @@ interface RouteParams {
 	}>;
 }
 
-export const revalidate = CACHE_CONFIG.CATEGORIES.revalidate;
+export const revalidate = 300;
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug);
-
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const rows = await db
 		.select()
 		.from(categories)
-		.where(and(eq(categories.storeId, storeId), eq(categories.isActive, true)))
+		.where(and(eq(categories.storeId, ctx.storeId), eq(categories.isActive, true)))
 		.orderBy(categories.sortOrder);
 
 	const response = ok(
@@ -49,11 +46,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug, undefined, { enforceOwner: true });
-
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContext(request, slug, { requireOwner: true });
+	if (ctx instanceof Response) return ctx;
 
 	try {
 		const body = await request.json();
@@ -72,7 +66,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 		await db.insert(categories).values({
 			id: categoryId,
-			storeId,
+			storeId: ctx.storeId,
 			name: name.trim(),
 			slug: categorySlug,
 			description: description || null,
@@ -98,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			}
 		);
 	} catch (error) {
-		await logRouteError('Failed to create category', error, params, { storeId });
+		await logRouteError('Failed to create category', error, params, { storeId: ctx.storeId });
 		return serverError('Failed to create category');
 	}
 }
@@ -107,11 +101,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug, undefined, { enforceOwner: true });
-
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContext(request, slug, { requireOwner: true });
+	if (ctx instanceof Response) return ctx;
 
 	try {
 		const body = await request.json();
@@ -128,7 +119,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const [existing] = await db
 			.select()
 			.from(categories)
-			.where(and(eq(categories.id, id), eq(categories.storeId, storeId)));
+			.where(and(eq(categories.id, id), eq(categories.storeId, ctx.storeId)));
 
 		if (!existing) {
 			return notFound('Category not found');
@@ -162,7 +153,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			}
 		);
 	} catch (error) {
-		await logRouteError('Failed to update category', error, params, { storeId });
+		await logRouteError('Failed to update category', error, params, { storeId: ctx.storeId });
 		return serverError('Failed to update category');
 	}
 }
@@ -171,11 +162,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
-	const ctx = await withStoreContext<{ storeId: string }>(request, slug, undefined, { enforceOwner: true });
-
-	if (!(ctx as unknown as { storeId?: string }).storeId) return ctx as unknown as Response;
-
-	const { storeId } = ctx as { storeId: string };
+	const ctx = await getApiContext(request, slug, { requireOwner: true });
+	if (ctx instanceof Response) return ctx;
 
 	try {
 		const url = new URL(request.url);
@@ -189,7 +177,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		const [existing] = await db
 			.select()
 			.from(categories)
-			.where(and(eq(categories.id, categoryId), eq(categories.storeId, storeId)));
+			.where(and(eq(categories.id, categoryId), eq(categories.storeId, ctx.storeId)));
 
 		if (!existing) {
 			return notFound('Category not found');
@@ -211,7 +199,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			}
 		);
 	} catch (error) {
-		await logRouteError('Failed to delete category', error, params, { storeId });
+		await logRouteError('Failed to delete category', error, params, { storeId: ctx.storeId });
 		return serverError('Failed to delete category');
 	}
 }

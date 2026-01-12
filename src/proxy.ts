@@ -2,19 +2,28 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { rateLimit } from "@/lib/api/rate-limit";
 
-// Rate limiting configuration per route
 const rateLimitConfig: Record<string, { interval: number; uniqueTokenPerInterval: number }> = {
-  "/api/stores": { interval: 60000, uniqueTokenPerInterval: 10 }, // 10 requests per minute
+  "/api/stores": { interval: 60000, uniqueTokenPerInterval: 10 },
   "/api/stores/[slug]/products": { interval: 60000, uniqueTokenPerInterval: 30 },
   "/api/stores/[slug]/orders": { interval: 60000, uniqueTokenPerInterval: 20 },
   "/api/stores/[slug]/checkout": { interval: 60000, uniqueTokenPerInterval: 10 },
-  default: { interval: 60000, uniqueTokenPerInterval: 100 }, // Default: 100 requests per minute
+  "/api/stores/[slug]/analytics": { interval: 60000, uniqueTokenPerInterval: 200 },
+  default: { interval: 60000, uniqueTokenPerInterval: 100 },
 };
+
+const skipRateLimitPaths = [
+  "/api/health",
+  "/api/auth",
+  "/api/stores/[slug]/analytics",
+  "/api/stores/[slug]/products",
+  "/api/stores/[slug]/orders",
+  "/api/stores/[slug]/customers",
+  "/api/stores/[slug]/categories",
+];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip rate limiting for health checks and static files
   if (
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/_next") ||
@@ -24,15 +33,24 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Apply rate limiting to API routes
   if (pathname.startsWith("/api/")) {
-    // Find matching rate limit config
+    const shouldSkipRateLimit = skipRateLimitPaths.some((skipPath) => {
+      if (skipPath.includes("[slug]")) {
+        const parts = skipPath.split("[slug]");
+        return pathname.startsWith(parts[0]) && pathname.includes(parts[1]);
+      }
+      return pathname.startsWith(skipPath);
+    });
+
+    if (shouldSkipRateLimit) {
+      return NextResponse.next();
+    }
+
     let config = rateLimitConfig.default;
 
     for (const [pattern, rateConfig] of Object.entries(rateLimitConfig)) {
       if (pattern === "default") continue;
 
-      // Simple pattern matching (you could use a more sophisticated matcher)
       if (pathname.startsWith(pattern.replace("[slug]", ""))) {
         config = rateConfig;
         break;

@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { storeHelpers } from "@/lib/domains/stores";
-import { requireAuthOrNull } from "@/lib/session/helpers";
-import { ok, created, unauthorized, notFound, forbidden, badRequest } from "@/lib/api/responses";
+import { getApiContext, getApiContextOrNull } from "@/lib/api/context";
+import { ok, created, notFound, forbidden, badRequest } from "@/lib/api/responses";
 
 interface RouteParams {
   params: Promise<{
@@ -16,24 +16,22 @@ const addMemberSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return notFound("Store not found");
+  const ctx = await getApiContextOrNull(request, slug);
+  if (ctx instanceof Response) return ctx;
+  if (!ctx) return notFound("Store not found");
 
-  const members = await storeHelpers.listStoreMembers(store.id);
+  const members = await storeHelpers.listStoreMembers(ctx.storeId);
   return ok({ members });
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const session = await requireAuthOrNull();
-  if (!session) return unauthorized();
-
   const { slug } = await params;
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return notFound("Store not found");
+  const ctx = await getApiContext(request, slug, { requireAuth: true });
+  if (ctx instanceof Response) return ctx;
 
-  const userRole = await storeHelpers.getUserRole(store.id, session.user.id);
+  const userRole = await storeHelpers.getUserRole(ctx.storeId, ctx.userId);
   if (userRole !== "owner" && userRole !== "admin") {
     return forbidden();
   }
@@ -46,11 +44,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   const { userId, role } = parsed.data;
 
-  if (userId === session.user.id) {
+  if (userId === ctx.userId) {
     return badRequest("Cannot add yourself");
   }
 
-  const createdMember = await storeHelpers.addStoreMember(store.id, userId, role);
+  const createdMember = await storeHelpers.addStoreMember(ctx.storeId, userId, role);
   return created({ member: createdMember });
 }
 

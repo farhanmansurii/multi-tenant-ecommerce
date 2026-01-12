@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContextOrNull } from "@/lib/api/context";
 import {
 	getOrderById,
 	updateOrderStatus,
@@ -17,15 +17,14 @@ interface RouteParams {
 }
 
 // GET /api/stores/[slug]/orders/[orderId] - Get order details
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
-	const order = await getOrderById(store.id, orderId);
+	const order = await getOrderById(ctx.storeId, orderId);
 
 	if (!order) {
 		return notFound("Order not found");
@@ -38,10 +37,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
 	const body = await request.json();
 	const parseResult = updateOrderStatusSchema.safeParse(body);
@@ -50,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		return badRequest("Invalid input");
 	}
 
-	const order = await updateOrderStatus(store.id, orderId, parseResult.data.status);
+	const order = await updateOrderStatus(ctx.storeId, orderId, parseResult.data.status);
 
 	if (!order) {
 		return notFound("Order not found");
@@ -60,15 +58,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/stores/[slug]/orders/[orderId] - Cancel order
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	const { slug, orderId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
-	const success = await cancelOrder(store.id, orderId);
+	const success = await cancelOrder(ctx.storeId, orderId);
 
 	if (!success) {
 		return badRequest("Order not found or cannot be cancelled");

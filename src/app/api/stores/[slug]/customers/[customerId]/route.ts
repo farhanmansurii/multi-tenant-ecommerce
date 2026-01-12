@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContextOrNull } from "@/lib/api/context";
 import {
 	getCustomerById,
 	updateCustomer,
@@ -17,15 +17,14 @@ interface RouteParams {
 }
 
 // GET /api/stores/[slug]/customers/[customerId] - Get customer details
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
-	const customer = await getCustomerById(store.id, customerId);
+	const customer = await getCustomerById(ctx.storeId, customerId);
 
 	if (!customer) {
 		return notFound("Customer not found");
@@ -38,10 +37,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
+
 
 	const body = await request.json();
 	const parseResult = updateCustomerSchema.safeParse(body);
@@ -50,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		return badRequest("Invalid input");
 	}
 
-	const customer = await updateCustomer(store.id, customerId, parseResult.data);
+	const customer = await updateCustomer(ctx.storeId, customerId, parseResult.data);
 
 	if (!customer) {
 		return notFound("Customer not found");
@@ -60,15 +59,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/stores/[slug]/customers/[customerId] - Delete customer
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	const { slug, customerId } = await params;
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+	const ctx = await getApiContextOrNull(request, slug);
+	if (ctx instanceof Response) return ctx;
+	if (!ctx) return notFound("Store not found");
 
-	const success = await deleteCustomer(store.id, customerId);
+	const success = await deleteCustomer(ctx.storeId, customerId);
 
 	if (!success) {
 		return notFound("Customer not found");

@@ -1,35 +1,26 @@
 import { NextRequest } from "next/server";
-import { requireAuthOrNull } from "@/lib/session/helpers";
-import { storeHelpers } from "@/lib/domains/stores";
+import { getApiContext } from "@/lib/api/context";
 import { analyticsService } from "@/lib/analytics/service";
-import { unauthorized, notFound, serverError, ok, badRequest } from "@/lib/api/responses";
+import { serverError, ok, badRequest } from "@/lib/api/responses";
 import { CACHE_CONFIG } from "@/lib/api/cache-config";
 
-export const revalidate = CACHE_CONFIG.ANALYTICS.revalidate;
+export const revalidate = 60;
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const session = await requireAuthOrNull();
-    if (!session) {
-      return unauthorized();
-    }
-
     const { slug } = await params;
-    const store = await storeHelpers.getStoreBySlug(slug);
-
-    if (!store || store.ownerUserId !== session.user.id) {
-      return notFound("Store not found or access denied");
-    }
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
     const period = (searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
 
-    const queryParams = { storeId: store.id, startDate, endDate };
+    const queryParams = { storeId: ctx.storeId, startDate, endDate };
 
     const [summary, topProducts, funnel, revenueByPeriod] = await Promise.all([
       analyticsService.getAnalyticsSummary(queryParams),
@@ -58,11 +49,8 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const store = await storeHelpers.getStoreBySlug(slug);
-
-    if (!store) {
-      return notFound("Store not found");
-    }
+    const ctx = await getApiContext(request, slug);
+    if (ctx instanceof Response) return ctx;
 
     const body = await request.json();
     const {
@@ -90,7 +78,7 @@ export async function POST(
     const url = request.headers.get('x-url') || undefined;
 
     await analyticsService.trackEvent({
-      storeId: store.id,
+      storeId: ctx.storeId,
       eventType,
       userId,
       sessionId,
@@ -99,7 +87,7 @@ export async function POST(
       orderId,
       quantity,
       value: value ? Math.round(value * 100) : undefined,
-      currency: currency || store.currency,
+      currency: currency || ctx.store.currency,
       metadata,
       userAgent,
       ipAddress,
