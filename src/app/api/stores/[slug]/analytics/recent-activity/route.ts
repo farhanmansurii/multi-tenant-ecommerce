@@ -6,6 +6,9 @@ import { analyticsEvents } from "@/lib/db/schema/shopify";
 import { products } from "@/lib/db/schema/ecommerce/products";
 import { requireAuthOrNull } from "@/lib/session/helpers";
 import { serverError, ok, notFound, unauthorized } from "@/lib/api/responses";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+
+export const revalidate = CACHE_CONFIG.RECENT_ACTIVITY.revalidate;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
@@ -88,7 +91,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       { activities: activityItems.slice(0, 20) },
       {
         headers: {
-          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': CACHE_CONFIG.RECENT_ACTIVITY.cacheControl,
         },
       }
     );

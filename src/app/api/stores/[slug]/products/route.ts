@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { unstable_cache } from 'next/cache';
 
 import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
@@ -6,6 +7,8 @@ import { db } from '@/lib/db';
 import { products as productsTable, categories as categoriesTable } from '@/lib/db/schema';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
 import { ok, notFound, created, badRequest, serverError, logRouteError } from '@/lib/api/responses';
+import { CACHE_CONFIG } from '@/lib/api/cache-config';
+import { revalidateProductCache } from '@/lib/api/cache-revalidation';
 
 interface RouteParams {
 	params: Promise<{
@@ -13,12 +16,13 @@ interface RouteParams {
 	}>;
 }
 
+export const revalidate = CACHE_CONFIG.PRODUCTS.revalidate;
+
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	try {
 		const { slug } = await params;
 		const url = new URL(request.url);
 
-		// Parse pagination params with sensible defaults
 		const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
 		const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
 		const offset = (page - 1) * limit;
@@ -28,15 +32,31 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			return notFound('Store not found');
 		}
 
-		// Run count and products query in parallel for better performance
-		type ProductRow = typeof productsTable.$inferSelect;
 		const [countResult, products] = await Promise.all([
 			db
 				.select({ count: sql<number>`COUNT(*)::int` })
 				.from(productsTable)
 				.where(eq(productsTable.storeId, store.id)),
 			db
-				.select()
+				.select({
+					id: productsTable.id,
+					name: productsTable.name,
+					slug: productsTable.slug,
+					description: productsTable.description,
+					shortDescription: productsTable.shortDescription,
+					sku: productsTable.sku,
+					type: productsTable.type,
+					status: productsTable.status,
+					price: productsTable.price,
+					compareAtPrice: productsTable.compareAtPrice,
+					quantity: productsTable.quantity,
+					images: productsTable.images,
+					categories: productsTable.categories,
+					tags: productsTable.tags,
+					featured: productsTable.featured,
+					createdAt: productsTable.createdAt,
+					updatedAt: productsTable.updatedAt,
+				})
 				.from(productsTable)
 				.where(eq(productsTable.storeId, store.id))
 				.orderBy(desc(productsTable.createdAt))
@@ -45,11 +65,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		]);
 
 		const total = countResult[0]?.count || 0;
-		const productsArray: ProductRow[] = products;
 
-		// Collect category IDs from products
 		const categoryIds = new Set<string>();
-		productsArray.forEach((p) => {
+		products.forEach((p) => {
 			if (Array.isArray(p.categories)) {
 				p.categories.forEach((id) => {
 					if (typeof id === 'string') categoryIds.add(id);
@@ -57,7 +75,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			}
 		});
 
-		// Fetch category names only if needed
 		const categoryMap = new Map<string, string>();
 		if (categoryIds.size > 0) {
 			const cats = await db
@@ -67,7 +84,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			cats.forEach((c) => categoryMap.set(c.id, c.name));
 		}
 
-		const enrichedProducts = productsArray.map((p) => ({
+		const enrichedProducts = products.map((p) => ({
 			...p,
 			categories: Array.isArray(p.categories)
 				? p.categories.map((id) => ({
@@ -77,7 +94,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 				: [],
 		}));
 
-		return ok(
+		const response = ok(
 			{
 				store: { id: store.id, slug: store.slug, name: store.name },
 				products: enrichedProducts,
@@ -88,10 +105,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			},
 			{
 				headers: {
-					'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+					'Cache-Control': CACHE_CONFIG.PRODUCTS.cacheControl,
 				},
 			}
 		);
+
+		response.headers.set('Cache-Tag', CACHE_CONFIG.PRODUCTS.tags(slug).join(', '));
+		return response;
 	} catch (error) {
 		await logRouteError('Error fetching products', error, params);
 		return serverError();
@@ -139,7 +159,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		}
 
 		const product = await productHelpers.createProduct(store.id, { ...body, slug: finalSlug });
-		return created({ product });
+
+		revalidateProductCache(slug);
+
+		return created(
+			{ product },
+			{
+				headers: {
+					'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+				},
+			}
+		);
 	} catch (error) {
 		await logRouteError('Error creating product', error, params, { storeId });
 		return serverError('Failed to create product');

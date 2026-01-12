@@ -7,6 +7,8 @@ import { categories } from '@/lib/db/schema';
 import { withStoreContext } from '@/lib/api/handlers';
 import { ok, created, badRequest, notFound, serverError, logRouteError } from '@/lib/api/responses';
 import { logger } from '@/lib/api/logger';
+import { CACHE_CONFIG } from '@/lib/api/cache-config';
+import { revalidateCategoryCache } from '@/lib/api/cache-revalidation';
 
 interface RouteParams {
 	params: Promise<{
@@ -14,7 +16,7 @@ interface RouteParams {
 	}>;
 }
 
-// GET - List all categories
+export const revalidate = CACHE_CONFIG.CATEGORIES.revalidate;
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	const { slug } = await params;
 
@@ -30,14 +32,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		.where(and(eq(categories.storeId, storeId), eq(categories.isActive, true)))
 		.orderBy(categories.sortOrder);
 
-	return ok(
+	const response = ok(
 		{ categories: rows },
 		{
 			headers: {
-				'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+				'Cache-Control': CACHE_CONFIG.CATEGORIES.cacheControl,
 			},
 		}
 	);
+
+	response.headers.set('Cache-Tag', CACHE_CONFIG.CATEGORIES.tags(slug).join(', '));
+	return response;
 }
 
 // POST - Create category
@@ -58,7 +63,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			return badRequest('Category name is required');
 		}
 
-		// Generate slug from name
 		const categorySlug = name
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, '-')
@@ -83,7 +87,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			.from(categories)
 			.where(eq(categories.id, categoryId));
 
-		return created({ category: newCategory });
+		revalidateCategoryCache(slug);
+
+		return created(
+			{ category: newCategory },
+			{
+				headers: {
+					'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+				},
+			}
+		);
 	} catch (error) {
 		await logRouteError('Failed to create category', error, params, { storeId });
 		return serverError('Failed to create category');
@@ -112,7 +125,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			return badRequest('Category name is required');
 		}
 
-		// Verify category belongs to this store
 		const [existing] = await db
 			.select()
 			.from(categories)
@@ -139,7 +151,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.from(categories)
 			.where(eq(categories.id, id));
 
-		return ok({ category: updatedCategory });
+		revalidateCategoryCache(slug);
+
+		return ok(
+			{ category: updatedCategory },
+			{
+				headers: {
+					'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+				},
+			}
+		);
 	} catch (error) {
 		await logRouteError('Failed to update category', error, params, { storeId });
 		return serverError('Failed to update category');
@@ -174,13 +195,21 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			return notFound('Category not found');
 		}
 
-		// Soft delete by setting isActive to false
 		await db
 			.update(categories)
 			.set({ isActive: false, updatedAt: new Date() })
 			.where(eq(categories.id, categoryId));
 
-		return ok({ success: true });
+		revalidateCategoryCache(slug);
+
+		return ok(
+			{ success: true },
+			{
+				headers: {
+					'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+				},
+			}
+		);
 	} catch (error) {
 		await logRouteError('Failed to delete category', error, params, { storeId });
 		return serverError('Failed to delete category');

@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { categories as categoriesTable } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import { ok, notFound, badRequest, serverError, logRouteError } from '@/lib/api/responses';
+import { CACHE_CONFIG } from '@/lib/api/cache-config';
+import { revalidateProductCache } from '@/lib/api/cache-revalidation';
 
 interface RouteParams {
   params: Promise<{
@@ -12,6 +14,8 @@ interface RouteParams {
     productSlug: string;
   }>;
 }
+
+export const revalidate = CACHE_CONFIG.PRODUCT.revalidate;
 
 async function getStoreAndProduct(slug: string, productSlug: string) {
   const store = await storeHelpers.getStoreBySlug(slug);
@@ -61,17 +65,20 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const { store, product } = result;
     const enrichedProduct = await enrichProductCategories(product);
 
-    return ok(
+    const response = ok(
       {
         product: enrichedProduct,
         store: { id: store.id, slug: store.slug, name: store.name },
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+          'Cache-Control': CACHE_CONFIG.PRODUCT.cacheControl,
         },
       }
     );
+
+    response.headers.set('Cache-Tag', CACHE_CONFIG.PRODUCT.tags(slug, productSlug).join(', '));
+    return response;
   } catch (error) {
     await logRouteError('Error fetching product', error, params);
     return serverError();
@@ -95,10 +102,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updated = await productHelpers.updateProduct(product.id, body);
     const enrichedProduct = await enrichProductCategories(updated);
 
-    return ok({
-      product: enrichedProduct,
-      store: { id: store.id, slug: store.slug, name: store.name },
-    });
+    revalidateProductCache(slug, productSlug);
+
+    return ok(
+      {
+        product: enrichedProduct,
+        store: { id: store.id, slug: store.slug, name: store.name },
+      },
+      {
+        headers: {
+          'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      }
+    );
   } catch (error) {
     await logRouteError('Error updating product', error, params);
     return serverError('Failed to update product');
@@ -116,7 +132,16 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     await productHelpers.deleteProduct(product.id);
 
-    return ok({ success: true });
+    revalidateProductCache(slug, productSlug);
+
+    return ok(
+      { success: true },
+      {
+        headers: {
+          'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      }
+    );
   } catch (error) {
     await logRouteError('Error deleting product', error, params);
     return serverError('Failed to delete product');

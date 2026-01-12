@@ -6,6 +6,8 @@ import { products, stores } from "@/lib/db/schema";
 import { storeHelpers } from "@/lib/domains/stores";
 import { auth } from "@/lib/auth/server";
 import { ok, notFound, unauthorized, forbidden, serverError, logRouteError } from "@/lib/api/responses";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
 
 interface RouteParams {
   params: Promise<{
@@ -13,6 +15,7 @@ interface RouteParams {
   }>;
 }
 
+export const revalidate = CACHE_CONFIG.STORE.revalidate;
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
@@ -23,7 +26,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return notFound("Store not found");
     }
 
-    // Get current user session to determine role (run in parallel with product count)
     const [productCountResult, session] = await Promise.all([
       db
         .select({ count: sql<number>`COUNT(*)::int`.as("count") })
@@ -36,16 +38,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     let currentUserRole = null;
     if (session?.user) {
-      // Check if owner
       if (store.ownerUserId === session.user.id) {
         currentUserRole = "owner";
       } else {
-        // Check member role
         currentUserRole = await storeHelpers.getUserRole(store.id, session.user.id);
       }
     }
 
-    return ok(
+    const response = ok(
       {
         store: {
           ...store,
@@ -55,10 +55,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+          'Cache-Control': CACHE_CONFIG.STORE.cacheControl,
         },
       }
     );
+
+    response.headers.set('Cache-Tag', CACHE_CONFIG.STORE.tags(slug).join(', '));
+    return response;
   } catch (error) {
     await logRouteError("Error fetching store", error, params);
     return serverError();
@@ -76,7 +79,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     storeId = existing.id;
 
-    // Check authentication
     const session = await auth.api.getSession({
       headers: request.headers,
     });
@@ -85,14 +87,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return unauthorized();
     }
 
-    // Check if user is owner
     if (existing.ownerUserId !== session.user.id) {
       return forbidden();
     }
 
     const body = await request.json();
 
-    // Construct the settings object by merging existing settings with new values
     const currentSettings = (existing.settings as any) || {};
     const newSettings = {
       ...currentSettings,
@@ -112,7 +112,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const [updated] = await db
       .update(stores)
       .set({
-        name: body.storeName ?? existing.name, // Note: form sends storeName, DB expects name
+        name: body.storeName ?? existing.name,
         description: body.description ?? existing.description,
         tagline: body.tagline ?? existing.tagline,
         contactEmail: body.email ?? existing.contactEmail,
@@ -139,7 +139,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .where(eq(stores.id, existing.id))
       .returning();
 
-    return ok({ store: updated });
+    revalidateStoreCache(slug);
+
+    return ok(
+      { store: updated },
+      {
+        headers: {
+          'Cache-Control': CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      }
+    );
   } catch (error) {
     await logRouteError("Error updating store", error, params, { storeId });
     return serverError("Failed to update store");

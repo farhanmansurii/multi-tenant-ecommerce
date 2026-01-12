@@ -61,7 +61,7 @@ export const TextReveal = () => {
   const words = sentence.split(" ");
 
   return (
-    <section ref={sectionRef} id="stack" className="relative py-32 md:py-48 bg-background">
+    <section ref={sectionRef} id="stack" className="relative py-32 md:py-48 bg-background" suppressHydrationWarning>
       {/* Top border with label */}
       <div className="px-6 md:px-12 mb-24">
         <div className="flex items-center gap-4 mb-8">
@@ -115,17 +115,9 @@ export const TextReveal = () => {
         </div>
       </div>
 
-      {/* Decorative */}
-      <div className="absolute top-32 right-6 md:right-12 font-mono text-xs text-muted-foreground writing-vertical">
+      <div className="absolute top-32 right-6 md:right-12 font-mono text-xs text-muted-foreground [writing-mode:vertical-rl] [text-orientation:mixed]">
         Manifesto
       </div>
-
-      <style jsx>{`
-        .writing-vertical {
-          writing-mode: vertical-rl;
-          text-orientation: mixed;
-        }
-      `}</style>
     </section>
   );
 };

@@ -3,6 +3,9 @@ import { requireAuthOrNull } from "@/lib/session/helpers";
 import { storeHelpers } from "@/lib/domains/stores";
 import { analyticsService } from "@/lib/analytics/service";
 import { unauthorized, notFound, serverError, ok, badRequest } from "@/lib/api/responses";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+
+export const revalidate = CACHE_CONFIG.ANALYTICS.revalidate;
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +42,7 @@ export async function GET(
       { summary, topProducts, funnel, revenueByPeriod },
       {
         headers: {
-          'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120',
+          'Cache-Control': CACHE_CONFIG.ANALYTICS.cacheControl,
         },
       }
     );
