@@ -20,20 +20,18 @@ function createDb(): DrizzleDb {
 		throw new Error("DATABASE_URL or POSTGRES_URL is not set");
 	}
 
-	// Vercel Postgres requires SSL connections
-	// Check if sslmode is already in the connection string
-	const requiresSSL = connectionString.includes("sslmode=require") ||
-		connectionString.includes("sslmode=prefer") ||
-		process.env.VERCEL_ENV !== undefined; // Vercel environment
+	const requiresSSL =
+		connectionString.includes("sslmode=require") ||
+		connectionString.includes("sslmode=prefer");
 
-	const ssl = requiresSSL ? "require" : (process.env.NODE_ENV === "production" ? "require" : undefined);
+	const ssl = requiresSSL ? "require" : undefined;
 
 	const queryClient = postgres(connectionString, {
 		ssl,
 		prepare: false,
 		max: 10,
 		idle_timeout: 20,
-		max_lifetime: 60 * 30, // 30 minutes
+		max_lifetime: 60 * 30,
 	});
 
 	logger.info("Database connection established", {

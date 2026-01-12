@@ -40,8 +40,9 @@ import { RecentActivity } from "@/components/features/dashboard/overview/recent-
 import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/hooks/queries/use-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotFoundState } from "@/components/shared/common/not-found-state";
+import { RefreshButton } from "@/components/shared/common/refresh-button";
 
 interface StoreDashboardProps {
   params: Promise<{ slug: string }>;
@@ -51,6 +52,7 @@ interface StoreDashboardProps {
 export default function StoreDashboard({ params, initialStore }: StoreDashboardProps) {
   const { isAuthenticated, user, isPending } = useRequireAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { slug, isLoading: paramsLoading } = useDashboardParams(params);
 
   const {
@@ -64,18 +66,27 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
   // Use store from query or fallback to initialStore
   const displayStore = store || initialStore;
 
-  const { data: productCount = 0, isLoading: productsLoading } = useQuery({
+  const { data: productCount = 0, isLoading: productsLoading, refetch: refetchProductCount, isRefetching: isRefreshingProducts } = useQuery({
     queryKey: ["productCount", slug],
     queryFn: () => fetchProductStats(slug),
     enabled: !!store && !paramsLoading,
   });
 
-  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+  const { data: analyticsData, isLoading: analyticsLoading, refetch: refetchAnalytics, isRefetching: isRefreshingAnalytics } = useQuery({
     queryKey: ["storeAnalytics", slug],
     queryFn: () => fetchStoreAnalytics(slug),
     enabled: !!store && !paramsLoading,
     staleTime: 0, // Always refetch analytics data
   });
+
+  const handleRefresh = () => {
+    refetchAnalytics();
+    refetchProductCount();
+    queryClient.invalidateQueries({ queryKey: ["storeAnalytics", slug] });
+    queryClient.invalidateQueries({ queryKey: ["productCount", slug] });
+  };
+
+  const isRefreshing = isRefreshingAnalytics || isRefreshingProducts;
 
   const analytics = analyticsData?.analytics;
   const currency = analyticsData?.currency || displayStore?.currency || "INR";
@@ -184,6 +195,13 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
       ]}
       headerActions={
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <RefreshButton
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+          />
           <Button variant="outline" asChild className="hidden sm:flex">
             <Link href={`/stores/${displayStore.slug}`} target="_blank">
               <ShoppingBag className="mr-2 h-4 w-4" />

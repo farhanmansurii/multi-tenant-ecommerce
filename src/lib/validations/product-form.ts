@@ -1,21 +1,13 @@
 import { z } from "zod";
 import { MIN_NAME_LENGTH, MIN_DESCRIPTION_LENGTH } from "@/lib/constants/product";
 
-const statusEnum = z.enum(["draft", "active", "inactive", "out_of_stock"]);
-
 export const productFormSchema = z.object({
   name: z.string().min(MIN_NAME_LENGTH, `Name must be at least ${MIN_NAME_LENGTH} characters`),
   description: z.string().min(MIN_DESCRIPTION_LENGTH, `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters`),
   shortDescription: z.string().optional(),
   sku: z.string().optional(),
   type: z.enum(["physical", "digital", "service"]),
-  status: z.preprocess(
-    (value) => {
-      if (value === "" || value == null) return "draft";
-      return value;
-    },
-    statusEnum
-  ),
+  status: z.enum(["draft", "active", "inactive", "out_of_stock"]),
   price: z.number({ invalid_type_error: "Price must be a number" }).min(0, "Price must be positive"),
   compareAtPrice: z
     .number({ invalid_type_error: "Compare at price must be a number" })

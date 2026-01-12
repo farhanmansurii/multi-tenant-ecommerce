@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { stores } from "@/lib/db/schema/core/stores";
+import { storeHelpers } from "@/lib/domains/stores";
 import { analyticsEvents } from "@/lib/db/schema/shopify";
 import { products } from "@/lib/db/schema/ecommerce/products";
 import { requireAuthOrNull } from "@/lib/session/helpers";
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
 
-    const store = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
-    if (!store[0] || store[0].ownerUserId !== session.user.id) {
+    const store = await storeHelpers.getStoreBySlug(slug);
+    if (!store || store.ownerUserId !== session.user.id) {
       return notFound("Store not found or access denied");
     }
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .leftJoin(products, eq(analyticsEvents.productId, products.id))
       .where(
         and(
-          eq(analyticsEvents.storeId, store[0].id),
+          eq(analyticsEvents.storeId, store.id),
           gte(analyticsEvents.timestamp, new Date(Date.now() - 24 * 60 * 60 * 1000)),
         ),
       )

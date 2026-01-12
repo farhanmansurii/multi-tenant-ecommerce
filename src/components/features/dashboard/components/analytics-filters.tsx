@@ -1,9 +1,10 @@
 "use client";
 
-import { CalendarDays, RefreshCw } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay } from "date-fns";
 
 import { Button } from "@/components/ui/button";
+import { RefreshButton } from "@/components/shared/common/refresh-button";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,8 @@ interface AnalyticsFiltersProps {
   onDateRangeChange: (range: DateRange) => void;
   period: "day" | "week" | "month";
   onPeriodChange: (period: "day" | "week" | "month") => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const quickRanges = [
@@ -71,6 +74,8 @@ export function AnalyticsFilters({
   onDateRangeChange,
   period,
   onPeriodChange,
+  onRefresh,
+  isRefreshing = false,
 }: AnalyticsFiltersProps) {
   const handleQuickRange = (rangeValue: string) => {
     const range = quickRanges.find(r => r.value === rangeValue);
@@ -161,10 +166,14 @@ export function AnalyticsFilters({
         </div>
 
         {/* Refresh Button */}
-        <Button variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        {onRefresh && (
+          <RefreshButton
+            onRefresh={onRefresh}
+            isRefreshing={isRefreshing}
+            variant="outline"
+            size="sm"
+          />
+        )}
       </div>
     </div>
   );

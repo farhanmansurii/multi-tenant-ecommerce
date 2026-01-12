@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Package2Icon } from "lucide-react";
+import type React from "react";
 
 import { useProductForm } from "@/hooks/use-product-form";
+import { ProductFormValues } from "@/lib/validations/product-form";
 import { Button } from "@/components/ui/button";
 import { PageCard } from "@/components/shared/layout/page-card";
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
@@ -20,6 +22,7 @@ import {
 } from "./components/product-form-sections";
 import { DangerZone } from "./components/danger-zone";
 import { toast } from "sonner";
+import { SubmitHandler } from "react-hook-form";
 
 interface ProductFormProps {
   mode: "create" | "edit";
@@ -196,14 +199,17 @@ export default function ProductForm({
 
       <form
         id="product-form"
-        onSubmit={form.handleSubmit(onSubmit, (errors) => {
-          const firstError = Object.values(errors)[0];
-          const message =
-            firstError?.message ||
-            (firstError && "root" in firstError && (firstError as any).root?.message) ||
-            "Please fix the highlighted errors before saving.";
-          toast.error(message);
-        })}
+        onSubmit={form.handleSubmit(
+          onSubmit as SubmitHandler<ProductFormValues>,
+          (errors) => {
+            const firstError = Object.values(errors)[0] as any;
+            const message =
+              firstError?.message ||
+              (firstError && "root" in firstError && firstError.root?.message) ||
+              "Please fix the highlighted errors before saving.";
+            toast.error(message);
+          }
+        )}
         className="space-y-8"
       >
         <section className="space-y-6">

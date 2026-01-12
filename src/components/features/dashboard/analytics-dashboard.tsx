@@ -47,8 +47,15 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
     period,
   }), [dateRange.from, dateRange.to, period]);
 
-  const { data: analytics, isLoading, error } = useAnalytics(slug, analyticsParams);
-  const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(slug, 10);
+  const { data: analytics, isLoading, error, refetch: refetchAnalytics, isRefetching: isRefreshingAnalytics } = useAnalytics(slug, analyticsParams);
+  const { data: recentActivity, isLoading: activityLoading, refetch: refetchActivity, isRefetching: isRefreshingActivity } = useRecentActivity(slug, 10);
+
+  const handleRefresh = useCallback(() => {
+    refetchAnalytics();
+    refetchActivity();
+  }, [refetchAnalytics, refetchActivity]);
+
+  const isRefreshing = isRefreshingAnalytics || isRefreshingActivity;
 
   const handleDateRangeChange = useCallback((range: { from: Date; to: Date }) => {
     setDateRange(range);
@@ -95,6 +102,8 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
         onDateRangeChange={handleDateRangeChange}
         period={period}
         onPeriodChange={handlePeriodChange}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

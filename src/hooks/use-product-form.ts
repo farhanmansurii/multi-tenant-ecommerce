@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -62,8 +62,7 @@ export const useProductForm = ({
   // Check permissions
   const isOwner = store && user && store.ownerUserId === user.id;
 
-  // Form setup
-  const form = useForm<ProductFormValues>({
+  const form = useForm<ProductFormValues, unknown, ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",

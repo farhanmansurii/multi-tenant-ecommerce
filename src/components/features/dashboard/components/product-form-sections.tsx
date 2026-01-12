@@ -116,8 +116,10 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           name="status"
           render={({ field }) => (
             <Select
-              value={field.value || "draft"}
-              onValueChange={(value) => field.onChange(value)}
+              value={field.value ?? "draft"}
+              onValueChange={(value) => {
+                field.onChange(value ?? "draft");
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />

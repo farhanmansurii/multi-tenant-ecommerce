@@ -1,8 +1,5 @@
-import { Users } from 'lucide-react';
-
-import AdminCustomersList from '@/components/features/dashboard/admin-customers-list';
-import DashboardLayout from '@/components/shared/layout/dashboard-container';
 import { getStoreBySlug } from '@/lib/domains/stores/helpers';
+import { CustomersPageClient } from './customers-client';
 
 interface CustomersPageProps {
   params: Promise<{ slug: string }>;
@@ -11,19 +8,5 @@ interface CustomersPageProps {
 export default async function CustomersPage({ params }: CustomersPageProps) {
   const { slug } = await params;
   const store = await getStoreBySlug(slug);
-  return (
-    <DashboardLayout
-      title="Customers"
-      desc="View and manage your store customers"
-      icon={<Users />}
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Stores', href: '/dashboard/stores' },
-        { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
-        { label: 'Customers' },
-      ]}
-    >
-      <AdminCustomersList storeSlug={slug} />
-    </DashboardLayout>
-  );
+  return <CustomersPageClient slug={slug} storeName={store?.name} />;
 }

@@ -84,7 +84,6 @@ export async function listCustomers(
 	const { page, limit, search } = query;
 	const offset = (page - 1) * limit;
 
-	// Build where conditions
 	let whereClause = eq(storeCustomers.storeId, storeId);
 
 	if (search) {
@@ -97,27 +96,25 @@ export async function listCustomers(
 		) as typeof whereClause;
 	}
 
-	// Get customers
-	const result = await db
-		.select({
-			id: storeCustomers.id,
-			email: storeCustomers.email,
-			data: storeCustomers.data,
-			createdAt: storeCustomers.createdAt,
-		})
-		.from(storeCustomers)
-		.where(whereClause)
-		.orderBy(desc(storeCustomers.createdAt))
-		.limit(limit)
-		.offset(offset);
+	const [result, countResult] = await Promise.all([
+		db
+			.select({
+				id: storeCustomers.id,
+				email: storeCustomers.email,
+				data: storeCustomers.data,
+				createdAt: storeCustomers.createdAt,
+			})
+			.from(storeCustomers)
+			.where(whereClause)
+			.orderBy(desc(storeCustomers.createdAt))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ count: sql<number>`COUNT(*)::int` })
+			.from(storeCustomers)
+			.where(whereClause),
+	]);
 
-	// Get total count
-	const countResult = await db
-		.select({ count: sql<number>`COUNT(*)::int` })
-		.from(storeCustomers)
-		.where(whereClause);
-
-	// Get order counts for these customers from the orders table
 	const customerIds = result.map((c) => c.id);
 	const orderCounts =
 		customerIds.length > 0

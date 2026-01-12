@@ -185,37 +185,34 @@ export async function listOrders(
 	const { page, limit, status, customerId } = query;
 	const offset = (page - 1) * limit;
 
-	// Build where conditions
 	const conditions = [eq(orders.storeId, storeId)];
 	if (status) conditions.push(eq(orders.status, status));
 	if (customerId) conditions.push(eq(orders.customerId, customerId));
 
 	const whereClause = and(...conditions);
 
-	// Get orders
-	const result = await db
-		.select({
-			id: orders.id,
-			orderNumber: orders.orderNumber,
-			status: orders.status,
-			paymentStatus: orders.paymentStatus,
-			amounts: orders.amounts,
-			currency: orders.currency,
-			createdAt: orders.createdAt,
-		})
-		.from(orders)
-		.where(whereClause)
-		.orderBy(desc(orders.createdAt))
-		.limit(limit)
-		.offset(offset);
+	const [result, countResult] = await Promise.all([
+		db
+			.select({
+				id: orders.id,
+				orderNumber: orders.orderNumber,
+				status: orders.status,
+				paymentStatus: orders.paymentStatus,
+				amounts: orders.amounts,
+				currency: orders.currency,
+				createdAt: orders.createdAt,
+			})
+			.from(orders)
+			.where(whereClause)
+			.orderBy(desc(orders.createdAt))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ count: sql<number>`COUNT(*)::int` })
+			.from(orders)
+			.where(whereClause),
+	]);
 
-	// Get total count
-	const countResult = await db
-		.select({ count: sql<number>`COUNT(*)::int` })
-		.from(orders)
-		.where(whereClause);
-
-	// Get item counts per order
 	const orderIds = result.map((o) => o.id);
 	const itemCounts =
 		orderIds.length > 0

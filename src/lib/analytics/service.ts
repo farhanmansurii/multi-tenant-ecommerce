@@ -89,6 +89,14 @@ export class AnalyticsService {
         )
       : undefined;
 
+    const previousEventFilter = previousPeriodStart && previousPeriodEnd
+      ? and(
+          eq(analyticsEvents.storeId, query.storeId),
+          gte(analyticsEvents.timestamp, previousPeriodStart),
+          lte(analyticsEvents.timestamp, previousPeriodEnd)
+        )
+      : undefined;
+
     const [eventCounts, orderRevenue, previousEventCounts, previousOrderRevenue] = await Promise.all([
       db
         .select({
@@ -106,18 +114,14 @@ export class AnalyticsService {
         })
         .from(orders)
         .where(orderDateFilter),
-      previousPeriodStart && previousPeriodEnd
+      previousEventFilter
         ? db
             .select({
               eventType: analyticsEvents.eventType,
               count: count(),
             })
             .from(analyticsEvents)
-            .where(and(
-              eq(analyticsEvents.storeId, query.storeId),
-              gte(analyticsEvents.timestamp, previousPeriodStart),
-              lte(analyticsEvents.timestamp, previousPeriodEnd)
-            ))
+            .where(previousEventFilter)
             .groupBy(analyticsEvents.eventType)
         : Promise.resolve([]),
       previousOrderFilter
@@ -181,7 +185,8 @@ export class AnalyticsService {
       .where(and(
         eq(analyticsEvents.storeId, query.storeId),
         dateFilter,
-        sql`${analyticsEvents.productId} IS NOT NULL`
+        sql`${analyticsEvents.productId} IS NOT NULL`,
+        sql`${analyticsEvents.eventType} IN ('view_product', 'add_to_cart', 'purchase')`
       ))
       .groupBy(analyticsEvents.productId, analyticsEvents.eventType);
 
@@ -210,7 +215,14 @@ export class AnalyticsService {
       productMap.set(stat.productId, existing);
     }
 
-    const productIds = Array.from(productMap.keys());
+    const productIds = Array.from(productMap.keys())
+      .sort((a, b) => {
+        const aStats = productMap.get(a)!;
+        const bStats = productMap.get(b)!;
+        return bStats.revenue - aStats.revenue;
+      })
+      .slice(0, limit);
+
     if (productIds.length === 0) return [];
 
     const productDetails = await db
@@ -223,8 +235,9 @@ export class AnalyticsService {
 
     const productNameMap = new Map(productDetails.map(p => [p.id, p.name]));
 
-    const productAnalytics: ProductAnalytics[] = Array.from(productMap.entries())
-      .map(([productId, stats]) => {
+    const productAnalytics: ProductAnalytics[] = productIds
+      .map((productId) => {
+        const stats = productMap.get(productId)!;
         const productName = productNameMap.get(productId);
         if (!productName) return null;
 
@@ -238,9 +251,7 @@ export class AnalyticsService {
           conversionRate: stats.views > 0 ? (stats.addToCarts / stats.views) * 100 : 0,
         };
       })
-      .filter((p): p is ProductAnalytics => p !== null)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, limit);
+      .filter((p): p is ProductAnalytics => p !== null);
 
     return productAnalytics;
   }
