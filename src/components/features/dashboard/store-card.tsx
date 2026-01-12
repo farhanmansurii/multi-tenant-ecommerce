@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,9 +74,22 @@ const getStatusConfig = (status: string) => {
 };
 
 export default function StoreCard({ store }: StoreCardProps) {
+  const router = useRouter();
   const statusConfig = getStatusConfig(store.status);
 
   const primaryColor = store.primaryColor || "#6366f1"; // Default Indigo
+
+  const handleSettingsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/dashboard/stores/${store.slug}/settings`);
+  };
+
+  const handleExternalClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(`/stores/${store.slug}`, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <Link href={`/dashboard/stores/${store.slug}`} className="block h-full">
@@ -157,11 +173,14 @@ export default function StoreCard({ store }: StoreCardProps) {
             <div className="flex gap-1.5">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50" asChild onClick={(e) => e.stopPropagation()}>
-                    <Link href={`/dashboard/stores/${store.slug}/settings`}>
-                      <Settings className="h-4 w-4" />
-                      <span className="sr-only">Settings</span>
-                    </Link>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50"
+                    onClick={handleSettingsClick}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="sr-only">Settings</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Settings</TooltipContent>
@@ -169,15 +188,14 @@ export default function StoreCard({ store }: StoreCardProps) {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50" asChild onClick={(e) => e.stopPropagation()}>
-                    <Link
-                      href={`/stores/${store.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="sr-only">Visit Store</span>
-                    </Link>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50"
+                    onClick={handleExternalClick}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="sr-only">Visit Store</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>View Live Store</TooltipContent>
