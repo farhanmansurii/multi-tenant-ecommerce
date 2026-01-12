@@ -15,6 +15,7 @@ interface StoreFormProps {
   storeLoading?: boolean;
   storeError?: Error | null;
   isSuccess?: boolean;
+  slug?: string;
 }
 
 export default function EditStoreForm({
@@ -28,6 +29,7 @@ export default function EditStoreForm({
   storeLoading = false,
   storeError = null,
   isSuccess = false,
+  slug,
 }: StoreFormProps) {
   return (
     <StoreForm
@@ -41,6 +43,7 @@ export default function EditStoreForm({
       storeLoading={storeLoading}
       storeError={storeError}
       isSuccess={isSuccess}
+      slug={slug}
     />
   );
 }

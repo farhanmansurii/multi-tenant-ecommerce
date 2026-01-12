@@ -29,6 +29,7 @@ import {
 import { PageCard } from "@/components/shared/layout/page-card";
 import { buildStoreFormState } from "@/lib/domains/stores/form";
 import { StoreFormData, storeSchema } from "@/lib/domains/stores/validation";
+import { ShopifyIntegrationSection } from "./components/shopify-integration-section";
 
 interface StoreFormProps {
   mode: "create" | "edit";
@@ -41,6 +42,7 @@ interface StoreFormProps {
   storeLoading?: boolean;
   storeError?: Error | null;
   isSuccess?: boolean;
+  slug?: string;
 }
 
 export default function StoreForm({
@@ -54,6 +56,7 @@ export default function StoreForm({
   storeLoading = false,
   storeError = null,
   isSuccess = false,
+  slug,
 }: StoreFormProps) {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
@@ -458,6 +461,15 @@ export default function StoreForm({
           </div>
         </Tabs>
       </form>
+
+      <div className="mt-8">
+        <PageCard
+          title="Integrations"
+          description="Connect your store with third-party services."
+        >
+          <ShopifyIntegrationSection params={Promise.resolve({ slug: slug || "" })} />
+        </PageCard>
+      </div>
     </div>
   );
 }

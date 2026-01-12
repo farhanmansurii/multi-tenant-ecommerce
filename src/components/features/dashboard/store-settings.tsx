@@ -45,6 +45,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
 
   const { can } = usePermission(store, user);
   const hasPermissionError = store && user && !can('manage_settings');
+  const isOwner = !!(store && user && store.ownerUserId === user.id);
 
   const updateMutation = useUpdateStore(slug || "");
 
@@ -148,7 +149,12 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
       onSave={handleSave}
       onCancel={() => router.back()}
       isSaving={updateMutation.isPending}
+      isAuthenticated={isAuthenticated}
+      isOwner={isOwner}
+      storeLoading={storeLoading}
+      storeError={storeError}
       isSuccess={updateMutation.isSuccess}
+      slug={slug}
     />
   );
 }

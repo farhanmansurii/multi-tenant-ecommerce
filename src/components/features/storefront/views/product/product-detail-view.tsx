@@ -19,11 +19,12 @@ import RecommendedProducts from '../../components/products/recommended-products'
 
 import type { StoreData } from '@/lib/domains/stores/types';
 import type { ProductData } from '@/lib/domains/products/types';
-import { formatPrice } from '@/lib/utils/price';
+import { useFormatPrice } from '@/lib/utils/price';
 import { cn } from '@/lib/utils';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import { StoreFrontHeader } from '../../shared/layout/navbar';
 import StoreFrontPageWrapper from '../../shared/layout/page-wrapper';
+import { useAnalytics } from '@/hooks/use-analytics-tracking';
 
 interface StorefrontProductViewProps {
   store: StoreData;
@@ -38,9 +39,13 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
     setStoreSlug: state.setStoreSlug,
   }));
 
+  const analytics = useAnalytics();
+
   useEffect(() => {
     setStoreSlug(store.slug);
   }, [setStoreSlug, store.slug]);
+
+
 
   // Derived Data
   const images = useMemo(() => (Array.isArray(product.images) ? product.images : []), [product.images]);
@@ -57,7 +62,11 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
   const quantityNumber = Number.parseFloat(String(product.quantity ?? '0'));
   const isInStock = product.status === 'active' && (quantityNumber > 0 || product.allowBackorder);
 
-  const displayPrice = (amount: number) => formatPrice(amount, store.currency);
+  const formatPrice = useFormatPrice();
+
+  useEffect(() => {
+    analytics.trackProductView(product.id, selectedVariantId || undefined);
+  }, [analytics, product.id, selectedVariantId]);
 
   const handleAddToCart = () => {
     if (isAdding) return;
@@ -73,6 +82,14 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
         image: images[0]?.url ?? null,
         variantId: selectedVariant?.id ?? null,
       });
+
+      // Track add to cart event
+      analytics.trackAddToCart(
+        product.id,
+        selectedVariant?.id,
+        1,
+        typeof priceSource === 'number' ? priceSource : Number(priceSource ?? 0)
+      );
 
       setIsAdding(false);
       toast.success("ITEM ACQUIRED", {
@@ -156,11 +173,11 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
 
                 <div className="flex items-baseline gap-4">
                   <span className="text-2xl font-mono tracking-tight">
-                    {displayPrice(priceSource)}
+                    {formatPrice(priceSource)}
                   </span>
                   {compareAtSource && (
                     <span className="text-lg text-muted-foreground line-through font-mono">
-                      {displayPrice(compareAtSource)}
+                      {formatPrice(compareAtSource)}
                     </span>
                   )}
                 </div>

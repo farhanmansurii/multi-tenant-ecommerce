@@ -6,12 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Loader } from '@/components/shared/common/loader';
 import ProductGrid from '../../components/products/product-grid';
-// UI Components
 import { Button } from '@/components/ui/button';
 
 import { useCategories } from '@/hooks/use-categories';
 import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
 import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
+import { useStoreSettings } from '@/lib/state/store-settings/store-settings-store';
 import { toast } from 'sonner';
 import { fetchStore } from '@/lib/domains/stores/service';
 import { fetchProducts } from '@/lib/domains/products/service';
@@ -21,6 +21,7 @@ import { Category } from '@/lib/db/schema';
 import { useStorefrontFilters } from '@/hooks/use-storefront-filters';
 import StoreFrontContainer from '../../shared/layout/container';
 import StorefrontControls from '../../shared/modules/storefront-controls';
+import { StoreSettings } from '@/lib/state/store-settings/store-settings-slice';
 
 interface StorefrontViewProps {
   slug: string;
@@ -46,6 +47,7 @@ export default function StorefrontView({
   );
 
   const { customerProfile, addWishlistItem } = useStorefrontCustomer();
+  const { setStoreSettings } = useStoreSettings();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -65,6 +67,13 @@ export default function StorefrontView({
     initialData: initialStore,
   });
 
+  // Cache store settings when store data is loaded
+  useEffect(() => {
+    if (store) {
+      setStoreSettings(store as StoreSettings);
+    }
+  }, [store, setStoreSettings]);
+
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['products', slug],
     queryFn: () => fetchProducts(slug),
@@ -76,7 +85,6 @@ export default function StorefrontView({
     initialData: initialCategories,
   });
 
-  // --- FILTER LOGIC ---
   const {
     filtersFromUrl,
     filteredProducts,
@@ -114,7 +122,6 @@ export default function StorefrontView({
   if (storeLoading || productsLoading || categoriesLoading) return <Loader text="Loading interface..." className="min-h-screen font-mono uppercase" />;
   if (!store) return <div className="min-h-screen flex items-center justify-center font-mono">STORE NOT FOUND</div>;
 
-  // Use "active" view state if user is searching/filtering, otherwise "landing" view
   const isLandingView = !hasActiveFilters && !filtersFromUrl.search && !hideHero;
 
   return (

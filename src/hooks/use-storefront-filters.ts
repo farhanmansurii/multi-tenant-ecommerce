@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { StorefrontFiltersState } from '@/components/features/storefront/shared/modules/filters/storefront-filters';
 import { ProductData } from '@/lib/domains/products';
 import { Category } from '@/lib/db/schema';
+import { useAnalytics } from '@/hooks/use-analytics-tracking';
 
 interface UseStorefrontFiltersProps {
   products: ProductData[];
@@ -19,6 +20,7 @@ export function useStorefrontFilters({
 }: UseStorefrontFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const analytics = useAnalytics();
 
   const filtersFromUrl: StorefrontFiltersState = useMemo(() => {
     const getAll = (key: string) => searchParams.getAll(key).filter(Boolean);
@@ -47,6 +49,9 @@ export function useStorefrontFilters({
       inStockOnly: searchParams.get('stock') === '1',
     };
   }, [searchParams, selectedCategoryId]);
+
+  // Track search events
+
 
   const filteredProducts = useMemo(() => {
     let result = products as ProductData[];
@@ -109,6 +114,13 @@ export function useStorefrontFilters({
 
     return result;
   }, [products, filtersFromUrl, categories]);
+
+  useEffect(() => {
+    if (filtersFromUrl.search.trim()) {
+      const resultsCount = filteredProducts.length;
+      analytics.trackSearch(filtersFromUrl.search.trim(), resultsCount);
+    }
+  }, [filtersFromUrl.search, filteredProducts.length, analytics]);
 
   const updateFilters = (next: StorefrontFiltersState) => {
     const url = new URL(window.location.href);

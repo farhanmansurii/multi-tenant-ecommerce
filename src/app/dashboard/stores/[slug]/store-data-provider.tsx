@@ -3,14 +3,16 @@
 import { ReactNode, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchStore } from "@/lib/domains/stores/service";
+import { useStoreSettings } from "@/lib/state/store-settings/store-settings-store";
 
 interface StoreDataProviderProps {
   children: ReactNode;
-  initialStore?: { id: string; name: string; slug: string; ownerUserId: string; currency?: string } | null;
+  initialStore?: any;
 }
 
 export function StoreDataProvider({ children, initialStore }: StoreDataProviderProps) {
   const queryClient = useQueryClient();
+  const { setStoreSettings } = useStoreSettings();
 
   useEffect(() => {
     if (initialStore) {
@@ -22,8 +24,11 @@ export function StoreDataProvider({ children, initialStore }: StoreDataProviderP
           updatedAt: Date.now(),
         }
       );
+
+      // Cache store settings in Zustand for global access
+      setStoreSettings(initialStore);
     }
-  }, [initialStore, queryClient]);
+  }, [initialStore, queryClient, setStoreSettings]);
 
   return <>{children}</>;
 }

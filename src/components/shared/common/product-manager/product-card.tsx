@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ProductData, ProductViewMode } from "./types";
+import { useFormatPrice } from "@/lib/utils/price";
 import {
   Edit,
   Eye,
@@ -54,18 +55,13 @@ const statusConfig: Record<string, { label: string; className: string; dotColor:
 };
 
 
-const formatPrice = (price: string) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(parseFloat(price || "0"));
-
 const ProductTable: React.FC<ProductTableProps> = ({
   products,
   onEdit,
   onDelete,
   onView,
 }) => {
+  const formatPrice = useFormatPrice();
   return (
     <>
       <div className="hidden md:block rounded-lg border bg-card overflow-hidden">
@@ -276,6 +272,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onDelete,
   onView,
 }) => {
+  const formatPrice = useFormatPrice();
   const status = statusConfig[product.status] || statusConfig.inactive;
 
   return (
