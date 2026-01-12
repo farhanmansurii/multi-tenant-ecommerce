@@ -15,7 +15,7 @@ export function useProduct(
   options?: UseProductOptions
 ) {
   const enabled = Boolean(storeSlug && productSlug);
-
+  const { staleTime: _, ...restDefaults } = defaultQueryOptions;
   return useQuery({
     queryKey: queryKeys.products.detail(storeSlug || "", productSlug || ""),
     queryFn: () => {
@@ -25,8 +25,8 @@ export function useProduct(
       return fetchProduct(storeSlug, productSlug);
     },
     enabled,
+    ...restDefaults,
     staleTime: longStaleTime,
-    ...defaultQueryOptions,
     ...options,
   });
 }

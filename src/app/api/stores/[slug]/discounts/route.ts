@@ -5,8 +5,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { db } from '@/lib/db';
 import { discounts } from '@/lib/db/schema';
 import { withStoreContext } from '@/lib/api/handlers';
-import { ok, created, badRequest, notFound, serverError } from '@/lib/api/responses';
-import { logger } from '@/lib/api/logger';
+import { ok, created, badRequest, notFound, serverError, logRouteError } from '@/lib/api/responses';
 
 interface RouteParams {
 	params: Promise<{
@@ -103,7 +102,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 		return created({ discount: newDiscount });
 	} catch (error) {
-		logger.error('Failed to create discount', error, { storeId });
+		await logRouteError('Failed to create discount', error, params, { storeId });
 		return serverError('Failed to create discount');
 	}
 }
@@ -158,7 +157,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 		return ok({ discount: updated });
 	} catch (error) {
-		logger.error('Failed to update discount', error, { storeId, discountId: id });
+		await logRouteError('Failed to update discount', error, params, { storeId });
 		return serverError('Failed to update discount');
 	}
 }
@@ -192,7 +191,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
 		return ok({ success: true });
 	} catch (error) {
-		logger.error('Failed to delete discount', error, { storeId, discountId });
+		await logRouteError('Failed to delete discount', error, params, { storeId });
 		return serverError('Failed to delete discount');
 	}
 }

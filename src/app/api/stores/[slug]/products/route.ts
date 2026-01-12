@@ -5,8 +5,7 @@ import { productHelpers } from '@/lib/domains/products';
 import { db } from '@/lib/db';
 import { products as productsTable, categories as categoriesTable } from '@/lib/db/schema';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
-import { ok, notFound, created, badRequest, serverError } from '@/lib/api/responses';
-import { logger } from '@/lib/api/logger';
+import { ok, notFound, created, badRequest, serverError, logRouteError } from '@/lib/api/responses';
 
 interface RouteParams {
 	params: Promise<{
@@ -85,18 +84,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			totalPages: Math.ceil(total / limit),
 		});
 	} catch (error) {
-		logger.error('Error fetching products', error, { slug });
+		await logRouteError('Error fetching products', error, params);
 		return serverError();
 	}
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+	let storeId: string | undefined;
 	try {
 		const { slug } = await params;
 		const store = await storeHelpers.getStoreBySlug(slug);
 		if (!store) {
 			return notFound('Store not found');
 		}
+
+		storeId = store.id;
 
 		const body = await request.json();
 
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		const product = await productHelpers.createProduct(store.id, { ...body, slug: finalSlug });
 		return created({ product });
 	} catch (error) {
-		logger.error('Error creating product', error, { slug, storeId: store.id });
+		await logRouteError('Error creating product', error, params, { storeId });
 		return serverError('Failed to create product');
 	}
 }

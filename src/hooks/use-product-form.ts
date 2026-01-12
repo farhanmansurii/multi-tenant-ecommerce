@@ -167,12 +167,19 @@ export const useProductForm = ({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: ProductFormValues) =>
-      updateProduct(
+    mutationFn: (data: ProductFormValues) => {
+      const formattedData = formatProductFormData(data, uploadedFiles)
+      // Fix: shortDescription must be string | undefined, not null
+      const { shortDescription, ...rest } = formattedData
+      return updateProduct(
         storeSlug,
         product!.slug,
-        formatProductFormData(data, uploadedFiles)
-      ),
+        {
+          ...rest,
+          shortDescription: shortDescription ?? undefined
+        }
+      )
+    },
     onSuccess: () => {
       toast.success("Product updated successfully");
       queryClient.invalidateQueries({

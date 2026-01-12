@@ -114,10 +114,12 @@ export async function getProductBySlug(storeId: string, slug: string) {
  * Update product
  */
 export async function updateProduct(id: string, data: Partial<CreateProductData>) {
+  const { storeId, slug, ...updateData } = data as any;
+
   const [updatedProduct] = await db
     .update(products)
     .set({
-      ...data,
+      ...updateData,
       updatedAt: new Date(),
     })
     .where(eq(products.id, id))

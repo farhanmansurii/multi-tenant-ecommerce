@@ -108,4 +108,59 @@ export function serverError(message = "Internal server error", options: ApiError
   );
 }
 
+/**
+ * Safely extracts params from a Promise for error logging.
+ * Handles cases where params might not be resolvable due to earlier errors.
+ */
+async function safeResolveParams<T extends Record<string, unknown>>(
+  paramsPromise: Promise<T>
+): Promise<T | null> {
+  try {
+    return await paramsPromise;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Safely logs an error with route params context.
+ * Attempts to resolve params for logging, but falls back gracefully if params cannot be resolved.
+ *
+ * @param message - Error message to log
+ * @param error - The error that occurred
+ * @param paramsPromise - Promise that resolves to route params
+ * @param additionalContext - Additional context to include in error logs
+ *
+ * @example
+ * ```ts
+ * export async function GET(_request: NextRequest, { params }: RouteParams) {
+ *   try {
+ *     const { slug } = await params;
+ *     // ... handler logic
+ *   } catch (error) {
+ *     logRouteError("Error fetching product", error, params);
+ *     return serverError();
+ *   }
+ * }
+ * ```
+ */
+export async function logRouteError<T extends Record<string, unknown>>(
+  message: string,
+  error: unknown,
+  paramsPromise: Promise<T>,
+  additionalContext?: Record<string, unknown>
+): Promise<void> {
+  const params = await safeResolveParams(paramsPromise);
+  const context = {
+    ...(params || {}),
+    ...(additionalContext || {}),
+  };
+
+  logger.error(
+    message,
+    error,
+    Object.keys(context).length > 0 ? context : undefined
+  );
+}
+
 

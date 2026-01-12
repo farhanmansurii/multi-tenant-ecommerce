@@ -4,8 +4,7 @@ import { productHelpers } from '@/lib/domains/products';
 import { db } from '@/lib/db';
 import { categories as categoriesTable } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
-import { ok, notFound, badRequest, serverError } from '@/lib/api/responses';
-import { logger } from '@/lib/api/logger';
+import { ok, notFound, badRequest, serverError, logRouteError } from '@/lib/api/responses';
 
 interface RouteParams {
   params: Promise<{
@@ -67,7 +66,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       store: { id: store.id, slug: store.slug, name: store.name },
     });
   } catch (error) {
-    logger.error('Error fetching product', error, { slug, productSlug });
+    await logRouteError('Error fetching product', error, params);
     return serverError();
   }
 }
@@ -94,7 +93,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       store: { id: store.id, slug: store.slug, name: store.name },
     });
   } catch (error) {
-    logger.error('Error updating product', error, { slug, productSlug, productId: product.id });
+    await logRouteError('Error updating product', error, params);
     return serverError('Failed to update product');
   }
 }
@@ -112,7 +111,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return ok({ success: true });
   } catch (error) {
-    logger.error('Error deleting product', error, { slug, productSlug, productId: product.id });
+    await logRouteError('Error deleting product', error, params);
     return serverError('Failed to delete product');
   }
 }

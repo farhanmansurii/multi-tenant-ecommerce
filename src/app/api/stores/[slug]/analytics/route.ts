@@ -3,8 +3,7 @@ import { auth } from "@/lib/auth/server";
 import { headers } from "next/headers";
 import { getStoreBySlug, isUserMember } from "@/lib/domains/stores/helpers";
 import { getStoreAnalytics } from "@/lib/domains/stores/analytics";
-import { ok, unauthorized, notFound, forbidden, serverError } from "@/lib/api/responses";
-import { logger } from "@/lib/api/logger";
+import { ok, unauthorized, notFound, forbidden, serverError, logRouteError } from "@/lib/api/responses";
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +41,7 @@ export async function GET(
       storeName: store.name,
     });
   } catch (error) {
-    logger.error("Error fetching analytics", error, { slug, storeId: store.id });
+    await logRouteError("Error fetching analytics", error, params);
     return serverError();
   }
 }

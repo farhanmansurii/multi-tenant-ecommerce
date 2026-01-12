@@ -4,8 +4,7 @@ import { storeHelpers } from '@/lib/domains/stores';
 import { productHelpers } from '@/lib/domains/products';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
-import { ok, notFound, serverError } from '@/lib/api/responses';
-import { logger } from '@/lib/api/logger';
+import { ok, notFound, serverError, logRouteError } from '@/lib/api/responses';
 
 interface RouteParams {
 	params: Promise<{
@@ -80,7 +79,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 	return ok({ products });
 	} catch (error) {
-		logger.error('Error fetching product recommendations', error, { slug, productSlug });
+		await logRouteError('Error fetching product recommendations', error, params);
 		return serverError();
 	}
 }

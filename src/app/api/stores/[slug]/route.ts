@@ -5,8 +5,7 @@ import { db } from "@/lib/db";
 import { products, stores } from "@/lib/db/schema";
 import { storeHelpers } from "@/lib/domains/stores";
 import { auth } from "@/lib/auth/server";
-import { ok, notFound, unauthorized, forbidden, serverError } from "@/lib/api/responses";
-import { logger } from "@/lib/api/logger";
+import { ok, notFound, unauthorized, forbidden, serverError, logRouteError } from "@/lib/api/responses";
 
 interface RouteParams {
   params: Promise<{
@@ -53,18 +52,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    logger.error("Error fetching store", error, { slug });
+    await logRouteError("Error fetching store", error, params);
     return serverError();
   }
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  let storeId: string | undefined;
   try {
     const { slug } = await params;
     const existing = await storeHelpers.getStoreBySlug(slug);
     if (!existing) {
       return notFound("Store not found");
     }
+
+    storeId = existing.id;
 
     // Check authentication
     const session = await auth.api.getSession({
@@ -131,7 +133,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return ok({ store: updated });
   } catch (error) {
-    logger.error("Error updating store", error, { slug, storeId: existing.id });
+    await logRouteError("Error updating store", error, params, { storeId });
     return serverError("Failed to update store");
   }
 }

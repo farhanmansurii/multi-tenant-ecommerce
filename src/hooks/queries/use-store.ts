@@ -14,7 +14,7 @@ export function useStore(
   options?: UseStoreOptions
 ) {
   const enabled = Boolean(slug);
-
+  const { staleTime: _, ...restDefaults } = defaultQueryOptions;
   return useQuery({
     queryKey: queryKeys.stores.detail(slug || ""),
     queryFn: () => {
@@ -24,8 +24,8 @@ export function useStore(
       return fetchStore(slug);
     },
     enabled,
+    ...restDefaults,
     staleTime: longStaleTime,
-    ...defaultQueryOptions,
     ...options,
   });
 }

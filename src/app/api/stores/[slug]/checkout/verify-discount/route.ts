@@ -3,8 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { discounts } from "@/lib/db/schema/ecommerce/discounts";
 import { storeHelpers } from "@/lib/domains/stores";
-import { ok, notFound, badRequest, serverError } from "@/lib/api/responses";
-import { logger } from "@/lib/api/logger";
+import { ok, notFound, badRequest, serverError, logRouteError } from "@/lib/api/responses";
 
 interface RouteParams {
 	params: Promise<{
@@ -20,12 +19,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 		return notFound("Store not found");
 	}
 
+	let code: string | undefined;
 	try {
-		const { code, cartTotal } = await request.json();
+		const body = await request.json();
+		code = body.code;
 
 		if (!code) {
 			return badRequest("Discount code is required");
 		}
+
+		const cartTotal = body.cartTotal;
 
 		const [discountRecord] = await db
 			.select()
@@ -81,7 +84,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			value: discountRecord.value,
 		});
 	} catch (error) {
-		logger.error("Failed to verify discount", error, { slug, code });
+		await logRouteError("Failed to verify discount", error, params, { code });
 		return serverError("Failed to verify discount");
 	}
 }

@@ -5,7 +5,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { withStoreContext } from '@/lib/api/handlers';
-import { ok, created, badRequest, notFound, serverError } from '@/lib/api/responses';
+import { ok, created, badRequest, notFound, serverError, logRouteError } from '@/lib/api/responses';
 import { logger } from '@/lib/api/logger';
 
 interface RouteParams {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 		return created({ category: newCategory });
 	} catch (error) {
-		logger.error('Failed to create category', error, { storeId });
+		await logRouteError('Failed to create category', error, params, { storeId });
 		return serverError('Failed to create category');
 	}
 }
@@ -134,7 +134,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 		return ok({ category: updatedCategory });
 	} catch (error) {
-		logger.error('Failed to update category', error, { storeId, categoryId: id });
+		await logRouteError('Failed to update category', error, params, { storeId });
 		return serverError('Failed to update category');
 	}
 }
@@ -175,7 +175,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
 		return ok({ success: true });
 	} catch (error) {
-		logger.error('Failed to delete category', error, { storeId, categoryId });
+		await logRouteError('Failed to delete category', error, params, { storeId });
 		return serverError('Failed to delete category');
 	}
 }
