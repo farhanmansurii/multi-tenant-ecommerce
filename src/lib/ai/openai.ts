@@ -1,8 +1,27 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when needed and API key is available
+let openaiClient: OpenAI | null = null;
+
+const getOpenAIClient = (): OpenAI | null => {
+  // Return cached client if already initialized
+  if (openaiClient !== null) {
+    return openaiClient;
+  }
+
+  // Only initialize if API key is available
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey || apiKey.trim() === "") {
+      return null;
+    }
+    openaiClient = new OpenAI({ apiKey });
+    return openaiClient;
+  } catch (error) {
+    console.warn("Failed to initialize OpenAI client:", error);
+    return null;
+  }
+};
 
 export interface ProductRecommendation {
   productId: string;
@@ -31,8 +50,13 @@ export class AIService {
       categories: string[];
       tags: string[];
     }>,
-    limit = 5
+    limit = 5,
   ): Promise<ProductRecommendation[]> {
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return [];
+    }
+
     try {
       const prompt = `
 Given a product and a list of other products in the store, recommend the most relevant products that customers would likely be interested in buying together or as alternatives.
@@ -79,8 +103,19 @@ Focus on complementary products, alternatives, or products in the same category.
       categories: string[];
       price: string;
     },
-    targetAudience = "general consumers"
+    targetAudience = "general consumers",
   ): Promise<CopySuggestion> {
+    const openai = getOpenAIClient();
+    if (!openai) {
+      console.warn("OpenAI API key not configured. Returning original copy.");
+      return {
+        original: product.description,
+        improved: product.description,
+        reasoning:
+          "OpenAI API key not configured. Please set OPENAI_API_KEY environment variable to enable AI features.",
+      };
+    }
+
     try {
       const prompt = `
 Improve the product description to be more engaging, persuasive, and SEO-friendly. Focus on benefits rather than just features. Make it compelling for ${targetAudience}.
@@ -122,10 +157,12 @@ Make the improved description natural, benefit-focused, and optimized for conver
     }
   }
 
-  async generateProductAltText(
-    productName: string,
-    imageDescription = ""
-  ): Promise<string> {
+  async generateProductAltText(productName: string, imageDescription = ""): Promise<string> {
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return productName;
+    }
+
     try {
       const prompt = `
 Generate concise, descriptive alt text for a product image.
@@ -157,10 +194,12 @@ Just return the alt text, nothing else.
     }
   }
 
-  async analyzeProductCategories(
-    productName: string,
-    description: string
-  ): Promise<string[]> {
+  async analyzeProductCategories(productName: string, description: string): Promise<string[]> {
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return [];
+    }
+
     try {
       const prompt = `
 Analyze this product and suggest appropriate e-commerce categories/tags.
