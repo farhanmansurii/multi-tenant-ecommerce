@@ -12,13 +12,7 @@ import {
   MinusCircle,
 } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,93 +37,91 @@ interface RecentActivityProps {
   isLoading?: boolean;
 }
 
+const baseActivityColor = {
+  color: "bg-muted/50",
+  bgColor: "bg-card/30",
+};
+
 const getActivityConfig = (eventType: string) => {
   switch (eventType) {
-    case 'view_product':
+    case "view_product":
       return {
         icon: Eye,
-        color: 'bg-blue-500',
-        label: 'Product viewed',
-        bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+        label: "Product viewed",
+        ...baseActivityColor,
       };
-    case 'add_to_cart':
+    case "add_to_cart":
       return {
         icon: ShoppingCart,
-        color: 'bg-orange-500',
-        label: 'Added to cart',
-        bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+        label: "Added to cart",
+        ...baseActivityColor,
       };
-    case 'remove_from_cart':
+    case "remove_from_cart":
       return {
         icon: MinusCircle,
-        color: 'bg-amber-500',
-        label: 'Removed from cart',
-        bgColor: 'bg-amber-50 dark:bg-amber-950/20',
+        label: "Removed from cart",
+        ...baseActivityColor,
       };
-    case 'purchase':
+    case "purchase":
       return {
         icon: CheckCircle,
-        color: 'bg-green-500',
-        label: 'Purchase completed',
-        bgColor: 'bg-green-50 dark:bg-green-950/20',
+        label: "Purchase completed",
+        ...baseActivityColor,
       };
-    case 'search':
+    case "search":
       return {
         icon: Search,
-        color: 'bg-purple-500',
-        label: 'Search performed',
-        bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+        label: "Search performed",
+        ...baseActivityColor,
       };
-    case 'checkout_start':
+    case "checkout_start":
       return {
         icon: Package,
-        color: 'bg-yellow-500',
-        label: 'Checkout started',
-        bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
+        label: "Checkout started",
+        ...baseActivityColor,
       };
     default:
       return {
         icon: Activity,
-        color: 'bg-gray-500',
-        label: 'Activity',
-        bgColor: 'bg-gray-50 dark:bg-gray-950/20',
+        label: "Activity",
+        ...baseActivityColor,
       };
   }
 };
 
 const formatActivityDescription = (activity: ActivityItem) => {
   const price = (value?: number, currency?: string) => {
-    if (typeof value !== 'number') return '';
+    if (typeof value !== "number") return "";
     const amount = value / 100;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
       minimumFractionDigits: 2,
     }).format(amount);
   };
 
   switch (activity.eventType) {
-    case 'view_product':
+    case "view_product":
       if (activity.count > 1) {
-        return `${activity.productName || 'Product'} viewed ${activity.count} times`;
+        return `${activity.productName || "Product"} viewed ${activity.count} times`;
       }
-      return activity.productName || 'Product viewed';
-    case 'add_to_cart':
-      return `${activity.productName || 'Item'} • Qty ${activity.quantity ?? 1}${
-        activity.value ? ` • ${price(activity.value, activity.currency)}` : ''
+      return activity.productName || "Product viewed";
+    case "add_to_cart":
+      return `${activity.productName || "Item"} • Qty ${activity.quantity ?? 1}${
+        activity.value ? ` • ${price(activity.value, activity.currency)}` : ""
       }`;
-    case 'remove_from_cart':
-      return `${activity.productName || 'Item'} removed • Qty ${activity.quantity ?? 1}`;
-    case 'purchase':
-      return `Order ${activity.orderId || ''} • ${price(activity.value, activity.currency)}`;
-    case 'search':
+    case "remove_from_cart":
+      return `${activity.productName || "Item"} removed • Qty ${activity.quantity ?? 1}`;
+    case "purchase":
+      return `Order ${activity.orderId || ""} • ${price(activity.value, activity.currency)}`;
+    case "search":
       return activity.metadata?.query
-        ? `Search: "${activity.metadata.query}"${activity.metadata.resultsCount ? ` • ${activity.metadata.resultsCount} results` : ''}`
-        : 'Search query performed';
-    case 'checkout_start':
+        ? `Search: "${activity.metadata.query}"${activity.metadata.resultsCount ? ` • ${activity.metadata.resultsCount} results` : ""}`
+        : "Search query performed";
+    case "checkout_start":
       return `Checkout process started`;
     default:
-      return activity.eventType || 'Activity occurred';
+      return activity.eventType || "Activity occurred";
   }
 };
 
@@ -182,7 +174,7 @@ export function RecentActivity({ activities, isLoading }: RecentActivityProps) {
               const config = getActivityConfig(activity.eventType);
               const Icon = config.icon;
               const timeAgo = formatDistanceToNow(new Date(activity.timestamp), {
-                addSuffix: true
+                addSuffix: true,
               });
 
               return (
@@ -211,9 +203,7 @@ export function RecentActivity({ activities, isLoading }: RecentActivityProps) {
           <div className="flex items-center justify-center py-8">
             <div className="text-center space-y-2">
               <Activity className="h-8 w-8 text-muted-foreground mx-auto" />
-              <p className="text-sm text-muted-foreground">
-                No recent activity in the last 7 days
-              </p>
+              <p className="text-sm text-muted-foreground">No recent activity in the last 7 days</p>
               <p className="text-xs text-muted-foreground">
                 Activity will appear here as customers interact with your store
               </p>

@@ -8,7 +8,7 @@ import {
   ShoppingBag,
   Users,
   Percent,
-  AlertCircle,
+  Boxes,
   Settings,
   ClipboardList,
   Tags,
@@ -18,11 +18,11 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
@@ -32,7 +32,6 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Image from "next/image";
 
 interface StoreSidebarProps {
@@ -61,50 +60,29 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
     }
   }, [pathname, isMobile, setOpenMobile]);
 
-  const primaryItems: NavItem[] = [
+  const nav: { label: string; items: NavItem[] }[] = [
     {
-      label: "Overview",
-      href: `/dashboard/stores/${slug}`,
-      icon: LayoutDashboard,
-      exact: true,
+      label: "Store",
+      items: [
+        { label: "Overview", href: `/dashboard/stores/${slug}`, icon: LayoutDashboard, exact: true },
+        { label: "Orders", href: `/dashboard/stores/${slug}/orders`, icon: ClipboardList },
+        { label: "Customers", href: `/dashboard/stores/${slug}/customers`, icon: Users },
+      ],
     },
     {
-      label: "Orders",
-      href: `/dashboard/stores/${slug}/orders`,
-      icon: ClipboardList,
+      label: "Catalog",
+      items: [
+        { label: "Products", href: `/dashboard/stores/${slug}/products`, icon: ShoppingBag },
+        { label: "Categories", href: `/dashboard/stores/${slug}/categories`, icon: Tags },
+        { label: "Inventory", href: `/dashboard/stores/${slug}/inventory`, icon: Boxes },
+      ],
     },
     {
-      label: "Products",
-      href: `/dashboard/stores/${slug}/products`,
-      icon: ShoppingBag,
-    },
-    {
-      label: "Categories",
-      href: `/dashboard/stores/${slug}/categories`,
-      icon: Tags,
-    },
-  ];
-
-  const secondaryItems: NavItem[] = [
-    {
-      label: "Analytics",
-      href: `/dashboard/stores/${slug}/analytics`,
-      icon: BarChart3,
-    },
-    {
-      label: "Customers",
-      href: `/dashboard/stores/${slug}/customers`,
-      icon: Users,
-    },
-    {
-      label: "Discounts",
-      href: `/dashboard/stores/${slug}/discounts`,
-      icon: Percent,
-    },
-    {
-      label: "Inventory",
-      href: `/dashboard/stores/${slug}/inventory`,
-      icon: AlertCircle,
+      label: "Growth",
+      items: [
+        { label: "Analytics", href: `/dashboard/stores/${slug}/analytics`, icon: BarChart3 },
+        { label: "Discounts", href: `/dashboard/stores/${slug}/discounts`, icon: Percent },
+      ],
     },
   ];
 
@@ -126,9 +104,9 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
           asChild
           isActive={isActive}
           className={cn(
-            "relative transition-colors duration-200",
-            isActive && ["bg-muted/40 text-foreground", "dark:bg-muted/30"],
-            !isActive && "hover:bg-muted/20",
+            "relative rounded-xl transition-colors",
+            isActive && "bg-muted/50 text-foreground",
+            !isActive && "hover:bg-muted/40",
           )}
         >
           <Link href={item.href} onClick={handleLinkClick} className="flex items-center gap-2.5">
@@ -152,7 +130,6 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
       collapsible={isMobile ? "offcanvas" : "icon"}
       className={cn("border-r-0", className)}
     >
-
       <SidebarHeader className="pb-0">
         <div className="flex items-center gap-3 px-2 py-3 pr-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:pr-2 group-data-[collapsible=icon]:gap-0">
           <div className="flex items-center gap-2.5 flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
@@ -181,59 +158,46 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
       </SidebarHeader>
 
       <SidebarContent className="w-full overflow-hidden">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>{primaryItems.map(renderNavItem)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>{secondaryItems.map(renderNavItem)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {nav.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{group.items.map(renderNavItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
-      <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  className="transition-colors duration-200 hover:bg-muted/20"
-                >
-                  <Link
-                    href="/dashboard/stores"
-                    onClick={() => {
-                      if (isMobile && setOpenMobile) {
-                        setTimeout(() => {
-                          setOpenMobile(false);
-                        }, 100);
-                      }
-                    }}
-                    className="flex items-center gap-2.5"
-                  >
-                    <ArrowLeft className="h-4 w-4 shrink-0" />
-                    <span className="text-sm">Back to Stores</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       <SidebarFooter className="mt-auto pt-2">
         <SidebarSeparator className="my-2 w-11/12 mx-auto" />
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="rounded-xl transition-colors hover:bg-muted/40">
+              <Link
+                href="/dashboard/stores"
+                onClick={() => {
+                  if (isMobile && setOpenMobile) {
+                    setTimeout(() => setOpenMobile(false), 100);
+                  }
+                }}
+                className="flex items-center gap-2.5"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                <span className="text-sm">All stores</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={pathname === `/dashboard/stores/${slug}/settings`}
               className={cn(
-                "transition-colors duration-200",
+                "rounded-xl transition-colors",
                 pathname === `/dashboard/stores/${slug}/settings` && [
-                  "bg-muted/40 text-foreground",
-                  "dark:bg-muted/30",
+                  "bg-muted/50 text-foreground",
                 ],
-                pathname !== `/dashboard/stores/${slug}/settings` && "hover:bg-muted/20",
+                pathname !== `/dashboard/stores/${slug}/settings` && "hover:bg-muted/40",
               )}
             >
               <Link

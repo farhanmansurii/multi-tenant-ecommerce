@@ -44,7 +44,6 @@ export async function getCustomerById(storeId: string, customerId: string): Prom
 		data: (customer.data as Customer["data"]) || {},
 		wishlist: (customer.wishlist as WishlistItem[]) || [],
 		savedAddresses: (customer.savedAddresses as Customer["savedAddresses"]) || [],
-		orders: (customer.orders as Customer["orders"]) || [],
 		createdAt: customer.createdAt,
 		updatedAt: customer.updatedAt,
 	};

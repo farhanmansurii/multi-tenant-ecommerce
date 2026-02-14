@@ -5,31 +5,13 @@ export interface StoreSettings {
   name: string;
   slug: string;
   currency: string;
-  timezone: string;
-  language: string;
   primaryColor?: string;
-  secondaryColor?: string;
   logo?: string;
-  favicon?: string;
-  tagline?: string;
   description: string;
   contactEmail: string;
-  contactPhone?: string;
-  website?: string;
-  businessType: string;
-  businessName: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
   settings: {
-    paymentMethods: string[];
-    shippingRates: any[];
-    upiId?: string;
+    paymentMethods: Array<'stripe' | 'cod'>;
     codEnabled: boolean;
-    stripeAccountId?: string;
-    paypalEmail?: string;
     shippingEnabled: boolean;
     freeShippingThreshold?: number;
     termsOfService: string;
@@ -43,7 +25,6 @@ export interface StoreSettingsSlice {
   setStoreSettings: (settings: StoreSettings) => void;
   clearStoreSettings: () => void;
   getCurrency: () => string;
-  getTimezone: () => string;
 }
 
 export const createStoreSettingsSlice: StateCreator<
@@ -63,10 +44,6 @@ export const createStoreSettingsSlice: StateCreator<
   },
 
   getCurrency: () => {
-    return get().storeSettings?.currency || 'INR';
-  },
-
-  getTimezone: () => {
-    return get().storeSettings?.timezone || 'Asia/Kolkata';
+    return get().storeSettings?.currency || 'USD';
   },
 });

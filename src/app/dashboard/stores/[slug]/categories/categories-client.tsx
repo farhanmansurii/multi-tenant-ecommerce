@@ -65,6 +65,7 @@ import {
 } from "@/lib/domains/products/category-service";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/common/empty-state";
+import { ColorPicker as BrandColorPicker } from "@/components/ui/color-picker";
 
 const DEFAULT_FORM_DATA = {
   name: "",
@@ -74,84 +75,7 @@ const DEFAULT_FORM_DATA = {
   sortOrder: 0,
 };
 
-const PRESET_COLORS = [
-  "#6366f1",
-  "#3b82f6",
-  "#0ea5e9",
-  "#10b981",
-  "#22c55e",
-  "#eab308",
-  "#f59e0b",
-  "#f97316",
-  "#ef4444",
-  "#ec4899",
-  "#a855f7",
-  "#64748b",
-];
-
-const ColorPicker = ({ value, onChange }: { value: string; onChange: (color: string) => void }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-start gap-2 px-3 font-normal"
-        >
-          <div
-            className="w-5 h-5 rounded-md border border-border/50"
-            style={{ backgroundColor: value }}
-          />
-          <span className="flex-1 text-left truncate">{value}</span>
-          <Palette className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-3">
-        <div className="space-y-3">
-          <div className="font-medium text-sm">Preset Colors</div>
-          <div className="grid grid-cols-6 gap-2">
-            {PRESET_COLORS.map((color) => (
-              <button
-                key={color}
-                className={cn(
-                  "w-8 h-8 rounded-md border border-border/50 flex items-center justify-center transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                  value === color && "ring-2 ring-ring ring-offset-2",
-                )}
-                style={{ backgroundColor: color }}
-                onClick={() => {
-                  onChange(color);
-                  setOpen(false);
-                }}
-              >
-                {value === color && <Check className="h-4 w-4 text-white drop-shadow-md" />}
-              </button>
-            ))}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="custom-color" className="text-xs">
-              Custom Hex
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                id="custom-color"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="h-9 font-mono"
-                maxLength={7}
-              />
-              <div
-                className="w-9 h-9 rounded-md border border-border/50 shrink-0"
-                style={{ backgroundColor: value }}
-              />
-            </div>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-};
+// Use shared color picker for consistent theme controls across the dashboard.
 
 const CategoryFormContent = ({
   data,
@@ -166,16 +90,16 @@ const CategoryFormContent = ({
     <div className="grid gap-5 py-4">
       <div className="space-y-2">
         <Label htmlFor="name" className="text-sm font-semibold">
-          Name <span className="text-red-500">*</span>
+          Name <span className="text-destructive">*</span>
         </Label>
         <Input
           id="name"
           value={data.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="e.g. Digital Assets, Merch"
-          className={cn(errors?.name && "border-red-500 focus-visible:ring-red-500")}
+          className={cn(errors?.name && "border-destructive focus-visible:ring-destructive")}
         />
-        {errors?.name && <p className="text-xs text-red-500">{errors.name}</p>}
+        {errors?.name && <p className="text-xs text-destructive">{errors.name}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="description" className="text-sm font-semibold">
@@ -193,7 +117,7 @@ const CategoryFormContent = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-sm font-semibold">Accent Color</Label>
-          <ColorPicker value={data.color} onChange={(color) => onChange({ color })} />
+          <BrandColorPicker value={data.color} onChange={(color) => onChange({ color })} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="sortOrder" className="text-sm font-semibold">
@@ -347,7 +271,6 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
         title="Categories"
         desc="Organize your products for a better customer experience."
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
           { label: "Stores", href: "/dashboard/stores" },
           { label: displayStore?.name || slug, href: `/dashboard/stores/${slug}` },
           { label: "Categories" },
@@ -454,7 +377,7 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
                                   <Edit className="w-4 h-4 mr-2" /> Edit Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                  className="text-destructive focus:text-destructive"
                                   onClick={() => setDeleteId(category.id)}
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" /> Delete
@@ -552,7 +475,7 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteCategoryMutation.mutate(deleteId)}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteCategoryMutation.isPending ? "Deleting..." : "Delete Forever"}
             </AlertDialogAction>

@@ -10,8 +10,7 @@ export default function Loading() {
       desc="Manage your store products"
       icon={<Package />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Products" },
       ]}
       headerActions={

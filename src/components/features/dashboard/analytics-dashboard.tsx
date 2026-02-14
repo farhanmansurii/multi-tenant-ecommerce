@@ -2,22 +2,9 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { subDays } from "date-fns";
-import {
-  TrendingUp,
-  TrendingDown,
-  ShoppingCart,
-  DollarSign,
-  Eye,
-  Target,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Eye, Target } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { useAnalytics, useRecentActivity } from "@/hooks/queries/use-analytics";
@@ -41,14 +28,28 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
   }));
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
 
-  const analyticsParams = useMemo(() => ({
-    startDate: dateRange.from,
-    endDate: dateRange.to,
-    period,
-  }), [dateRange.from, dateRange.to, period]);
+  const analyticsParams = useMemo(
+    () => ({
+      startDate: dateRange.from,
+      endDate: dateRange.to,
+      period,
+    }),
+    [dateRange.from, dateRange.to, period],
+  );
 
-  const { data: analytics, isLoading, error, refetch: refetchAnalytics, isRefetching: isRefreshingAnalytics } = useAnalytics(slug, analyticsParams);
-  const { data: recentActivity, isLoading: activityLoading, refetch: refetchActivity, isRefetching: isRefreshingActivity } = useRecentActivity(slug, 10);
+  const {
+    data: analytics,
+    isLoading,
+    error,
+    refetch: refetchAnalytics,
+    isRefetching: isRefreshingAnalytics,
+  } = useAnalytics(slug, analyticsParams);
+  const {
+    data: recentActivity,
+    isLoading: activityLoading,
+    refetch: refetchActivity,
+    isRefetching: isRefreshingActivity,
+  } = useRecentActivity(slug, 10);
 
   const handleRefresh = useCallback(() => {
     refetchAnalytics();
@@ -74,9 +75,7 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">
-              Failed to Load Analytics
-            </CardTitle>
+            <CardTitle className="text-center text-destructive">Failed to Load Analytics</CardTitle>
             <CardDescription className="text-center">
               {error?.message || "Unable to load analytics data. Please try again later."}
             </CardDescription>
@@ -88,12 +87,39 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
 
   const { summary, topProducts, funnel, revenueByPeriod } = analytics;
 
-  const metrics = useMemo(() => [
-    { label: "Total Views", value: summary.totalViews.toLocaleString(), icon: Eye, color: "blue" as const, trend: summary.trends?.views },
-    { label: "Add to Cart", value: summary.totalAddToCarts.toLocaleString(), icon: ShoppingCart, color: "emerald" as const, trend: summary.trends?.addToCarts },
-    { label: "Total Orders", value: summary.totalPurchases.toLocaleString(), icon: Target, color: "purple" as const, trend: summary.trends?.purchases },
-    { label: "Revenue", value: `$${summary.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "amber" as const, trend: summary.trends?.revenue },
-  ], [summary]);
+  const metrics = useMemo(
+    () => [
+      {
+        label: "Total Views",
+        value: summary.totalViews.toLocaleString(),
+        icon: Eye,
+        color: "blue" as const,
+        trend: summary.trends?.views,
+      },
+      {
+        label: "Add to Cart",
+        value: summary.totalAddToCarts.toLocaleString(),
+        icon: ShoppingCart,
+        color: "emerald" as const,
+        trend: summary.trends?.addToCarts,
+      },
+      {
+        label: "Total Orders",
+        value: summary.totalPurchases.toLocaleString(),
+        icon: Target,
+        color: "purple" as const,
+        trend: summary.trends?.purchases,
+      },
+      {
+        label: "Revenue",
+        value: `$${summary.totalRevenue.toFixed(2)}`,
+        icon: DollarSign,
+        color: "amber" as const,
+        trend: summary.trends?.revenue,
+      },
+    ],
+    [summary],
+  );
 
   return (
     <div className="space-y-6">
@@ -118,11 +144,11 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
             {metric.trend !== undefined && (
               <div className="absolute top-3 right-3 text-xs flex items-center gap-1">
                 {metric.trend >= 0 ? (
-                  <span className="text-emerald-600 font-medium">
+                  <span className="text-foreground font-medium">
                     <TrendingUp className="h-3 w-3 inline" /> +{metric.trend.toFixed(1)}%
                   </span>
                 ) : (
-                  <span className="text-red-600 font-medium">
+                  <span className="text-destructive font-medium">
                     <TrendingDown className="h-3 w-3 inline" /> {metric.trend.toFixed(1)}%
                   </span>
                 )}
@@ -138,7 +164,7 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
             <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-foreground">
               {summary.conversionRate.toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -152,12 +178,8 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
             <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${summary.averageOrderValue.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Average per order
-            </p>
+            <div className="text-2xl font-bold">${summary.averageOrderValue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Average per order</p>
           </CardContent>
         </Card>
 
@@ -166,15 +188,13 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
             <CardTitle className="text-sm font-medium">Cart Conversion</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-foreground">
               {summary.totalAddToCarts > 0
                 ? ((summary.totalPurchases / summary.totalAddToCarts) * 100).toFixed(1)
-                : "0"
-              }%
+                : "0"}
+              %
             </div>
-            <p className="text-xs text-muted-foreground">
-              From cart to purchase
-            </p>
+            <p className="text-xs text-muted-foreground">From cart to purchase</p>
           </CardContent>
         </Card>
       </div>
@@ -186,10 +206,7 @@ export function AnalyticsDashboard({ params }: AnalyticsDashboardProps) {
 
       <TopProductsTable products={topProducts} />
 
-      <RecentActivity
-        activities={recentActivity?.activities || []}
-        isLoading={activityLoading}
-      />
+      <RecentActivity activities={recentActivity?.activities || []} isLoading={activityLoading} />
     </div>
   );
 }

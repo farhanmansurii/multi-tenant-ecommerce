@@ -4,49 +4,51 @@ import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+type MetricColor = "blue" | "emerald" | "purple" | "amber" | "red" | "yellow" | "green" | "indigo";
+
+const accentPalette: Record<MetricColor, { icon: string; glow: string }> = {
+  blue: {
+    icon: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    glow: "from-blue-500/[0.10]",
+  },
+  emerald: {
+    icon: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    glow: "from-emerald-500/[0.10]",
+  },
+  purple: {
+    icon: "border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+    glow: "from-purple-500/[0.10]",
+  },
+  amber: {
+    icon: "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+    glow: "from-amber-500/[0.12]",
+  },
+  red: {
+    icon: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300",
+    glow: "from-red-500/[0.10]",
+  },
+  yellow: {
+    icon: "border-yellow-500/25 bg-yellow-500/10 text-yellow-800 dark:text-yellow-300",
+    glow: "from-yellow-500/[0.12]",
+  },
+  green: {
+    icon: "border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-300",
+    glow: "from-green-500/[0.10]",
+  },
+  indigo: {
+    icon: "border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+    glow: "from-indigo-500/[0.10]",
+  },
+};
+
 export interface MetricCardProps {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  color?: "blue" | "emerald" | "purple" | "amber" | "red" | "yellow" | "green" | "indigo";
+  color?: MetricColor;
   className?: string;
   delay?: number;
 }
-
-const colorConfig = {
-  blue: {
-    color: "text-blue-500",
-    glowBg: "bg-blue-500",
-  },
-  emerald: {
-    color: "text-emerald-500",
-    glowBg: "bg-emerald-500",
-  },
-  purple: {
-    color: "text-purple-500",
-    glowBg: "bg-purple-500",
-  },
-  amber: {
-    color: "text-amber-500",
-    glowBg: "bg-amber-500",
-  },
-  red: {
-    color: "text-red-500",
-    glowBg: "bg-red-500",
-  },
-  yellow: {
-    color: "text-yellow-500",
-    glowBg: "bg-yellow-500",
-  },
-  green: {
-    color: "text-green-500",
-    glowBg: "bg-green-500",
-  },
-  indigo: {
-    color: "text-indigo-500",
-    glowBg: "bg-indigo-500",
-  },
-};
 
 export function MetricCard({
   label,
@@ -54,93 +56,49 @@ export function MetricCard({
   icon: Icon,
   color = "blue",
   className,
-  delay = 0
+  delay = 0,
 }: MetricCardProps) {
-  const config = colorConfig[color];
+  const accent = accentPalette[color];
 
   return (
-    <div
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "group relative p-6 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm",
-        "hover:border-border/80 hover:bg-card/80",
-        "transition-all duration-300 overflow-hidden",
-        className
+        "group relative w-full overflow-hidden rounded-2xl border border-border/50 bg-card p-5",
+        "shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset]",
+        "transition-[transform,border-color,background-color,box-shadow] duration-300",
+        "hover:-translate-y-0.5 hover:border-border/80 hover:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_18px_35px_rgba(0,0,0,0.10)]",
+        "bg-gradient-to-br to-transparent",
+        accent.glow,
+        className,
       )}
     >
-      {/* Bottom glow bleeding */}
-      <motion.div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 h-24 opacity-0",
-          "group-hover:opacity-20 transition-all duration-500",
-          config.glowBg
-        )}
-        style={{
-          filter: "blur(40px)",
-          transform: "translateY(50%)"
-        }}
-      />
-
-      {/* Icon + Label */}
-      <div className="flex items-center gap-2.5 mb-6 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.5,
-            delay: delay,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="relative"
-        >
-          {/* Icon glow */}
-          <div className="relative w-5 h-5">
-            <motion.div
-              className={cn(
-                "absolute inset-0 scale-150 rounded-full opacity-0",
-                "group-hover:opacity-25 transition-all duration-500",
-                config.glowBg
-              )}
-              style={{
-                filter: "blur(10px)",
-                transform: "translateZ(0)"
-              }}
-            />
-            <Icon
-              className={cn("w-5 h-5 relative z-10", config.color)}
-              strokeWidth={2}
-            />
-          </div>
-        </motion.div>
-
-        <motion.span
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{
-            duration: 0.5,
-            delay: delay + 0.1,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="text-[13px] font-medium text-muted-foreground/80 tracking-wide"
-        >
-          {label}
-        </motion.span>
-      </div>
-
-      {/* Value */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.6,
-          delay: delay + 0.2,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        className="relative z-10"
-      >
-        <div className="text-3xl font-bold tracking-tight text-foreground">
-          {value}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: delay + 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[clamp(1.6rem,3.2vw,2.2rem)] font-semibold leading-none tracking-tight text-foreground"
+          >
+            {value}
+          </motion.div>
         </div>
-      </motion.div>
-    </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45, delay: delay, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-2xl border shadow-sm",
+            accent.icon,
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </motion.div>
+      </div>
+    </motion.article>
   );
 }

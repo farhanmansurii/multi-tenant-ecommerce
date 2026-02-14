@@ -2,13 +2,8 @@ import type { Metadata } from 'next';
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
 import { fetchProducts } from '@/lib/domains/products/service';
-import { fetchCategories } from '@/lib/domains/products/category-service';
-import { StoreEditorial } from '@/components/features/storefront/shared/modules/editorial-about';
-import { StoreServiceStrip } from '@/components/features/storefront/shared/layout/store-service-strip';
-import StorefrontView from '@/components/features/storefront/views/home/storefront-view';
-import { StoreFooter } from '@/components/features/storefront/shared/layout/footer';
-import { StoreFrontHeader } from '@/components/features/storefront/shared/layout/navbar';
-import { StoreHero } from '@/components/features/storefront/storefront-reusables/hero';
+import StorefrontHome from '@/components/storefront-ui/pages/StorefrontHome';
+import { toStorefrontThemeConfig } from '@/components/storefront-ui/storefront/theme-config';
 
 
 interface StorefrontPageProps {
@@ -48,26 +43,37 @@ export async function generateMetadata({
 export default async function StorefrontPage({ params }: StorefrontPageProps) {
   const { slug } = await params;
 
-  const [store, products, categories] = await Promise.all([
+  const [store, products] = await Promise.all([
     fetchStore(slug).catch(() => null),
     fetchProducts(slug).catch(() => []),
-    fetchCategories(slug).catch(() => []),
   ]);
 
   if (!store) {
     return <div>Store not found</div>;
   }
 
+  const theme = toStorefrontThemeConfig(store);
+  const zoomProduct =
+    theme.content.zoomSection.imageSource === 'product' && theme.content.zoomSection.productSlug
+      ? products.find((p) => p.slug === theme.content.zoomSection.productSlug) || null
+      : null;
+
+  const zoomImageUrl =
+    theme.content.zoomSection.imageSource === 'product'
+      ? zoomProduct?.images?.[0]?.url || theme.content.zoomSection.imageUrl
+      : theme.content.zoomSection.imageUrl;
+
   return (
-    <>
-      <StoreFrontHeader storeData={store} />
-      <div className='pt-24'>
-        <StoreHero store={store} />
-      </div>
-      <StoreEditorial store={store} />
-      <StoreServiceStrip store={store} />
-      <StorefrontView slug={slug} initialStore={store} initialProducts={products} initialCategories={categories} />
-      <StoreFooter store={store} />
-    </>
+    <StorefrontHome
+      slug={slug}
+      zoomImageUrl={zoomImageUrl}
+      featuredProducts={products.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        price: Number(p.price || 0),
+        images: p.images,
+      }))}
+    />
   );
 }

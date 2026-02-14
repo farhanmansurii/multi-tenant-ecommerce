@@ -16,7 +16,7 @@ export function StoreFooter({ store }: { store: StoreData }) {
               {store.name}
             </h2>
             <p className="text-zinc-400 max-w-md text-lg">
-              {store.tagline || "Redefining the modern aesthetic."}
+              {store.description || "Redefining the modern aesthetic."}
             </p>
           </div>
 
@@ -37,42 +37,27 @@ export function StoreFooter({ store }: { store: StoreData }) {
         {/* Middle: Links Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20 border-t border-white/10 pt-12">
 
-          {/* Column 1: Address */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Visit</h4>
-            <address className="not-italic text-sm text-zinc-300 space-y-1">
-              <p>{store.addressLine1}</p>
-              <p>{store.city}, {store.state}</p>
-              <p>{store.zipCode}, {store.country}</p>
-            </address>
-          </div>
-
-          {/* Column 2: Contact */}
+          {/* Column 1: Contact */}
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Inquiries</h4>
             <div className="flex flex-col gap-2 text-sm text-zinc-300">
-              <a href={`mailto:${store.contactEmail} `} className="hover:text-white transition-colors">
+              <a href={`mailto:${store.contactEmail}`} className="hover:text-white transition-colors">
                 {store.contactEmail}
               </a>
-              {store.contactPhone && (
-                <a href={`tel:${store.contactPhone} `} className="hover:text-white transition-colors">
-                  {store.contactPhone}
-                </a>
-              )}
             </div>
           </div>
 
-          {/* Column 3: Legal */}
+          {/* Column 2: Legal */}
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Legal</h4>
             <div className="flex flex-col gap-2 text-sm text-zinc-300">
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/refunds" className="hover:text-white transition-colors">Refund Policy</Link>
+              <Link href={`/stores/${store.slug}/terms`} className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href={`/stores/${store.slug}/privacy`} className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href={`/stores/${store.slug}/refunds`} className="hover:text-white transition-colors">Refund Policy</Link>
             </div>
           </div>
 
-          {/* Column 4: Social (Dynamic based on data if available, mostly static structure) */}
+          {/* Column 3: Social (Dynamic based on data if available, mostly static structure) */}
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Follow</h4>
             <div className="flex flex-col gap-2 text-sm text-zinc-300">
@@ -90,7 +75,7 @@ export function StoreFooter({ store }: { store: StoreData }) {
         {/* Bottom: Copyright */}
         <div className="flex flex-col md:flex-row justify-between items-end md:items-center pt-8 border-t border-white/10">
           <p className="text-[10px] text-zinc-600 uppercase tracking-wider">
-            © {new Date().getFullYear()} {store.businessName || store.name}. All rights reserved.
+            © {new Date().getFullYear()} {store.name}. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0">
             <span className="text-[10px] text-zinc-600 uppercase tracking-wider">

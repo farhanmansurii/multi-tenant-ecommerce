@@ -9,7 +9,6 @@ import { useProductForm } from "@/hooks/use-product-form";
 import { ProductFormValues } from "@/lib/validations/product-form";
 import { Button } from "@/components/ui/button";
 import { PageCard } from "@/components/shared/layout/page-card";
-import DashboardLayout from "@/components/shared/layout/dashboard-container";
 import { ErrorState } from "./components/error-state";
 import { NotFoundState } from "@/components/shared/common/not-found-state";
 import { ProductFormSkeleton } from "./components/product-form-skeleton";
@@ -202,17 +201,24 @@ export default function ProductForm({
             toast.error(message);
           }
         )}
-        className="space-y-8"
+        className="space-y-6"
       >
-        <section className="space-y-6">
+        <PageCard title="Images" description="Upload product images customers will see first.">
           <ImageUploadSection
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
           />
-        </section>
-        <BasicInformationSection form={form} storeSlug={storeSlug} />
-        <ProductDetailsSection form={form} storeSlug={storeSlug} />
-        <section className="space-y-6">
+        </PageCard>
+
+        <PageCard title="Basics" description="Core details used across storefront and search.">
+          <BasicInformationSection form={form} storeSlug={storeSlug} />
+        </PageCard>
+
+        <PageCard title="Pricing & Inventory" description="How it sells and how stock is tracked.">
+          <ProductDetailsSection form={form} storeSlug={storeSlug} />
+        </PageCard>
+
+        <PageCard title="Availability" description="Shipping, tax, and merchandising controls.">
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <SwitchField
               name="requiresShipping"
@@ -247,8 +253,11 @@ export default function ProductForm({
               />
             </div>
           </div>
-        </section>
-        <CategoriesAndTagsSection form={form} storeSlug={storeSlug} />
+        </PageCard>
+
+        <PageCard title="Categories & Tags" description="Organize for navigation and discovery.">
+          <CategoriesAndTagsSection form={form} storeSlug={storeSlug} />
+        </PageCard>
       </form>
     </div>
   );

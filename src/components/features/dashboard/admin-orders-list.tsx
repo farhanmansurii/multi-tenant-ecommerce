@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Package,
   Search,
@@ -16,14 +16,14 @@ import {
   Clock,
   ShoppingCart,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MetricCard } from '@/components/shared/common/metric-card';
-import { EmptyState } from '@/components/shared/common/empty-state';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/shared/common/metric-card";
+import { EmptyState } from "@/components/shared/common/empty-state";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -31,38 +31,38 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-import { formatPrice } from '@/lib/utils/price';
-import { useOrders } from '@/hooks/queries/use-orders';
-import { useUpdateOrderStatus } from '@/hooks/mutations/use-order-mutations';
-import { QueryListSkeleton } from '@/lib/ui/query-skeleton';
+import { formatPrice } from "@/lib/utils/price";
+import { useOrders } from "@/hooks/queries/use-orders";
+import { useUpdateOrderStatus } from "@/hooks/mutations/use-order-mutations";
+import { QueryListSkeleton } from "@/lib/ui/query-skeleton";
 
 interface AdminOrdersListProps {
   storeSlug: string;
   currency?: string;
 }
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/10 text-yellow-600',
-  confirmed: 'bg-blue-500/10 text-blue-600',
-  processing: 'bg-purple-500/10 text-purple-600',
-  shipped: 'bg-indigo-500/10 text-indigo-600',
-  delivered: 'bg-green-500/10 text-green-600',
-  cancelled: 'bg-red-500/10 text-red-600',
+const statusVariant: Record<string, "secondary" | "info" | "success" | "warning" | "destructive"> = {
+  pending: "warning",
+  confirmed: "info",
+  processing: "info",
+  shipped: "info",
+  delivered: "success",
+  cancelled: "destructive",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -74,13 +74,13 @@ const statusIcons: Record<string, React.ReactNode> = {
   cancelled: <XCircle className="h-3 w-3" />,
 };
 
-export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOrdersListProps) {
+export default function AdminOrdersList({ storeSlug, currency = "INR" }: AdminOrdersListProps) {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading: loading } = useOrders(storeSlug, {
-    status: statusFilter !== 'all' ? statusFilter : undefined,
+    status: statusFilter !== "all" ? statusFilter : undefined,
     limit: 50,
   });
 
@@ -98,10 +98,10 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
 
   const stats = {
     total: orders.length,
-    pending: orders.filter((o) => o.status === 'pending').length,
-    processing: orders.filter((o) => ['confirmed', 'processing'].includes(o.status)).length,
-    shipped: orders.filter((o) => o.status === 'shipped').length,
-    delivered: orders.filter((o) => o.status === 'delivered').length,
+    pending: orders.filter((o) => o.status === "pending").length,
+    processing: orders.filter((o) => ["confirmed", "processing"].includes(o.status)).length,
+    shipped: orders.filter((o) => o.status === "shipped").length,
+    delivered: orders.filter((o) => o.status === "delivered").length,
   };
 
   return (
@@ -144,7 +144,7 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
         </div>
         <Button
           variant="outline"
-          onClick={() => queryClient.refetchQueries({ queryKey: ['orders', storeSlug] })}
+          onClick={() => queryClient.refetchQueries({ queryKey: ["orders", storeSlug] })}
           disabled={updateOrderStatusMutation.isPending}
         >
           Refresh
@@ -155,9 +155,7 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
       <Card>
         <CardHeader>
           <CardTitle>Orders</CardTitle>
-          <CardDescription>
-            Manage and track all orders for your store
-          </CardDescription>
+          <CardDescription>Manage and track all orders for your store</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -167,18 +165,18 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
               icon={Package}
               title="No orders yet"
               description={
-                searchQuery || statusFilter !== 'all'
+                searchQuery || statusFilter !== "all"
                   ? "No orders match your current filters. Try adjusting your search or filter criteria."
                   : "When customers place orders, they'll appear here."
               }
-              variant={searchQuery || statusFilter !== 'all' ? "search" : "default"}
+              variant={searchQuery || statusFilter !== "all" ? "search" : "default"}
               secondaryAction={
-                searchQuery || statusFilter !== 'all'
+                searchQuery || statusFilter !== "all"
                   ? {
                       label: "Clear filters",
                       onClick: () => {
                         setSearchQuery("");
-                        setStatusFilter('all');
+                        setStatusFilter("all");
                       },
                     }
                   : undefined
@@ -198,7 +196,10 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                             {new Date(order.createdAt).toLocaleDateString()}
                           </div>
                         </div>
-                        <Badge className={statusColors[order.status] || ''}>
+                        <Badge
+                          variant={statusVariant[order.status] || "secondary"}
+                          className="capitalize"
+                        >
                           <span className="mr-1">{statusIcons[order.status]}</span>
                           {order.status}
                         </Badge>
@@ -210,18 +211,13 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                         </div>
                         <div>
                           <div className="text-muted-foreground">Total</div>
-                          <div className="font-medium">{formatPrice(order.totalAmount, currency)}</div>
+                          <div className="font-medium">
+                            {formatPrice(order.totalAmount, currency)}
+                          </div>
                         </div>
                         <div>
                           <div className="text-muted-foreground">Payment</div>
-                          <Badge
-                            variant="outline"
-                            className={
-                              order.paymentStatus === 'succeeded'
-                                ? 'border-green-500 text-green-600'
-                                : 'border-yellow-500 text-yellow-600'
-                            }
-                          >
+                          <Badge variant="outline" className="border-border/60 text-foreground">
                             {order.paymentStatus}
                           </Badge>
                         </div>
@@ -247,32 +243,32 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                              onClick={() => updateOrderStatus(order.id, "confirmed")}
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Mark as Confirmed
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => updateOrderStatus(order.id, 'processing')}
+                              onClick={() => updateOrderStatus(order.id, "processing")}
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Mark as Processing
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => updateOrderStatus(order.id, 'shipped')}
+                              onClick={() => updateOrderStatus(order.id, "shipped")}
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Mark as Shipped
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => updateOrderStatus(order.id, 'delivered')}
+                              onClick={() => updateOrderStatus(order.id, "delivered")}
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Mark as Delivered
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                              className="text-red-600"
+                              onClick={() => updateOrderStatus(order.id, "cancelled")}
+                              className="text-destructive focus:text-destructive"
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Cancel Order
@@ -302,9 +298,7 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          #{order.orderNumber}
-                        </TableCell>
+                        <TableCell className="font-medium">#{order.orderNumber}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </TableCell>
@@ -313,19 +307,15 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                           {formatPrice(order.totalAmount, currency)}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              order.paymentStatus === 'succeeded'
-                                ? 'border-green-500 text-green-600'
-                                : 'border-yellow-500 text-yellow-600'
-                            }
-                          >
+                          <Badge variant="outline" className="border-border/60 text-foreground">
                             {order.paymentStatus}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusColors[order.status] || ''}>
+                          <Badge
+                            variant={statusVariant[order.status] || "secondary"}
+                            className="capitalize"
+                          >
                             <span className="mr-1">{statusIcons[order.status]}</span>
                             {order.status}
                           </Badge>
@@ -350,32 +340,32 @@ export default function AdminOrdersList({ storeSlug, currency = 'INR' }: AdminOr
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
-                                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                                  onClick={() => updateOrderStatus(order.id, "confirmed")}
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Mark as Confirmed
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateOrderStatus(order.id, 'processing')}
+                                  onClick={() => updateOrderStatus(order.id, "processing")}
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Mark as Processing
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateOrderStatus(order.id, 'shipped')}
+                                  onClick={() => updateOrderStatus(order.id, "shipped")}
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Mark as Shipped
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateOrderStatus(order.id, 'delivered')}
+                                  onClick={() => updateOrderStatus(order.id, "delivered")}
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Mark as Delivered
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                  className="text-red-600"
+                                  onClick={() => updateOrderStatus(order.id, "cancelled")}
+                                  className="text-destructive focus:text-destructive"
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Cancel Order

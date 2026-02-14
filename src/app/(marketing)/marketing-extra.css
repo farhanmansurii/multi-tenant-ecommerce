@@ -1,0 +1,250 @@
+/* Extra marketing-only styling layered on top of storefront-ui scoped CSS. */
+
+.storefront-scope .mkt-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 50;
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.storefront-scope .mkt-nav .mkt-nav-inner {
+  width: 100%;
+  max-width: 2000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+
+.storefront-scope .mkt-nav a {
+  color: var(--base-700);
+}
+
+.storefront-scope .mkt-nav .mkt-links {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.storefront-scope .mkt-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  padding-top: 7.5rem;
+}
+
+.storefront-scope .mkt-hero-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.storefront-scope .mkt-hero .container {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+  align-items: end;
+}
+
+.storefront-scope .mkt-hero-left {
+  grid-column: span 8;
+}
+
+.storefront-scope .mkt-hero-right {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.storefront-scope .mkt-kicker {
+  display: inline-flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.storefront-scope .mkt-kicker .dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--base-700);
+  border-radius: 999px;
+}
+
+.storefront-scope .mkt-kicker p {
+  color: var(--base-500);
+}
+
+.storefront-scope .mkt-hero h1 {
+  line-height: 0.82;
+}
+
+.storefront-scope .mkt-hero h1 .mkt-accent {
+  color: var(--storefront-accent, #c5f74f);
+}
+
+.storefront-scope .mkt-panel {
+  border: 1px solid rgba(175, 179, 171, 0.35);
+  background: rgba(237, 241, 232, 0.35);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.storefront-scope .mkt-panel.dark {
+  background: var(--base-700);
+  color: var(--base-100);
+  border-color: rgba(215, 219, 210, 0.2);
+}
+
+.storefront-scope .mkt-panel.dark p,
+.storefront-scope .mkt-panel.dark a,
+.storefront-scope .mkt-panel.dark span {
+  color: var(--base-200);
+}
+
+.storefront-scope .mkt-panel .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.storefront-scope .mkt-stack {
+  position: relative;
+  padding: 8rem 0;
+  background: var(--base-700);
+  color: var(--base-100);
+}
+
+.storefront-scope .mkt-stack .container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+}
+
+.storefront-scope .mkt-stack .mkt-stack-left {
+  grid-column: span 5;
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  padding-bottom: 2rem;
+}
+
+.storefront-scope .mkt-stack .mkt-stack-left p {
+  color: var(--base-400);
+}
+
+.storefront-scope .mkt-stack .mkt-stack-right {
+  grid-column: span 7;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.storefront-scope .mkt-card {
+  border: 1px solid rgba(215, 219, 210, 0.18);
+  background: rgba(15, 15, 15, 0.25);
+  border-radius: 1rem;
+  padding: 1.75rem;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.storefront-scope .mkt-card:hover {
+  transform: translateY(-4px);
+  transition: 200ms transform ease;
+}
+
+.storefront-scope .mkt-card p {
+  color: var(--base-400);
+}
+
+.storefront-scope .mkt-card .tag {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  border: 1px solid rgba(215, 219, 210, 0.18);
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  color: var(--base-300);
+}
+
+.storefront-scope .mkt-card .tag .dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--storefront-accent, #c5f74f);
+  border-radius: 999px;
+}
+
+.storefront-scope .mkt-slice {
+  padding: 7rem 0;
+}
+
+.storefront-scope .mkt-slice .container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+  align-items: center;
+}
+
+.storefront-scope .mkt-slice .mkt-slice-copy {
+  grid-column: span 5;
+}
+
+.storefront-scope .mkt-slice .mkt-slice-media {
+  grid-column: span 7;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(175, 179, 171, 0.35);
+  background: var(--base-200);
+}
+
+.storefront-scope .mkt-slice .mkt-slice-media img {
+  transform: scale(1.05);
+  will-change: transform;
+}
+
+@media (max-width: 1000px) {
+  .storefront-scope .mkt-nav {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .storefront-scope .mkt-hero .container {
+    grid-template-columns: 1fr;
+  }
+
+  .storefront-scope .mkt-hero-left,
+  .storefront-scope .mkt-hero-right {
+    grid-column: auto;
+  }
+
+  .storefront-scope .mkt-stack .container {
+    grid-template-columns: 1fr;
+  }
+
+  .storefront-scope .mkt-stack .mkt-stack-left,
+  .storefront-scope .mkt-stack .mkt-stack-right {
+    grid-column: auto;
+    position: static;
+  }
+
+  .storefront-scope .mkt-slice .container {
+    grid-template-columns: 1fr;
+  }
+
+  .storefront-scope .mkt-slice .mkt-slice-copy,
+  .storefront-scope .mkt-slice .mkt-slice-media {
+    grid-column: auto;
+  }
+}
+

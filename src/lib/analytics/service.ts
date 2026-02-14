@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, sql, count, sum, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { analyticsEvents } from "@/lib/db/schema/shopify";
+import { analyticsEvents } from "@/lib/db/schema/core/analytics-events";
 import { orders, orderItems } from "@/lib/db/schema/ecommerce/orders";
 import { products } from "@/lib/db/schema/ecommerce/products";
 

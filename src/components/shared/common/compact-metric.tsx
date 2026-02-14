@@ -4,49 +4,27 @@ import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+type CompactColor = "blue" | "emerald" | "purple" | "amber" | "red" | "yellow" | "green" | "indigo";
+
+const accentPalette: Record<CompactColor, string> = {
+  blue: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  purple: "border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+  amber: "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+  red: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300",
+  yellow: "border-yellow-500/25 bg-yellow-500/10 text-yellow-800 dark:text-yellow-300",
+  green: "border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-300",
+  indigo: "border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+};
+
 export interface CompactMetricProps {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  color?: "blue" | "emerald" | "purple" | "amber" | "red" | "yellow" | "green" | "indigo";
+  color?: CompactColor;
   className?: string;
   delay?: number;
 }
-
-const colorConfig = {
-  blue: {
-    color: "text-blue-500",
-    glowBg: "bg-blue-500",
-  },
-  emerald: {
-    color: "text-emerald-500",
-    glowBg: "bg-emerald-500",
-  },
-  purple: {
-    color: "text-purple-500",
-    glowBg: "bg-purple-500",
-  },
-  amber: {
-    color: "text-amber-500",
-    glowBg: "bg-amber-500",
-  },
-  red: {
-    color: "text-red-500",
-    glowBg: "bg-red-500",
-  },
-  yellow: {
-    color: "text-yellow-500",
-    glowBg: "bg-yellow-500",
-  },
-  green: {
-    color: "text-green-500",
-    glowBg: "bg-green-500",
-  },
-  indigo: {
-    color: "text-indigo-500",
-    glowBg: "bg-indigo-500",
-  },
-};
 
 export function CompactMetric({
   label,
@@ -54,93 +32,44 @@ export function CompactMetric({
   icon: Icon,
   color = "blue",
   className,
-  delay = 0
+  delay = 0,
 }: CompactMetricProps) {
-  const config = colorConfig[color];
+  const accentClass = accentPalette[color];
 
   return (
-    <div
+    <motion.article
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "group relative flex flex-col p-4 rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm",
-        "hover:border-border/80 hover:bg-card/80",
-        "transition-all duration-300 overflow-hidden",
-        "h-full min-h-[80px]",
-        className
+        "group relative flex w-full items-center justify-between gap-4 rounded-2xl border border-border/50 bg-card px-4 py-3 text-left",
+        "shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] transition-all duration-300",
+        "hover:border-border/80 hover:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_12px_22px_rgba(0,0,0,0.10)]",
+        className,
       )}
     >
-      <motion.div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 h-16 opacity-0",
-          "group-hover:opacity-20 transition-all duration-500",
-          config.glowBg
-        )}
-        style={{
-          filter: "blur(30px)",
-          transform: "translateY(50%)"
-        }}
-      />
-
-      {/* Icon + Label */}
-      <div className="flex items-center gap-2 mb-3 relative z-10 flex-shrink-0">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.5,
-            delay: delay,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="relative"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: delay + 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-xl font-semibold leading-none tracking-tight text-foreground"
         >
-          {/* Icon glow */}
-          <div className="relative w-3.5 h-3.5">
-            <motion.div
-              className={cn(
-                "absolute inset-0 scale-150 rounded-full opacity-0",
-                "group-hover:opacity-25 transition-all duration-500",
-                config.glowBg
-              )}
-              style={{
-                filter: "blur(8px)",
-                transform: "translateZ(0)"
-              }}
-            />
-            <Icon
-              className={cn("w-3.5 h-3.5 relative z-10", config.color)}
-              strokeWidth={2}
-            />
-          </div>
-        </motion.div>
-
-        <motion.span
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{
-            duration: 0.5,
-            delay: delay + 0.1,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="text-[11px] font-medium text-muted-foreground/80 tracking-wide uppercase"
-        >
-          {label}
-        </motion.span>
-      </div>
-
-      {/* Value */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.6,
-          delay: delay + 0.2,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        className="relative z-10 flex-1 flex items-end"
-      >
-        <div className={cn("text-xl font-bold tracking-tight leading-none", config.color)}>
           {value}
-        </div>
+        </motion.div>
+      </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.75 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm",
+          accentClass,
+        )}
+      >
+        <Icon className="h-4 w-4" />
       </motion.div>
-    </div>
+    </motion.article>
   );
 }

@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   Globe,
-  MapPin,
   Share2,
   CheckCircle2,
   Store,
@@ -71,11 +70,9 @@ export function StoreProfileHeader({ store }: StoreProfileHeaderProps) {
                   {store.name}
                   <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-500/10" />
                 </h1>
-                {store.tagline && (
-                  <p className="text-muted-foreground font-medium mt-1">
-                    {store.tagline}
-                  </p>
-                )}
+                <p className="text-muted-foreground font-medium mt-1 line-clamp-2">
+                  {store.description}
+                </p>
               </div>
 
               {/* Actions (Desktop: Right aligned, Mobile: Full width) */}
@@ -95,23 +92,13 @@ export function StoreProfileHeader({ store }: StoreProfileHeaderProps) {
 
             {/* Meta Links */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-sm text-muted-foreground pt-1">
-              {store.city && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 opacity-70" />
-                  {store.city}, {store.country}
-                </div>
-              )}
-              {store.website && (
-                <a
-                  href={store.website.startsWith('http') ? store.website : `https://${store.website}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1.5 hover:text-primary transition-colors"
-                >
-                  <Globe className="w-4 h-4 opacity-70" />
-                  Website
-                </a>
-              )}
+              <a
+                href={`mailto:${store.contactEmail}`}
+                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+              >
+                <Globe className="w-4 h-4 opacity-70" />
+                Contact
+              </a>
               <div className="flex items-center gap-1.5">
                 <Store className="w-4 h-4 opacity-70" />
                 {store.productCount ?? 0} Products

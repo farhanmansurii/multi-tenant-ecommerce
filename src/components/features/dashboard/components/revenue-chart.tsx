@@ -2,13 +2,7 @@
 
 import { format } from "date-fns";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface RevenueDataPoint {
   period: string | Date;
@@ -38,21 +32,21 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
     );
   }
 
-  const maxRevenue = Math.max(...data.map(d => d.revenue));
-  const maxOrders = Math.max(...data.map(d => d.orders));
+  const maxRevenue = Math.max(...data.map((d) => d.revenue));
+  const maxOrders = Math.max(...data.map((d) => d.orders));
 
   const formatPeriod = (periodStr: string | Date) => {
-    const date = typeof periodStr === 'string' ? new Date(periodStr) : periodStr;
+    const date = typeof periodStr === "string" ? new Date(periodStr) : periodStr;
 
     switch (period) {
-      case 'day':
-        return format(date, 'MMM dd');
-      case 'week':
-        return format(date, 'MMM dd');
-      case 'month':
-        return format(date, 'MMM yyyy');
+      case "day":
+        return format(date, "MMM dd");
+      case "week":
+        return format(date, "MMM dd");
+      case "month":
+        return format(date, "MMM yyyy");
       default:
-        return format(date, 'MMM dd');
+        return format(date, "MMM dd");
     }
   };
 
@@ -60,9 +54,7 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
     <Card>
       <CardHeader>
         <CardTitle>Revenue Trend</CardTitle>
-        <CardDescription>
-          Daily revenue and order volume over time
-        </CardDescription>
+        <CardDescription>Daily revenue and order volume over time</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -78,11 +70,11 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
                     {/* Revenue bar */}
                     <div className="relative w-full mb-1">
                       <div
-                        className="w-full bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
+                        className="w-full bg-muted/40 rounded-t transition-all duration-300 hover:bg-muted/60"
                         style={{ height: `${Math.max(revenueHeight, 4)}px` }}
                       />
                       {point.revenue > 0 && (
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-blue-600">
+                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground">
                           ${point.revenue.toFixed(0)}
                         </div>
                       )}
@@ -91,11 +83,11 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
                     {/* Orders bar (smaller, on top) */}
                     <div className="relative w-3/4">
                       <div
-                        className="w-full bg-green-500 rounded-t transition-all duration-300 hover:bg-green-600"
+                        className="w-full bg-muted/30 rounded-t transition-all duration-300 hover:bg-muted/50"
                         style={{ height: `${Math.max(ordersHeight, 4)}px` }}
                       />
                       {point.orders > 0 && (
-                        <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs font-medium text-green-600">
+                        <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs font-medium text-foreground">
                           {point.orders}
                         </div>
                       )}
@@ -114,11 +106,11 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-muted/60 rounded"></div>
               <span>Revenue ($)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <div className="w-3 h-3 bg-muted/40 rounded"></div>
               <span>Orders</span>
             </div>
           </div>
@@ -126,13 +118,13 @@ export function RevenueChart({ data, period }: RevenueChartProps) {
           {/* Summary */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-foreground">
                 ${data.reduce((sum, d) => sum + d.revenue, 0).toFixed(0)}
               </div>
               <div className="text-sm text-muted-foreground">Total Revenue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-foreground">
                 {data.reduce((sum, d) => sum + d.orders, 0)}
               </div>
               <div className="text-sm text-muted-foreground">Total Orders</div>

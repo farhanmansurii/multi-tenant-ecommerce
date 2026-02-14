@@ -12,18 +12,8 @@ export interface CreateStoreData {
   slug: string;
   description: string;
   contactEmail: string;
-  businessType: string;
-  businessName: string;
-  taxId?: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
   primaryColor: string;
   currency?: string;
-  timezone?: string;
-  language?: string;
   settings?: StoreSettings;
 }
 
@@ -31,27 +21,9 @@ export interface CreateStoreData {
  * Create a new store
  */
 export async function createStore(data: CreateStoreData) {
-  const defaultSettings: StoreSettings = {
-    paymentMethods: [],
-    shippingRates: [],
-    upiId: undefined,
-    codEnabled: true,
-    stripeAccountId: undefined,
-    paypalEmail: undefined,
-    shippingEnabled: true,
-    freeShippingThreshold: undefined,
-    termsOfService: "",
-    privacyPolicy: "",
-    refundPolicy: "",
-  };
-
   const mergedSettings = {
-    paymentMethods: (data.settings?.paymentMethods ?? []) as string[],
-    shippingRates: (data.settings?.shippingRates ?? []) as any[],
-    upiId: data.settings?.upiId,
+    paymentMethods: (data.settings?.paymentMethods ?? []) as Array<"stripe" | "cod">,
     codEnabled: data.settings?.codEnabled ?? true,
-    stripeAccountId: data.settings?.stripeAccountId,
-    paypalEmail: data.settings?.paypalEmail,
     shippingEnabled: data.settings?.shippingEnabled ?? true,
     freeShippingThreshold: data.settings?.freeShippingThreshold ?? undefined,
     termsOfService: data.settings?.termsOfService ?? "",
@@ -77,18 +49,8 @@ export async function createStore(data: CreateStoreData) {
       slug: uniqueSlug,
       description: data.description,
       contactEmail: data.contactEmail,
-      businessType: data.businessType,
-      businessName: data.businessName,
-      taxId: data.taxId,
-      addressLine1: data.addressLine1,
-      city: data.city,
-      state: data.state,
-      zipCode: data.zipCode,
-      country: data.country,
       primaryColor: data.primaryColor,
-      currency: data.currency || "INR",
-      timezone: data.timezone || "Asia/Kolkata",
-      language: data.language || "en",
+      currency: data.currency || "USD",
       status: "draft",
       featured: false,
       settings: mergedSettings,
@@ -157,7 +119,6 @@ export async function updateStore(id: string, data: Partial<CreateStoreData>) {
   if (data.settings) {
     updateData.settings = {
       paymentMethods: data.settings.paymentMethods ?? [],
-      shippingRates: data.settings.shippingRates ?? [],
       ...data.settings,
     };
   }

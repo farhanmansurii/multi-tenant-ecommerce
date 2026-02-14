@@ -10,13 +10,12 @@ export default function Loading() {
       desc="Configure your store settings"
       icon={<Settings />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Settings" },
       ]}
       disableAnimation={true}
     >
-      <div className="space-y-8 max-w-4xl">
+      <div className="space-y-8">
         {/* Store Info Section */}
         <Card className="border-border/40">
           <CardHeader>

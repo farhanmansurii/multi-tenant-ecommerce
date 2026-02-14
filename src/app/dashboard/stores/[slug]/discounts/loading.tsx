@@ -10,8 +10,7 @@ export default function Loading() {
       desc="Create and manage discount codes"
       icon={<Percent />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Discounts" },
       ]}
       headerActions={<Skeleton className="h-10 w-36 rounded-full" />}

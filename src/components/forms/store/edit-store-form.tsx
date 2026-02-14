@@ -44,6 +44,7 @@ export default function EditStoreForm({
       storeError={storeError}
       isSuccess={isSuccess}
       slug={slug}
+      hidePageHeading={true}
     />
   );
 }

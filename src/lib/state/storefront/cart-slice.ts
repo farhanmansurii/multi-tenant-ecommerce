@@ -1,6 +1,13 @@
 import { StateCreator } from 'zustand';
 
 import type { CartItem, CartSlice, CartSummary, StorefrontState } from './types';
+import {
+	addToCart,
+	clearCart as clearCartApi,
+	getCart,
+	removeCartItem,
+	updateCartItemQty,
+} from './cart-api-client';
 
 const recalculateCart = (items: CartItem[]): Pick<CartSummary, 'subtotal' | 'totalQuantity'> => {
 	return items.reduce(
@@ -21,13 +28,54 @@ const matchCartItem = (item: CartItem, productId: string, variantId?: string | n
 
 export const createCartSlice: StateCreator<StorefrontState, [], [], CartSlice> = (
 	set,
-	_get,
+	get,
 	_api
 ) => ({
 	cart: {
 		items: [],
 		subtotal: 0,
 		totalQuantity: 0,
+	},
+
+	syncCart: async ({ slug }) => {
+		try {
+			const res = await getCart(slug);
+			const serverItems = Array.isArray(res?.cart?.items) ? res.cart.items : [];
+
+			const mapped: CartItem[] = serverItems.map((it: any) => ({
+				id: String(it.id),
+				productId: String(it.productId),
+				variantId: it.variantId ?? null,
+				name: it.product?.name ?? 'Item',
+				price: typeof it.unitPriceCents === 'number' ? it.unitPriceCents / 100 : 0,
+				quantity: typeof it.qty === 'number' ? it.qty : 1,
+				image: it.product?.images?.[0]?.url ?? null,
+			}));
+
+			get().hydrateCart(mapped);
+		} catch {
+			// Keep existing local state if API is temporarily unavailable.
+		}
+	},
+
+	addToCartApi: async ({ slug, productId, variantId, qty }) => {
+		await addToCart(slug, { productId, variantId: variantId ?? null, qty: qty ?? 1 });
+		await get().syncCart({ slug });
+	},
+
+	updateCartItemQtyApi: async ({ slug, itemId, qty }) => {
+		await updateCartItemQty(slug, itemId, qty);
+		await get().syncCart({ slug });
+	},
+
+	removeCartItemApi: async ({ slug, itemId }) => {
+		await removeCartItem(slug, itemId);
+		await get().syncCart({ slug });
+	},
+
+	clearCartApi: async ({ slug }) => {
+		await clearCartApi(slug);
+		await get().syncCart({ slug });
 	},
 
 	addItem: (incoming) => {

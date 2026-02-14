@@ -9,7 +9,6 @@ export default function Loading() {
       desc="Organize your products for a better customer experience."
       icon={<Tags />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
         { label: "Stores", href: "/dashboard/stores" },
         { label: "Categories" },
       ]}

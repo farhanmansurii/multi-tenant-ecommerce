@@ -3,12 +3,12 @@
 import { Package, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import DashboardLayout from '@/components/shared/layout/dashboard-container';
 import ProductManager from '@/components/shared/common/product-manager';
 import { RefreshButton } from '@/components/shared/common/refresh-button';
 import { useProducts } from '@/hooks/queries/use-products';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query/keys';
+import { StoreSectionShell } from '@/components/features/dashboard/store-section-shell';
 
 interface ProductsPageClientProps {
   slug: string;
@@ -25,16 +25,12 @@ export function ProductsPageClient({ slug, storeName }: ProductsPageClientProps)
   };
 
   return (
-    <DashboardLayout
+    <StoreSectionShell
+      slug={slug}
+      storeName={storeName}
       title="Products"
-      desc="Manage your store products"
+      desc="Manage your product catalog"
       icon={<Package />}
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Stores', href: '/dashboard/stores' },
-        { label: storeName || slug, href: `/dashboard/stores/${slug}` },
-        { label: 'Products' },
-      ]}
       headerActions={
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <RefreshButton
@@ -54,6 +50,6 @@ export function ProductsPageClient({ slug, storeName }: ProductsPageClientProps)
       }
     >
       <ProductManager storeSlug={slug} />
-    </DashboardLayout>
+    </StoreSectionShell>
   );
 }

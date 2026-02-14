@@ -5,20 +5,20 @@ import { storeHelpers } from "@/lib/domains/stores";
 import { unauthorized, notFound, forbidden } from "./responses";
 import { setTenantContext } from "@/lib/middleware/tenant";
 
-interface ApiContext {
+export interface ApiContext {
   session: {
     user: {
       id: string;
       email: string;
       name?: string;
     };
-  };
+  } | null;
   store: Awaited<ReturnType<typeof storeHelpers.getStoreBySlug>>;
   userId: string;
   storeId: string;
 }
 
-interface ApiContextOptions {
+export interface ApiContextOptions {
   requireAuth?: boolean;
   requireOwner?: boolean;
 }
@@ -35,7 +35,7 @@ const getCachedSession = cache(async (headers: Headers) => {
 export async function getApiContext(
   request: NextRequest,
   slug: string,
-  options: ApiContextOptions = {}
+  options: ApiContextOptions = {},
 ): Promise<ApiContext | Response> {
   const { requireAuth = false, requireOwner = false } = options;
 
@@ -64,7 +64,7 @@ export async function getApiContext(
   await setTenantContext(store.id);
 
   return {
-    session: session!,
+    session,
     store,
     userId: session?.user.id || "",
     storeId: store.id,
@@ -73,7 +73,7 @@ export async function getApiContext(
 
 export async function getApiContextOrNull(
   request: NextRequest,
-  slug: string
+  slug: string,
 ): Promise<ApiContext | null | Response> {
   const [session, store] = await Promise.all([
     getCachedSession(request.headers),
@@ -84,16 +84,12 @@ export async function getApiContextOrNull(
     return notFound("Store not found");
   }
 
-  if (!session) {
-    return null;
-  }
-
   await setTenantContext(store.id);
 
   return {
     session,
     store,
-    userId: session.user.id,
+    userId: session?.user.id || "",
     storeId: store.id,
   };
 }

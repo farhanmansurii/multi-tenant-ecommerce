@@ -26,7 +26,7 @@ export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("name")}
         />
         {form.formState.errors.name && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.name.message}
           </p>
         )}
@@ -40,7 +40,7 @@ export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("sku")}
         />
         {form.formState.errors.sku && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.sku.message}
           </p>
         )}
@@ -55,7 +55,7 @@ export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("shortDescription")}
         />
         {form.formState.errors.shortDescription && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.shortDescription.message}
           </p>
         )}
@@ -70,7 +70,7 @@ export const BasicInformationSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("description")}
         />
         {form.formState.errors.description && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.description.message}
           </p>
         )}
@@ -103,7 +103,7 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           )}
         />
         {form.formState.errors.type && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.type.message}
           </p>
         )}
@@ -135,7 +135,7 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           )}
         />
         {form.formState.errors.status && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.status.message}
           </p>
         )}
@@ -152,7 +152,7 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("price", { valueAsNumber: true })}
         />
         {form.formState.errors.price && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.price.message}
           </p>
         )}
@@ -169,7 +169,7 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("compareAtPrice", { valueAsNumber: true })}
         />
         {form.formState.errors.compareAtPrice && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.compareAtPrice.message}
           </p>
         )}
@@ -185,7 +185,7 @@ export const ProductDetailsSection = ({ form }: ProductFormSectionsProps) => (
           {...form.register("quantity", { valueAsNumber: true })}
         />
         {form.formState.errors.quantity && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             {form.formState.errors.quantity.message}
           </p>
         )}

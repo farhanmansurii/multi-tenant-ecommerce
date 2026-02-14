@@ -9,8 +9,7 @@ export default function Loading() {
       desc="Track your store's performance and customer insights"
       icon={<BarChart3 />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Analytics" },
       ]}
       disableAnimation={true}

@@ -62,17 +62,8 @@ async function createDummyStore() {
 			slug: storeSlug,
 			description: "This is a store created for testing purposes. It contains sample data to help you get started.",
 			contactEmail: "store@example.com",
-			businessType: "retail",
-			businessName: "Mansuri Store Inc.",
-			addressLine1: "123 Main Street",
-			city: "Mumbai",
-			state: "Maharashtra",
-			zipCode: "400001",
-			country: "India",
 			primaryColor: "#3B82F6",
-			currency: "INR",
-			timezone: "Asia/Kolkata",
-			language: "en",
+			currency: "USD",
 		};
 
 		console.log("  Creating store with the following data:");
@@ -80,7 +71,6 @@ async function createDummyStore() {
 		console.log(`    Slug: ${dummyStoreData.slug}`);
 		console.log(`    Description: ${dummyStoreData.description}`);
 		console.log(`    Email: ${dummyStoreData.contactEmail}`);
-		console.log(`    Address: ${dummyStoreData.addressLine1}, ${dummyStoreData.city}, ${dummyStoreData.state} ${dummyStoreData.zipCode}`);
 		console.log(`    Primary Color: ${dummyStoreData.primaryColor}\n`);
 
 		// Create store directly using the same logic as createStore helper
@@ -93,26 +83,13 @@ async function createDummyStore() {
 				slug: dummyStoreData.slug,
 				description: dummyStoreData.description,
 				contactEmail: dummyStoreData.contactEmail,
-				businessType: dummyStoreData.businessType,
-				businessName: dummyStoreData.businessName,
-				addressLine1: dummyStoreData.addressLine1,
-				city: dummyStoreData.city,
-				state: dummyStoreData.state,
-				zipCode: dummyStoreData.zipCode,
-				country: dummyStoreData.country,
 				primaryColor: dummyStoreData.primaryColor,
 				currency: dummyStoreData.currency,
-				timezone: dummyStoreData.timezone,
-				language: dummyStoreData.language,
 				status: "draft",
 				featured: false,
 				settings: {
 					paymentMethods: [],
-					shippingRates: [],
-					upiId: undefined,
 					codEnabled: true,
-					stripeAccountId: undefined,
-					paypalEmail: undefined,
 					shippingEnabled: true,
 					freeShippingThreshold: undefined,
 					termsOfService: "",

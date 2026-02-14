@@ -10,8 +10,7 @@ export default function Loading() {
       desc="View and manage all customer orders"
       icon={<ClipboardList />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Orders" },
       ]}
       headerActions={
@@ -26,16 +25,16 @@ export default function Loading() {
         <div className="grid gap-4 md:grid-cols-4">
           {[
             { label: "Total Orders" },
-            { label: "Pending", color: "text-yellow-600" },
-            { label: "Processing", color: "text-purple-600" },
-            { label: "Delivered", color: "text-green-600" },
+            { label: "Pending" },
+            { label: "Processing" },
+            { label: "Delivered" },
           ].map((stat, i) => (
             <Card key={i} className="border-border/40">
               <CardHeader className="pb-2">
                 <Skeleton className="h-4 w-24" />
               </CardHeader>
               <CardContent>
-                <Skeleton className={`h-8 w-20 ${stat.color ? stat.color : ''}`} />
+                <Skeleton className="h-8 w-20" />
               </CardContent>
             </Card>
           ))}

@@ -1,15 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { AlertTriangle, Package, TrendingDown, Edit, CheckCircle2, CheckCircle } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  Package,
+  TrendingDown,
+  Edit,
+  CheckCircle2,
+  CheckCircle,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MetricCard } from '@/components/shared/common/metric-card';
-import { EmptyState } from '@/components/shared/common/empty-state';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/shared/common/metric-card";
+import { EmptyState } from "@/components/shared/common/empty-state";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -17,9 +24,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -49,21 +56,19 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
     setLoading(true);
     try {
       const res = await fetch(`/api/stores/${storeSlug}/products?limit=100`);
-      if (!res.ok) throw new Error('Failed to fetch products');
+      if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       setProducts(data.products || []);
     } catch (error) {
-      console.error('Failed to fetch products:', error);
-      toast.error('Failed to load products');
+      console.error("Failed to fetch products:", error);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
   };
 
   // Filter products with low stock
-  const lowStockProducts = products.filter(
-    (p) => p.stockQty <= (p.lowStockThreshold || threshold)
-  );
+  const lowStockProducts = products.filter((p) => p.stockQty <= (p.lowStockThreshold || threshold));
 
   const outOfStockProducts = products.filter((p) => p.stockQty === 0);
   const lowStockOnlyProducts = lowStockProducts.filter((p) => p.stockQty > 0);
@@ -80,7 +85,12 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
       {/* Stats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
         <MetricCard label="Total Products" value={stats.total} icon={Package} color="blue" />
-        <MetricCard label="Out of Stock" value={stats.outOfStock} icon={AlertTriangle} color="red" />
+        <MetricCard
+          label="Out of Stock"
+          value={stats.outOfStock}
+          icon={AlertTriangle}
+          color="red"
+        />
         <MetricCard label="Low Stock" value={stats.lowStock} icon={TrendingDown} color="yellow" />
         <MetricCard label="Healthy Stock" value={stats.healthy} icon={CheckCircle2} color="green" />
       </div>
@@ -89,7 +99,9 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Alert Threshold</CardTitle>
-          <CardDescription>Products below this quantity will be flagged as low stock</CardDescription>
+          <CardDescription>
+            Products below this quantity will be flagged as low stock
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
@@ -106,10 +118,10 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
       </Card>
 
       {/* Low Stock Table */}
-      <Card className={lowStockProducts.length > 0 ? 'border-yellow-500/50' : ''}>
+      <Card className={lowStockProducts.length > 0 ? "border-border/40" : ""}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            <AlertTriangle className="h-5 w-5 text-muted-foreground" />
             Inventory Alerts
           </CardTitle>
           <CardDescription>
@@ -162,7 +174,9 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={`font-bold ${product.stockQty === 0 ? 'text-red-600' : 'text-yellow-600'}`}>
+                        <span
+                          className={`font-bold ${product.stockQty === 0 ? "text-destructive" : "text-muted-foreground"}`}
+                        >
                           {product.stockQty}
                         </span>
                       </TableCell>
@@ -170,14 +184,19 @@ export default function AdminInventoryAlerts({ storeSlug }: AdminInventoryAlerts
                         {product.stockQty === 0 ? (
                           <Badge variant="destructive">Out of Stock</Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">
+                          <Badge
+                            variant="secondary"
+                            className="bg-muted/20 text-muted-foreground border-border/50"
+                          >
                             Low Stock
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/stores/${storeSlug}/products/${product.slug}/edit`}>
+                          <Link
+                            href={`/dashboard/stores/${storeSlug}/products/${product.slug}/edit`}
+                          >
                             <Edit className="mr-1 h-4 w-4" />
                             Update Stock
                           </Link>

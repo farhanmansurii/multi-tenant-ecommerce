@@ -3,13 +3,7 @@
 import Image from "next/image";
 import { TrendingUp, Eye, ShoppingCart, DollarSign } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -40,9 +34,7 @@ export function TopProductsTable({ products }: TopProductsTableProps) {
       <Card>
         <CardHeader>
           <CardTitle>Top Products</CardTitle>
-          <CardDescription>
-            Your best performing products by revenue
-          </CardDescription>
+          <CardDescription>Your best performing products by revenue</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32 text-muted-foreground">
@@ -60,9 +52,7 @@ export function TopProductsTable({ products }: TopProductsTableProps) {
           <TrendingUp className="h-5 w-5" />
           Top Products
         </CardTitle>
-        <CardDescription>
-          Your best performing products ranked by revenue
-        </CardDescription>
+        <CardDescription>Your best performing products ranked by revenue</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -113,9 +103,7 @@ export function TopProductsTable({ products }: TopProductsTableProps) {
                   {product.addToCarts.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="font-medium text-green-600">
-                    ${product.revenue.toFixed(2)}
-                  </div>
+                  <div className="font-medium text-foreground">${product.revenue.toFixed(2)}</div>
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge
@@ -123,8 +111,8 @@ export function TopProductsTable({ products }: TopProductsTableProps) {
                       product.conversionRate >= 10
                         ? "default"
                         : product.conversionRate >= 5
-                        ? "secondary"
-                        : "outline"
+                          ? "secondary"
+                          : "outline"
                     }
                   >
                     {product.conversionRate.toFixed(1)}%

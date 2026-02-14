@@ -22,12 +22,12 @@ export function StoreServiceStrip({ store }: { store: StoreData }) {
         <ServiceItem
           label="Secure Checkout"
           value="Encrypted Payment"
-          sub="Stripe • PayPal • Apple Pay"
+          sub="Stripe • Cash on Delivery"
         />
         <ServiceItem
           label="Authenticity"
           value="100% Verified"
-          sub={`Direct from ${store.city}`}
+          sub="Direct from the store"
         />
 
       </div>

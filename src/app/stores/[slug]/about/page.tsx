@@ -88,9 +88,6 @@ export default async function AboutPage({ params }: AboutPageProps) {
                     <p className="text-sm font-medium truncate" title={store.contactEmail}>
                       {store.contactEmail}
                     </p>
-                    {store.contactPhone && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{store.contactPhone}</p>
-                    )}
                   </div>
                 </div>
 
@@ -107,21 +104,14 @@ export default async function AboutPage({ params }: AboutPageProps) {
                   </div>
                 </div>
 
-                {/* Website */}
-                {store.website && (
-                  <>
-                    <Separator />
-                    <a
-                      href={store.website.startsWith('http') ? store.website : `https://${store.website}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between w-full group p-2 -mx-2 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <span className="text-sm font-medium">Visit Website</span>
-                      <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-                    </a>
-                  </>
-                )}
+                <Separator />
+                <a
+                  href={`mailto:${store.contactEmail}`}
+                  className="flex items-center justify-between w-full group p-2 -mx-2 rounded-md hover:bg-muted transition-colors"
+                >
+                  <span className="text-sm font-medium">Email Store</span>
+                  <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                </a>
               </CardContent>
             </Card>
 

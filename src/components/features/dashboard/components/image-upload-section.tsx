@@ -86,7 +86,7 @@ export const ImageUploadSection = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {uploadedFiles.map((file, index) => (
             <div key={`${file.url}-${index}`} className="relative group">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div className="aspect-square bg-muted/40 rounded-lg overflow-hidden border border-border/50">
                 <img
                   src={file.url}
                   alt={file.name}

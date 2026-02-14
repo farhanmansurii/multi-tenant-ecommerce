@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogContent,
@@ -297,13 +298,9 @@ export function GeneralSelector({
               {showColor && (
                 <div className="space-y-2">
                   <Label htmlFor="color">Color</Label>
-                  <Input
-                    id="color"
-                    type="color"
+                  <ColorPicker
                     value={createFormData.color}
-                    onChange={(e) =>
-                      setCreateFormData((prev) => ({ ...prev, color: e.target.value }))
-                    }
+                    onChange={(hex) => setCreateFormData((prev) => ({ ...prev, color: hex }))}
                   />
                 </div>
               )}

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getApiContext } from "@/lib/api/context";
-import { analyticsEvents } from "@/lib/db/schema/shopify";
+import { analyticsEvents } from "@/lib/db/schema/core/analytics-events";
 import { products } from "@/lib/db/schema/ecommerce/products";
 import { serverError, ok } from "@/lib/api/responses";
 import { CACHE_CONFIG } from "@/lib/api/cache-config";

@@ -22,6 +22,18 @@ export interface CartSlice {
 	removeItem: (productId: string, variantId?: string | null) => void;
 	clearCart: () => void;
 	hydrateCart: (items: CartItem[]) => void;
+
+	// API-backed cart actions (server cart is source of truth).
+	syncCart: (params: { slug: string }) => Promise<void>;
+	addToCartApi: (params: {
+		slug: string;
+		productId: string;
+		variantId?: string | null;
+		qty?: number;
+	}) => Promise<void>;
+	updateCartItemQtyApi: (params: { slug: string; itemId: string; qty: number }) => Promise<void>;
+	removeCartItemApi: (params: { slug: string; itemId: string }) => Promise<void>;
+	clearCartApi: (params: { slug: string }) => Promise<void>;
 }
 
 export interface StorefrontSessionSlice {

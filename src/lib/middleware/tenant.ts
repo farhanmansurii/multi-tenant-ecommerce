@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { stores } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface TenantContext {
   storeId: string;
@@ -72,5 +72,6 @@ export async function resolveStoreContext(storeSlug: string): Promise<TenantCont
  * Set tenant context for RLS
  */
 export async function setTenantContext(storeId: string) {
-  await db.execute(`SELECT set_config('app.current_store_id', '${storeId}', true)`);
+  // Parameterize to avoid injection through storeId.
+  await db.execute(sql`SELECT set_config('app.current_store_id', ${storeId}, true)`);
 }

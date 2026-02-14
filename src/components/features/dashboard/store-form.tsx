@@ -13,23 +13,12 @@ import { ErrorState } from "./components/error-state";
 import { NotFoundState } from "@/components/shared/common/not-found-state";
 import { StoreImageUploadSection } from "./components/store-image-upload-section";
 import { FormValidationErrors } from "./components/form-validation-errors";
-import {
-  BasicInformationSection,
-  BusinessDetailsSection,
-  BrandingSection,
-  PaymentAndShippingSection,
-  LegalPoliciesSection,
-} from "./components/store-form-sections";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { BasicsSection, CheckoutSection, PoliciesSection } from "./components/store-form-sections";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageCard } from "@/components/shared/layout/page-card";
 import { buildStoreFormState } from "@/lib/domains/stores/form";
 import { StoreFormData, storeSchema } from "@/lib/domains/stores/validation";
-import { ShopifyIntegrationSection } from "./components/shopify-integration-section";
+import { cn } from "@/lib/utils";
 
 interface StoreFormProps {
   mode: "create" | "edit";
@@ -43,6 +32,8 @@ interface StoreFormProps {
   storeError?: Error | null;
   isSuccess?: boolean;
   slug?: string;
+  /** When the page already has a header (DashboardLayout), hide the form's internal title block. */
+  hidePageHeading?: boolean;
 }
 
 export default function StoreForm({
@@ -57,9 +48,10 @@ export default function StoreForm({
   storeError = null,
   isSuccess = false,
   slug,
+  hidePageHeading = false,
 }: StoreFormProps) {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
-  const [activeTab, setActiveTab] = useState("basic");
+  const [activeTab, setActiveTab] = useState("basics");
   const tabsListRef = React.useRef<HTMLDivElement>(null);
 
   // Scroll active tab into view on mobile when tab changes
@@ -76,10 +68,7 @@ export default function StoreForm({
     }
   }, [activeTab]);
 
-  const resolvedDefaults = useMemo(
-    () => buildStoreFormState(initialValues),
-    [initialValues]
-  );
+  const resolvedDefaults = useMemo(() => buildStoreFormState(initialValues), [initialValues]);
 
   useEffect(() => {
     if (isSuccess) {
@@ -95,66 +84,39 @@ export default function StoreForm({
     mode: "onChange",
   });
 
-  const { handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = form;
 
   useEffect(() => {
     reset(resolvedDefaults);
   }, [reset, resolvedDefaults]);
 
   const logo = watch("logo");
-  const heroImages = watch("heroImages") || [];
 
   const setLogo = (newLogo: string | undefined) => {
     setValue("logo", newLogo || "", { shouldDirty: true, shouldTouch: true });
   };
 
-  const setHeroImages = (
-    newHeroImages:
-      | typeof heroImages
-      | ((prev: typeof heroImages) => typeof heroImages)
-  ) => {
-    const updatedImages = typeof newHeroImages === "function"
-      ? newHeroImages(heroImages)
-      : newHeroImages;
-
-    setValue("heroImages", updatedImages, { shouldDirty: true, shouldTouch: true });
-  };
-
   const fieldToTabMap: Record<string, string> = {
-    storeName: "basic",
-    storeSlug: "basic",
-    tagline: "basic",
-    description: "basic",
-    logo: "media",
-    favicon: "media",
-    heroImages: "media",
-    email: "business",
-    phone: "business",
-    website: "business",
-    businessName: "business",
-    businessType: "business",
-    taxId: "business",
-    address: "business",
-    city: "business",
-    state: "business",
-    zipCode: "business",
-    country: "business",
-    primaryColor: "branding",
-    secondaryColor: "branding",
-    currency: "branding",
-    timezone: "branding",
-    language: "branding",
-    paymentMethods: "payment",
-    upiId: "payment",
-    codEnabled: "payment",
-    stripeAccountId: "payment",
-    paypalEmail: "payment",
-    shippingEnabled: "payment",
-    freeShippingThreshold: "payment",
-    shippingRates: "payment",
-    termsOfService: "legal",
-    privacyPolicy: "legal",
-    refundPolicy: "legal",
+    storeName: "basics",
+    storeSlug: "basics",
+    description: "basics",
+    email: "basics",
+    logo: "basics",
+    primaryColor: "basics",
+    currency: "checkout",
+    paymentMethods: "checkout",
+    codEnabled: "checkout",
+    shippingEnabled: "checkout",
+    freeShippingThreshold: "checkout",
+    termsOfService: "policies",
+    privacyPolicy: "policies",
+    refundPolicy: "policies",
   };
 
   const handleErrorClick = (fieldName: string) => {
@@ -181,7 +143,9 @@ export default function StoreForm({
             block: "center",
           });
           setTimeout(() => {
-            const input = element.querySelector('input, textarea, select, button[role="combobox"]') as HTMLElement;
+            const input = element.querySelector(
+              'input, textarea, select, button[role="combobox"]',
+            ) as HTMLElement;
             const targetElement = input || element;
             targetElement.focus();
             if (targetElement instanceof HTMLElement) {
@@ -209,11 +173,7 @@ export default function StoreForm({
   if (storeLoading) {
     return (
       <LoadingState
-        message={
-          mode === "create"
-            ? "Preparing store creation..."
-            : "Loading store details..."
-        }
+        message={mode === "create" ? "Preparing store creation..." : "Loading store details..."}
       />
     );
   }
@@ -222,12 +182,9 @@ export default function StoreForm({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-md border rounded-lg p-6">
-          <h2 className="text-center font-semibold text-lg">
-            Authentication Required
-          </h2>
+          <h2 className="text-center font-semibold text-lg">Authentication Required</h2>
           <p className="text-center text-muted-foreground mt-2">
-            You must be logged in to {mode === "create" ? "create" : "edit"}{" "}
-            stores.
+            You must be logged in to {mode === "create" ? "create" : "edit"} stores.
           </p>
           <div className="text-center mt-4">
             <Button asChild>
@@ -244,11 +201,7 @@ export default function StoreForm({
       return (
         <NotFoundState
           title="Store Not Found"
-          message={
-            storeError instanceof Error
-              ? storeError.message
-              : "Failed to load store"
-          }
+          message={storeError instanceof Error ? storeError.message : "Failed to load store"}
           backHref="/dashboard/stores"
           backLabel="Back to Stores"
         />
@@ -267,24 +220,18 @@ export default function StoreForm({
   }
 
   const isCreateMode = mode === "create";
-  const title = isCreateMode ? "Create New Store" : "Edit Store";
-  const description = isCreateMode
-    ? "Set up your store and start selling online."
-    : "Update your store settings and information.";
   const submitButtonText = isCreateMode ? "Create Store" : "Save Changes";
-  const submitButtonLoadingText = isCreateMode
-    ? "Creating Store..."
-    : "Saving Changes...";
+  const submitButtonLoadingText = isCreateMode ? "Creating Store..." : "Saving Changes...";
 
   const hasValidationErrors = Object.keys(errors).length > 0;
 
   return (
     <div className="space-y-6">
       {showSavedMessage && (
-        <Alert className="border-green-200 bg-green-50">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertTitle className="text-green-800">Success</AlertTitle>
-          <AlertDescription className="text-green-700">
+        <Alert className="border-border/40 bg-card/80">
+          <Check className="h-4 w-4 text-foreground" />
+          <AlertTitle className="text-foreground">Success</AlertTitle>
+          <AlertDescription className="text-muted-foreground">
             {mode === "create" ? "Store created successfully!" : "Store updated successfully!"}
           </AlertDescription>
         </Alert>
@@ -294,13 +241,26 @@ export default function StoreForm({
         <FormValidationErrors errors={errors} onErrorClick={handleErrorClick} />
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {description}
-          </p>
-        </div>
+      <div
+        className={cn(
+          "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
+          hidePageHeading ? "pb-2" : "pb-4 border-b",
+        )}
+      >
+        {!hidePageHeading ? (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isCreateMode ? "Create New Store" : "Edit Store"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isCreateMode
+                ? "Set up your store and start selling online."
+                : "Update your store settings and information."}
+            </p>
+          </div>
+        ) : (
+          <div />
+        )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <Button
             type="button"
@@ -311,12 +271,7 @@ export default function StoreForm({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="store-form"
-            disabled={isSaving}
-            className={`w-full sm:w-auto ${showSavedMessage ? "bg-green-600 hover:bg-green-700" : ""}`}
-          >
+          <Button type="submit" form="store-form" disabled={isSaving} className="w-full sm:w-auto">
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -347,7 +302,11 @@ export default function StoreForm({
           }
         })}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col lg:flex-row gap-4 lg:gap-8">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full flex flex-col lg:flex-row gap-4 lg:gap-8"
+        >
           <aside className="w-full lg:w-64 flex-shrink-0">
             <div className="sticky top-4 lg:top-24">
               <div className="relative">
@@ -358,118 +317,53 @@ export default function StoreForm({
                   ref={tabsListRef}
                   className="flex flex-row lg:flex-col h-auto w-full items-stretch p-0 bg-transparent gap-1 overflow-x-auto lg:overflow-x-visible scrollbar-hide snap-x snap-mandatory scroll-smooth px-2 lg:px-0"
                 >
-                <TabsTrigger
-                  value="basic"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Basic Information</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="media"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Media & Images</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="business"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Business Details</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="branding"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Branding</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="payment"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Payment & Shipping</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="legal"
-                  className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
-                >
-                  <span className="whitespace-nowrap text-sm">Legal Policies</span>
-                </TabsTrigger>
-              </TabsList>
+                  <TabsTrigger
+                    value="basics"
+                    className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
+                  >
+                    <span className="whitespace-nowrap text-sm">Basics</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="checkout"
+                    className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
+                  >
+                    <span className="whitespace-nowrap text-sm">Checkout</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="policies"
+                    className="justify-start px-4 py-3 min-h-[44px] lg:min-h-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/50 transition-colors flex-shrink-0 lg:flex-shrink snap-start scroll-ml-2"
+                  >
+                    <span className="whitespace-nowrap text-sm">Policies</span>
+                  </TabsTrigger>
+                </TabsList>
               </div>
             </div>
           </aside>
 
           <div className="flex-1 space-y-6">
-            <TabsContent value="basic" className="mt-0">
-              <PageCard
-                title="Basic Information"
-                description="Manage your store's core details and identity."
-              >
-                <BasicInformationSection form={form} />
+            <TabsContent value="basics" className="mt-0">
+              <PageCard title="Basics" description="The essentials customers see.">
+                <BasicsSection form={form} mode={mode} />
+                <div className="mt-6">
+                  <StoreImageUploadSection logo={logo} setLogo={setLogo} />
+                </div>
               </PageCard>
             </TabsContent>
 
-            <TabsContent value="media" className="mt-0">
-              <PageCard
-                title="Media & Images"
-                description="Upload your store logo and hero images."
-              >
-                <StoreImageUploadSection
-                  logo={logo}
-                  setLogo={setLogo}
-                  heroImages={heroImages}
-                  setHeroImages={setHeroImages}
-                />
+            <TabsContent value="checkout" className="mt-0">
+              <PageCard title="Checkout" description="Payments, shipping, and currency.">
+                <CheckoutSection form={form} mode={mode} />
               </PageCard>
             </TabsContent>
 
-            <TabsContent value="business" className="mt-0">
-              <PageCard
-                title="Business Details"
-                description="Your contact info and business address."
-              >
-                <BusinessDetailsSection form={form} />
-              </PageCard>
-            </TabsContent>
-
-            <TabsContent value="branding" className="mt-0">
-              <PageCard
-                title="Branding"
-                description="Customize your store's appearance and regional settings."
-              >
-                <BrandingSection form={form} />
-              </PageCard>
-            </TabsContent>
-
-            <TabsContent value="payment" className="mt-0">
-              <PageCard
-                title="Payment & Shipping"
-                description="Configure how you accept payments and ship products."
-              >
-                <PaymentAndShippingSection form={form} />
-              </PageCard>
-            </TabsContent>
-
-            <TabsContent value="legal" className="mt-0">
-              <PageCard
-                title="Legal Policies"
-                description="Define your terms, privacy, and refund policies."
-              >
-                <LegalPoliciesSection form={form} />
+            <TabsContent value="policies" className="mt-0">
+              <PageCard title="Policies" description="What customers agree to when they buy.">
+                <PoliciesSection form={form} mode={mode} />
               </PageCard>
             </TabsContent>
           </div>
         </Tabs>
       </form>
-
-      <div className="mt-8">
-        <PageCard
-          title="Integrations"
-          description="Connect your store with third-party services."
-        >
-          <ShopifyIntegrationSection params={Promise.resolve({ slug: slug || "" })} />
-        </PageCard>
-      </div>
     </div>
   );
 }

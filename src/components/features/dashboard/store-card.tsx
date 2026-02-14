@@ -6,12 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { StoreData } from "@/lib/domains/stores/types";
 import { formatDate, sanitizeText } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -27,12 +22,7 @@ import {
   ArrowRight,
   Globe,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CompactMetric } from "@/components/shared/common/compact-metric";
 
 interface StoreCardProps {
@@ -46,29 +36,29 @@ const getStatusConfig = (status: string) => {
       return {
         icon: CheckCircle2,
         label: "Active",
-        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-        dot: "bg-emerald-500"
+        className: "bg-muted/40 text-muted-foreground border-border/40",
+        dot: "bg-foreground",
       };
     case "draft":
       return {
         icon: PauseCircle,
         label: "Draft",
-        className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-        dot: "bg-amber-500"
+        className: "bg-muted/40 text-muted-foreground border-border/40",
+        dot: "bg-foreground",
       };
     case "suspended":
       return {
         icon: Slash,
         label: "Suspended",
-        className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-        dot: "bg-red-500"
+        className: "bg-muted/40 text-muted-foreground border-border/40",
+        dot: "bg-foreground",
       };
     default:
       return {
         icon: Store,
         label: "Unknown",
         className: "bg-muted text-muted-foreground border-border",
-        dot: "bg-muted-foreground"
+        dot: "bg-muted-foreground",
       };
   }
 };
@@ -88,7 +78,7 @@ export default function StoreCard({ store }: StoreCardProps) {
   const handleExternalClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.open(`/stores/${store.slug}`, '_blank', 'noopener,noreferrer');
+    window.open(`/stores/${store.slug}`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -98,7 +88,10 @@ export default function StoreCard({ store }: StoreCardProps) {
           <div className="absolute top-6 right-6 z-10">
             <Badge
               variant="outline"
-              className={cn("px-2.5 py-1 text-[10px] font-semibold capitalize border shadow-sm", statusConfig.className)}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-semibold capitalize border shadow-sm",
+                statusConfig.className,
+              )}
             >
               {statusConfig.label}
             </Badge>
@@ -120,11 +113,16 @@ export default function StoreCard({ store }: StoreCardProps) {
                 className="relative h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 border-2 border-border/50 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor}20, ${primaryColor}30)`,
-                  borderColor: `${primaryColor}40`
+                  borderColor: `${primaryColor}40`,
                 }}
               >
                 <Store className="h-8 w-8" style={{ color: primaryColor }} />
-                <span className={cn("absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-background shadow-sm", statusConfig.dot)} />
+                <span
+                  className={cn(
+                    "absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-background shadow-sm",
+                    statusConfig.dot,
+                  )}
+                />
               </div>
             )}
 
@@ -140,7 +138,8 @@ export default function StoreCard({ store }: StoreCardProps) {
           </div>
 
           <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed min-h-[2.75rem]">
-            {sanitizeText(store.description) || "No description provided. Add a description to help customers understand your store."}
+            {sanitizeText(store.description) ||
+              "No description provided. Add a description to help customers understand your store."}
           </p>
         </CardHeader>
 
@@ -154,7 +153,10 @@ export default function StoreCard({ store }: StoreCardProps) {
             />
             <CompactMetric
               label="Created"
-              value={new Date(store.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              value={new Date(store.createdAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
               icon={CalendarDays}
               color="blue"
             />

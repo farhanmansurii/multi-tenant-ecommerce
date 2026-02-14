@@ -2,7 +2,7 @@
 
 import { StoreData } from '@/lib/domains/stores/types';
 import { Button } from '@/components/ui/button';
-import { ArrowDownRight, Globe, MapPin } from 'lucide-react';
+import { ArrowDownRight, Globe } from 'lucide-react';
 import Link from 'next/link';
 import StoreFrontContainer from '../shared/layout/container';
 
@@ -12,10 +12,6 @@ export function StoreHero({ store }: { store: StoreData }) {
       {/* 1. Top Ticker / Meta Bar */}
       <div className="w-full border-b border-zinc-200 dark:border-zinc-800 py-3 px-4 md:px-8 flex flex-col md:flex-row justify-between items-start md:items-center text-xs font-mono uppercase tracking-widest gap-2">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-2">
-            <MapPin className="w-3 h-3" /> {store.city}, {store.country}
-          </span>
-          <span className="hidden md:inline text-zinc-300">|</span>
           <span className="flex items-center gap-2">
             <Globe className="w-3 h-3" /> WORLDWIDE SHIPPING
           </span>
@@ -35,13 +31,11 @@ export function StoreHero({ store }: { store: StoreData }) {
               {store.name}
             </h1>
 
-            {store.tagline && (
-              <div className="max-w-xl pl-6 border-l-4 border-black dark:border-white">
-                <p className="text-xl md:text-3xl font-light text-zinc-600 dark:text-zinc-400">
-                  {store.tagline}
-                </p>
-              </div>
-            )}
+            <div className="max-w-xl pl-6 border-l-4 border-black dark:border-white">
+              <p className="text-xl md:text-3xl font-light text-zinc-600 dark:text-zinc-400">
+                {store.description}
+              </p>
+            </div>
           </div>
 
           <div className="mt-16 lg:mt-0">

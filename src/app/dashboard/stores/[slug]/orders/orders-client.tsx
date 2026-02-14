@@ -3,12 +3,12 @@
 import { ClipboardList } from 'lucide-react';
 import { Suspense } from 'react';
 import AdminOrdersList from '@/components/features/dashboard/admin-orders-list';
-import DashboardLayout from '@/components/shared/layout/dashboard-container';
 import { Loader } from '@/components/shared/common/loader';
 import { RefreshButton } from '@/components/shared/common/refresh-button';
 import { useOrders } from '@/hooks/queries/use-orders';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query/keys';
+import { StoreSectionShell } from '@/components/features/dashboard/store-section-shell';
 
 interface OrdersPageClientProps {
   slug: string;
@@ -25,16 +25,12 @@ export function OrdersPageClient({ slug, storeName }: OrdersPageClientProps) {
   };
 
   return (
-    <DashboardLayout
+    <StoreSectionShell
+      slug={slug}
+      storeName={storeName}
       title="Orders"
-      desc="View and manage all customer orders"
+      desc="View and manage customer orders"
       icon={<ClipboardList />}
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Stores', href: '/dashboard/stores' },
-        { label: storeName || slug, href: `/dashboard/stores/${slug}` },
-        { label: 'Orders' },
-      ]}
       headerActions={
         <RefreshButton
           onRefresh={handleRefresh}
@@ -47,6 +43,6 @@ export function OrdersPageClient({ slug, storeName }: OrdersPageClientProps) {
       <Suspense fallback={<Loader text="Loading orders..." className="py-24" />}>
         <AdminOrdersList storeSlug={slug} />
       </Suspense>
-    </DashboardLayout>
+    </StoreSectionShell>
   );
 }

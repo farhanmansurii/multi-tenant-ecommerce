@@ -105,7 +105,6 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
           { label: "Stores", href: "/dashboard/stores" },
           { label: displayStore?.name || slug || "Loading..." }
         ]}
-        fullWidth
         disableAnimation={true}
       >
         <StoreDashboardSkeleton />
@@ -153,7 +152,7 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
         <div className="min-h-screen flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-center text-red-600">
+              <CardTitle className="text-center text-destructive">
                 Access Denied
               </CardTitle>
               <CardDescription className="text-center">
@@ -161,15 +160,15 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <Alert className="border-red-200 bg-red-50">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
                   Only the store owner can manage this store.
                 </AlertDescription>
               </Alert>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" asChild>
-                  <Link href="/dashboard">Go to Dashboard</Link>
+                  <Link href="/dashboard/stores">All Stores</Link>
                 </Button>
                 <Button asChild>
                   <Link href={`/stores/${slug}`}>View Store</Link>
@@ -188,7 +187,6 @@ export default function StoreDashboard({ params, initialStore }: StoreDashboardP
     <DashboardLayout
       title={displayStore.name}
       desc="Overview of your store performance"
-      fullWidth
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
         { label: displayStore.name },

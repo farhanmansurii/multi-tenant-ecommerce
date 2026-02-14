@@ -1,75 +1,128 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
-import { getApiContextOrNull } from "@/lib/api/context";
+import { ok, notFound } from "@/lib/api/responses";
 import {
-	getOrderById,
-	updateOrderStatus,
-	cancelOrder,
-	updateOrderStatusSchema,
+  composeMiddleware,
+  rateLimitMiddleware,
+  storeMemberMiddleware,
+  apiContextMiddleware,
+  validationMiddleware,
+  withErrorCapture,
+  MiddlewareContext,
+  type ApiMiddleware,
+} from "@/lib/api/middleware/pipeline";
+import type { ApiContext } from "@/lib/api/context";
+import {
+  getOrderById,
+  updateOrderStatus,
+  cancelOrder,
+  updateOrderStatusSchema,
 } from "@/lib/domains/orders";
-import { ok, notFound, badRequest } from "@/lib/api/responses";
+import { z } from "zod";
 
-interface RouteParams {
-	params: Promise<{
-		slug: string;
-		orderId: string;
-	}>;
+type HandlerParams = { slug: string; orderId: string };
+type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
+
+const pipelineBase = (method: "GET" | "PATCH" | "DELETE", withValidation = false) => {
+  const middlewares: ApiMiddleware[] = [
+    apiContextMiddleware(),
+    storeMemberMiddleware({
+      resourceParam: "orderId",
+      resourceType: "order",
+      method,
+    }),
+    rateLimitMiddleware(),
+  ];
+
+  if (withValidation) {
+    middlewares.push(validationMiddleware(updateOrderStatusSchema));
+  }
+
+  return composeMiddleware(middlewares);
+};
+
+async function buildPipelineContext(
+  request: NextRequest,
+  paramsPromise: Promise<HandlerParams>,
+): Promise<MiddlewareContext> {
+  const resolved = await paramsPromise;
+  return {
+    request,
+    slug: resolved.slug,
+    params: resolved,
+    data: {},
+  };
 }
 
-// GET /api/stores/[slug]/orders/[orderId] - Get order details
-export async function GET(request: NextRequest, { params }: RouteParams) {
-	const { slug, orderId } = await params;
-
-	const ctx = await getApiContextOrNull(request, slug);
-	if (ctx instanceof Response) return ctx;
-	if (!ctx) return notFound("Store not found");
-
-	const order = await getOrderById(ctx.storeId, orderId);
-
-	if (!order) {
-		return notFound("Order not found");
-	}
-
-	return ok({ order });
+async function runPipeline(
+  method: "GET" | "PATCH" | "DELETE",
+  request: NextRequest,
+  params: Promise<HandlerParams>,
+  withValidation = false,
+) {
+  const context = await buildPipelineContext(request, params);
+  const pipeline = pipelineBase(method, withValidation);
+  return pipeline(context);
 }
 
-// PATCH /api/stores/[slug]/orders/[orderId] - Update order status
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
-	const { slug, orderId } = await params;
-
-	const ctx = await getApiContextOrNull(request, slug);
-	if (ctx instanceof Response) return ctx;
-	if (!ctx) return notFound("Store not found");
-
-	const body = await request.json();
-	const parseResult = updateOrderStatusSchema.safeParse(body);
-
-	if (!parseResult.success) {
-		return badRequest("Invalid input");
-	}
-
-	const order = await updateOrderStatus(ctx.storeId, orderId, parseResult.data.status);
-
-	if (!order) {
-		return notFound("Order not found");
-	}
-
-	return ok({ order });
+function extractApiContext(pipelineResult: MiddlewareContext): ApiContext {
+  return pipelineResult.data.apiContext as ApiContext;
 }
 
-// DELETE /api/stores/[slug]/orders/[orderId] - Cancel order
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-	const { slug, orderId } = await params;
+export async function GET(request: NextRequest, { params }: { params: Promise<HandlerParams> }) {
+  return withErrorCapture(async () => {
+    const pipelineResult = await runPipeline("GET", request, params);
+    if (pipelineResult instanceof Response) {
+      return pipelineResult;
+    }
 
-	const ctx = await getApiContextOrNull(request, slug);
-	if (ctx instanceof Response) return ctx;
-	if (!ctx) return notFound("Store not found");
+    const { orderId } = pipelineResult.params;
+    const apiContext = extractApiContext(pipelineResult);
 
-	const success = await cancelOrder(ctx.storeId, orderId);
+    const order = await getOrderById(apiContext.storeId, orderId);
+    if (!order) {
+      return notFound("Order not found");
+    }
 
-	if (!success) {
-		return badRequest("Order not found or cannot be cancelled");
-	}
+    return ok({ order });
+  });
+}
 
-	return ok({ success: true, message: "Order cancelled" });
+export async function PATCH(request: NextRequest, { params }: { params: Promise<HandlerParams> }) {
+  return withErrorCapture(async () => {
+    const pipelineResult = await runPipeline("PATCH", request, params, true);
+    if (pipelineResult instanceof Response) {
+      return pipelineResult;
+    }
+
+    const { orderId } = pipelineResult.params;
+    const apiContext = extractApiContext(pipelineResult);
+    const validatedBody = pipelineResult.data.validatedBody as UpdateOrderStatusInput;
+
+    const order = await updateOrderStatus(apiContext.storeId, orderId, validatedBody.status);
+    if (!order) {
+      return notFound("Order not found");
+    }
+
+    return ok({ order });
+  });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<HandlerParams> }) {
+  return withErrorCapture(async () => {
+    const pipelineResult = await runPipeline("DELETE", request, params);
+    if (pipelineResult instanceof Response) {
+      return pipelineResult;
+    }
+
+    const { orderId } = pipelineResult.params;
+    const apiContext = extractApiContext(pipelineResult);
+
+    const success = await cancelOrder(apiContext.storeId, orderId);
+    if (!success) {
+      return notFound("Order not found or cannot be cancelled");
+    }
+
+    return ok({ success: true, message: "Order cancelled" });
+  });
 }

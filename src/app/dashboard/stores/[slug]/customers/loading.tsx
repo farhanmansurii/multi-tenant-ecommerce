@@ -10,8 +10,7 @@ export default function Loading() {
       desc="View and manage your store customers"
       icon={<Users />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Customers" },
       ]}
       disableAnimation={true}

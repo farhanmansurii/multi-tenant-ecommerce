@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { generateStoreMetadata } from '@/lib/metadata';
 import { fetchStore } from '@/lib/domains/stores/service';
 import { fetchProducts } from '@/lib/domains/products/service';
-import { fetchCategories } from '@/lib/domains/products/category-service';
-import { StorefrontView } from '@/components';
+import StorefrontProducts from '@/components/storefront-ui/pages/StorefrontProducts';
 
 interface ProductsPageProps {
   params: Promise<{ slug: string }>;
@@ -40,10 +39,9 @@ export async function generateMetadata({
 export default async function ProductsPage({ params }: ProductsPageProps) {
   const { slug } = await params;
 
-  const [store, products, categories] = await Promise.all([
+  const [store, products] = await Promise.all([
     fetchStore(slug).catch(() => null),
     fetchProducts(slug).catch(() => []),
-    fetchCategories(slug).catch(() => []),
   ]);
 
   if (!store) {
@@ -51,12 +49,15 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
   }
 
   return (
-    <StorefrontView
-      slug={slug}
-      initialStore={store}
-      initialProducts={products}
-      initialCategories={categories}
-      hideHero={true}
+    <StorefrontProducts
+      products={products.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        price: Number(p.price || 0),
+        tags: p.tags || [],
+        images: p.images,
+      }))}
     />
   );
 }

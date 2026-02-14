@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter} from "next/navigation";
-import { Home, LogOut, Store, User2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Building2, LogOut, Store, User2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -32,22 +32,20 @@ interface NavItem {
   isLogout?: boolean;
 }
 
-const navigationItems: NavItem[] = [
+const primaryFlow: NavItem[] = [
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-    exact: true,
-  },
-  {
-    title: "My Stores",
+    title: "Stores",
     url: "/dashboard/stores",
-    icon: Store,
+    icon: Building2,
+    exact: false,
   },
+];
+
+const quickActions: NavItem[] = [
   {
-    title: "Create Store",
+    title: "New store",
     url: "/dashboard/stores/new",
-    icon: Store,
+    icon: Plus,
   },
 ];
 
@@ -58,13 +56,18 @@ const accountItems: NavItem[] = [
     icon: User2,
   },
   {
-    title: "Logout",
+    title: "Log out",
     icon: LogOut,
     isLogout: true,
   },
 ];
 
-function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeof useRouter>, setOpenMobile?: (open: boolean) => void) {
+function renderNavItem(
+  item: NavItem,
+  pathname: string,
+  router: ReturnType<typeof useRouter>,
+  setOpenMobile?: (open: boolean) => void,
+) {
   const isActive = item.url
     ? item.exact
       ? pathname === item.url
@@ -72,7 +75,6 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
     : false;
 
   const handleClick = async () => {
-    // Close mobile sidebar when navigating
     if (setOpenMobile) {
       setOpenMobile(false);
     }
@@ -90,21 +92,29 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
     }
   };
 
+  const buttonClasses = cn(
+    "group w-full rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+    "hover:bg-muted/40 hover:text-foreground",
+    isActive && "bg-muted/50 text-foreground",
+  );
+
+  const innerContent = (
+    <div className="flex items-center gap-3">
+      <item.icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+      <div className="flex flex-col">
+        <span className="text-sm font-semibold text-foreground">{item.title}</span>
+      </div>
+    </div>
+  );
+
   if (item.isLogout || item.onClick) {
     return (
       <SidebarMenuItem key={item.title}>
         <SidebarMenuButton
           onClick={handleClick}
-          className={cn(
-            "relative transition-colors duration-200 w-full",
-            item.isLogout && "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-700 dark:hover:text-red-400",
-            !item.isLogout && "hover:bg-muted/20"
-          )}
+          className={cn(buttonClasses, item.isLogout && "text-destructive hover:bg-destructive/10")}
         >
-          <div className="flex items-center gap-2.5">
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="text-sm">{item.title}</span>
-          </div>
+          {innerContent}
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
@@ -112,33 +122,9 @@ function renderNavItem(item: NavItem, pathname: string, router: ReturnType<typeo
 
   return (
     <SidebarMenuItem key={item.title}>
-      <SidebarMenuButton
-        asChild
-        isActive={isActive}
-        className={cn(
-          "relative transition-colors duration-200",
-          isActive && [
-            "bg-muted/40 text-foreground",
-            "dark:bg-muted/30",
-          ],
-          !isActive && "hover:bg-muted/20"
-        )}
-      >
-        <Link
-          href={item.url!}
-          onClick={(e) => {
-            handleClick();
-            // Small delay to ensure navigation happens
-            setTimeout(() => {
-              if (setOpenMobile) {
-                setOpenMobile(false);
-              }
-            }, 100);
-          }}
-          className="flex items-center gap-2.5"
-        >
-          <item.icon className="h-4 w-4 shrink-0" />
-          <span className="text-sm">{item.title}</span>
+      <SidebarMenuButton asChild className={buttonClasses}>
+        <Link href={item.url!} onClick={handleClick} className="flex items-center gap-3">
+          {innerContent}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -150,7 +136,6 @@ export function AppSidebar({ className }: { className: string }) {
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
 
-  // Close sidebar on mobile when pathname changes
   useEffect(() => {
     if (isMobile && setOpenMobile) {
       setOpenMobile(false);
@@ -159,30 +144,51 @@ export function AppSidebar({ className }: { className: string }) {
 
   return (
     <Sidebar variant="floating" side="left" className={className} collapsible="offcanvas">
-      <SidebarHeader className="border-b border-border/40 pb-0">
-        <div className="px-2 py-3 pr-10">
-          <h2 className="text-sm font-semibold text-foreground">Menu</h2>
+      <SidebarHeader>
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-muted flex items-center justify-center">
+              <Store className="h-4 w-4 text-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold leading-tight text-foreground">Dashboard</p>
+              <p className="text-xs text-muted-foreground">Pick a store to manage</p>
+            </div>
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/70">
-            Navigation
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">
+            Workspace
           </SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="space-y-2">
             <SidebarMenu>
-              {navigationItems.map((item) => renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined))}
+              {primaryFlow.map((item) =>
+                renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/70">
-            Account
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">Create</SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-2">
             <SidebarMenu>
-              {accountItems.map((item) => renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined))}
+              {quickActions.map((item) =>
+                renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">Account</SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-2">
+            <SidebarMenu>
+              {accountItems.map((item) =>
+                renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -62,7 +62,9 @@ function DashboardLayoutContent({
         bottomActions={bottomActions}
         disableAnimation={disableAnimation}
       />
-      <PageContent contentKey={contentKey} animate={!disableAnimation}>{children}</PageContent>
+      <PageContent contentKey={contentKey} animate={!disableAnimation}>
+        {children}
+      </PageContent>
     </PageContainer>
   );
 }

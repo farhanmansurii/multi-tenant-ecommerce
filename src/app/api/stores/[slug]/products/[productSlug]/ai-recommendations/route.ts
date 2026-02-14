@@ -6,11 +6,24 @@ import { stores } from "@/lib/db/schema/core/stores";
 import { aiService } from "@/lib/ai/openai";
 import { requireAuthOrNull } from "@/lib/session/helpers";
 import { unauthorized, notFound, serverError, ok } from "@/lib/api/responses";
+import { rateLimit } from "@/lib/api/rate-limit";
+
+// Rate limiter: 10 requests per minute per user for AI endpoints
+const aiRateLimit = rateLimit({
+  interval: 60000, // 1 minute
+  uniqueTokenPerInterval: 10, // 10 requests per minute
+});
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string; productSlug: string }> }
+  { params }: { params: Promise<{ slug: string; productSlug: string }> },
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = aiRateLimit(request);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const session = await requireAuthOrNull();
     if (!session) {
@@ -20,11 +33,7 @@ export async function POST(
     const { slug, productSlug } = await params;
 
     // Verify store ownership
-    const store = await db
-      .select()
-      .from(stores)
-      .where(eq(stores.slug, slug))
-      .limit(1);
+    const store = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
 
     if (!store[0] || store[0].ownerUserId !== session.user.id) {
       return notFound("Store not found or access denied");
@@ -34,12 +43,7 @@ export async function POST(
     const targetProduct = await db
       .select()
       .from(products)
-      .where(
-        and(
-          eq(products.storeId, store[0].id),
-          eq(products.slug, productSlug)
-        )
-      )
+      .where(and(eq(products.storeId, store[0].id), eq(products.slug, productSlug)))
       .limit(1);
 
     if (!targetProduct[0]) {
@@ -56,14 +60,9 @@ export async function POST(
         tags: products.tags,
       })
       .from(products)
-      .where(
-        and(
-          eq(products.storeId, store[0].id),
-          eq(products.status, "active")
-        )
-      );
+      .where(and(eq(products.storeId, store[0].id), eq(products.status, "active")));
 
-    const otherProducts = storeProducts.filter(p => p.id !== targetProduct[0].id);
+    const otherProducts = storeProducts.filter((p) => p.id !== targetProduct[0].id);
 
     // Generate recommendations
     const recommendations = await aiService.generateProductRecommendations(
@@ -73,13 +72,13 @@ export async function POST(
         categories: targetProduct[0].categories || [],
         tags: targetProduct[0].tags || [],
       },
-      otherProducts.map(p => ({
+      otherProducts.map((p) => ({
         id: p.id,
         name: p.name,
         description: p.description,
         categories: p.categories || [],
         tags: p.tags || [],
-      }))
+      })),
     );
 
     // Get full product details for recommended products
@@ -102,7 +101,7 @@ export async function POST(
           ...rec,
           product: product[0],
         };
-      })
+      }),
     );
 
     return ok({ recommendations: recommendedProducts });

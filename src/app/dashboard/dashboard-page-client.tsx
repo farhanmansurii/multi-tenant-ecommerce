@@ -118,11 +118,11 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
     }
   }, []);
 
-  const statusColors = {
-    active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    draft: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    suspended: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  }[store.status] || "bg-muted text-muted-foreground";
+  const statusVariant = {
+    active: "success",
+    draft: "warning",
+    suspended: "destructive",
+  } as const;
 
   return (
     <Link href={`/dashboard/stores/${store.slug}`} className="block">
@@ -166,8 +166,8 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
                 {store.name}
               </h3>
               <Badge
-                variant="secondary"
-                className={cn("text-[10px] px-2.5 py-1 h-5 font-semibold capitalize shadow-sm border", statusColors)}
+                variant={statusVariant[store.status as keyof typeof statusVariant] || "secondary"}
+                className="text-[10px] px-2.5 py-1 h-5 font-semibold capitalize shadow-sm"
               >
                 {store.status}
               </Badge>

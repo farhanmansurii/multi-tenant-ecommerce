@@ -26,7 +26,6 @@ export default async function StoreSettingsPage({ params }: { params: Promise<{ 
       desc="Configure your store settings"
       icon={<Settings />}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
         { label: 'Stores', href: '/dashboard/stores' },
         { label: store?.name || slug, href: `/dashboard/stores/${slug}` },
         { label: 'Settings' },

@@ -5,7 +5,8 @@ import { generateBaseMetadata, generateProductMetadata } from '@/lib/metadata';
 import { StoreData } from '@/lib/domains/stores';
 import { ProductData } from '@/lib/domains/products';
 import { fetchStoreAndProduct } from '@/lib/domains/products/service';
-import StorefrontProductView from '@/components/features/storefront/views/product/product-detail-view';
+import { fetchProducts } from '@/lib/domains/products/service';
+import StorefrontProductDetail from '@/components/storefront-ui/pages/StorefrontProductDetail';
 
 interface RouteParams {
   slug: string;
@@ -58,9 +59,34 @@ export async function generateMetadata({
 
 export default async function StorefrontProductPage({ params }: { params: Promise<RouteParams> }) {
   const { slug, productSlug } = await params;
-  const result = await fetchStoreAndProduct(slug, productSlug);
+  const [result, products] = await Promise.all([
+    fetchStoreAndProduct(slug, productSlug),
+    fetchProducts(slug).catch(() => []),
+  ]);
 
   if (!result) notFound();
 
-  return <StorefrontProductView store={result.store} product={result.product} />;
+  const related = products.filter((p) => p.id !== result.product.id).slice(0, 4);
+
+  return (
+    <StorefrontProductDetail
+      slug={slug}
+      product={{
+        id: result.product.id,
+        slug: result.product.slug,
+        name: result.product.name,
+        price: Number(result.product.price || 0),
+        images: result.product.images,
+        shortDescription: result.product.shortDescription ?? null,
+        description: result.product.description ?? null,
+      }}
+      relatedProducts={related.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        price: Number(p.price || 0),
+        images: p.images,
+      }))}
+    />
+  );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { generateDashboardMetadata } from "@/lib/metadata";
-import DashboardPageClient from "./dashboard-page-client";
+import { redirect } from "next/navigation";
 
 
 export const metadata: Metadata = generateDashboardMetadata("dashboard", {
@@ -10,5 +10,5 @@ export const metadata: Metadata = generateDashboardMetadata("dashboard", {
 });
 
 export default function DashboardPage() {
-  return <DashboardPageClient />;
+  redirect("/dashboard/stores");
 }

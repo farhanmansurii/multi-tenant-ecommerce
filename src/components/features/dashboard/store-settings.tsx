@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 import { useDashboardParams } from "@/hooks/use-dashboard-params";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,10 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader } from "@/components/shared/common/loader";
-import { StoreFormData } from "@/lib/domains/stores/validation";
-import { storeDataToFormValues, storeFormValuesToPayload } from "@/lib/domains/stores/form";
-
-import EditStoreForm from "@/components/forms/store/edit-store-form";
 import { useRequireAuth } from "@/lib/session";
 import { useStore } from "@/hooks/queries/use-store";
-import { useUpdateStore } from "@/hooks/mutations/use-store-mutations";
+import { fetchProducts } from "@/lib/domains/products/service";
+import UnifiedStoreEditor from "@/components/features/dashboard/unified-editor/UnifiedStoreEditor";
 
 interface StoreSettingsProps {
   params: Promise<{ slug: string }>;
@@ -47,15 +44,11 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
   const hasPermissionError = store && user && !can('manage_settings');
   const isOwner = !!(store && user && store.ownerUserId === user.id);
 
-  const updateMutation = useUpdateStore(slug || "");
-
-  const handleSave = async (values: StoreFormData): Promise<void> => {
-    if (!store) {
-      throw new Error('Store not found');
-    }
-    const payload = storeFormValuesToPayload(values, store);
-    await updateMutation.mutateAsync(payload);
-  };
+  const { data: products = [] } = useQuery({
+    queryKey: ["store-products-minimal", slug],
+    queryFn: () => fetchProducts(slug || ""),
+    enabled: !!slug && isAuthenticated,
+  });
 
 
   if (isPending || paramsLoading || storeLoading) {
@@ -101,7 +94,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
       <div className="min-h-screen  flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">
+            <CardTitle className="text-center text-destructive">
               Access Denied
             </CardTitle>
             <CardDescription className="text-center">
@@ -116,7 +109,7 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
             </Alert>
             <div className="flex gap-2 justify-center">
               <Button variant="outline" asChild>
-                <Link href="/dashboard">Go to Dashboard</Link>
+                <Link href="/dashboard/stores">All Stores</Link>
               </Button>
               <Button asChild>
                 <Link href={`/stores/${slug}`}>View Store</Link>
@@ -139,22 +132,18 @@ export default function StoreSettings({ params }: StoreSettingsProps) {
     );
   }
 
-  const formData = React.useMemo(() => {
-    return store ? storeDataToFormValues(store) : undefined;
-  }, [store]);
-
   return (
-    <EditStoreForm
-      initialValues={formData}
-      onSave={handleSave}
-      onCancel={() => router.back()}
-      isSaving={updateMutation.isPending}
-      isAuthenticated={isAuthenticated}
-      isOwner={isOwner}
-      storeLoading={storeLoading}
-      storeError={storeError}
-      isSuccess={updateMutation.isSuccess}
-      slug={slug}
-    />
+    <>
+      <UnifiedStoreEditor
+        store={store}
+        featuredProducts={(products || []).map((p: any) => ({
+          id: p.id,
+          slug: p.slug,
+          name: p.name,
+          price: Number(p.price || 0),
+          images: p.images,
+        }))}
+      />
+    </>
   );
 }

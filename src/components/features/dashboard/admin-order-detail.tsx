@@ -1,26 +1,36 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Package, Truck, CheckCircle, Clock, XCircle, User, MapPin, CreditCard } from 'lucide-react';
+import { useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  XCircle,
+  User,
+  MapPin,
+  CreditCard,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-import { formatPrice } from '@/lib/utils/price';
-import { useOrder } from '@/hooks/queries/use-order';
-import { useUpdateOrderStatus } from '@/hooks/mutations/use-order-mutations';
-import { QuerySkeleton } from '@/lib/ui/query-skeleton';
-import { NotFoundState } from '@/components/shared/common/not-found-state';
+import { formatPrice } from "@/lib/utils/price";
+import { useOrder } from "@/hooks/queries/use-order";
+import { useUpdateOrderStatus } from "@/hooks/mutations/use-order-mutations";
+import { QuerySkeleton } from "@/lib/ui/query-skeleton";
+import { NotFoundState } from "@/components/shared/common/not-found-state";
 
 type OrderItem = {
   id: string;
@@ -78,13 +88,13 @@ interface AdminOrderDetailProps {
   orderId: string;
 }
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/10 text-yellow-600',
-  confirmed: 'bg-blue-500/10 text-blue-600',
-  processing: 'bg-purple-500/10 text-purple-600',
-  shipped: 'bg-indigo-500/10 text-indigo-600',
-  delivered: 'bg-green-500/10 text-green-600',
-  cancelled: 'bg-red-500/10 text-red-600',
+const statusVariant: Record<string, "secondary" | "info" | "success" | "warning" | "destructive"> = {
+  pending: "warning",
+  confirmed: "info",
+  processing: "info",
+  shipped: "info",
+  delivered: "success",
+  cancelled: "destructive",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -127,24 +137,32 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold">Order #{order.orderNumber}</h2>
-            <Badge className={`${statusColors[order.status]} gap-1 px-3 py-1`}>
+            <Badge
+              variant={statusVariant[order.status] || "secondary"}
+              className="gap-1 px-3 py-1 capitalize"
+            >
               {statusIcons[order.status]}
               <span className="capitalize">{order.status}</span>
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
+            Placed on{" "}
+            {new Date(order.createdAt).toLocaleDateString("en-IN", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <span className="text-sm text-muted-foreground">Update Status:</span>
-          <Select value={order.status} onValueChange={(value) => updateStatus(value)} disabled={updateStatusMutation.isPending}>
+          <Select
+            value={order.status}
+            onValueChange={(value) => updateStatus(value)}
+            disabled={updateStatusMutation.isPending}
+          >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Update status" />
             </SelectTrigger>
@@ -186,9 +204,7 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {item.product?.name || 'Product'}
-                      </p>
+                      <p className="font-medium truncate">{item.product?.name || "Product"}</p>
                       <p className="text-sm text-muted-foreground">
                         Qty: {item.qty} × {formatPrice(item.unitPriceCents, order.currency)}
                       </p>
@@ -221,10 +237,14 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
-                <span>{order.amounts.shipping === 0 ? 'Free' : formatPrice(order.amounts.shipping, order.currency)}</span>
+                <span>
+                  {order.amounts.shipping === 0
+                    ? "Free"
+                    : formatPrice(order.amounts.shipping, order.currency)}
+                </span>
               </div>
               {order.amounts.discount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-foreground">
                   <span>Discount</span>
                   <span>-{formatPrice(order.amounts.discount, order.currency)}</span>
                 </div>
@@ -238,9 +258,9 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                 <Badge
                   variant="outline"
                   className={
-                    order.paymentStatus === 'succeeded'
-                      ? 'border-green-500 text-green-600'
-                      : 'border-yellow-500 text-yellow-600'
+                    order.paymentStatus === "succeeded"
+                      ? "border-border/60 text-foreground"
+                      : "border-border/60 text-foreground"
                   }
                 >
                   Payment: {order.paymentStatus}
@@ -266,7 +286,8 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                 <p className="text-muted-foreground">{order.shippingAddress.line2}</p>
               )}
               <p className="text-muted-foreground">
-                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                {order.shippingAddress.postalCode}
               </p>
               <p className="text-muted-foreground">{order.shippingAddress.country}</p>
               {order.shippingAddress.phone && (
@@ -290,7 +311,8 @@ export default function AdminOrderDetail({ storeSlug, orderId }: AdminOrderDetai
                   <p className="text-muted-foreground">{order.billingAddress.line2}</p>
                 )}
                 <p className="text-muted-foreground">
-                  {order.billingAddress.city}, {order.billingAddress.state} {order.billingAddress.postalCode}
+                  {order.billingAddress.city}, {order.billingAddress.state}{" "}
+                  {order.billingAddress.postalCode}
                 </p>
                 <p className="text-muted-foreground">{order.billingAddress.country}</p>
               </CardContent>

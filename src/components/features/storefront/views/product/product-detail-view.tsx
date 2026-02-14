@@ -111,7 +111,7 @@ export default function StorefrontProductView({ store, product }: StorefrontProd
     if (product.sku) {
       specs.push({ label: 'SKU', value: product.sku });
     }
-    specs.push({ label: 'ORIGIN', value: `${store.city}, ${store.country}`.toUpperCase() });
+    specs.push({ label: 'ORIGIN', value: store.name.toUpperCase() });
     return specs;
   };
 

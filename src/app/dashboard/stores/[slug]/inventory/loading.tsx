@@ -10,8 +10,7 @@ export default function Loading() {
       desc="Monitor and manage product stock levels"
       icon={<AlertTriangle />}
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Stores" },
+        { label: "Stores", href: "/dashboard/stores" },
         { label: "Inventory" },
       ]}
       disableAnimation={true}
@@ -20,11 +19,11 @@ export default function Loading() {
         <div className="grid gap-4 md:grid-cols-4">
           {[
             { label: "Total Products" },
-            { label: "Out of Stock", color: "border-red-500/50" },
-            { label: "Low Stock", color: "border-yellow-500/50" },
+            { label: "Out of Stock" },
+            { label: "Low Stock" },
             { label: "Healthy Stock" },
           ].map((stat, i) => (
-            <Card key={i} className={`border-border/40 ${stat.color || ''}`}>
+            <Card key={i} className="border-border/40">
               <CardHeader>
                 <Skeleton className="h-4 w-24 mb-2" />
                 <Skeleton className="h-8 w-16" />
