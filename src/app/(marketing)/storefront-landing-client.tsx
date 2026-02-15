@@ -371,6 +371,8 @@ function LandingMenu() {
       return;
     }
 
+    let ticking = false;
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
@@ -390,8 +392,17 @@ function LandingMenu() {
       lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const scrollListener = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        handleScroll();
+        ticking = false;
+      });
+    };
+
+    window.addEventListener("scroll", scrollListener);
+    return () => window.removeEventListener("scroll", scrollListener);
   }, [isOpen, isMenuVisible, isMobile]);
 
   return (

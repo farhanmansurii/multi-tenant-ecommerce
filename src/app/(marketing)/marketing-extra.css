@@ -75,6 +75,8 @@
 .storefront-scope .lp-hero-line .lp-char {
   display: inline-block;
   will-change: transform;
+  opacity: 0;
+  transform: translateY(110%);
 }
 
 .storefront-scope .lp-hero-accent {
@@ -154,11 +156,13 @@
   overflow: hidden;
   background: var(--base-700);
   position: relative;
+  padding-top: 6.5rem;
+  box-sizing: border-box;
 }
 
 .storefront-scope .lp-cap-heading {
   position: absolute;
-  top: 3.5rem;
+  top: 6.5rem;
   left: 2.5rem;
   z-index: 2;
   will-change: transform, opacity;
@@ -447,7 +451,7 @@
   }
 
   .storefront-scope .lp-cap-heading {
-    top: 2.5rem;
+    top: 4rem;
     left: 1.5rem;
   }
 }
