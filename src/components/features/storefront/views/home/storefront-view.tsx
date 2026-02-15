@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { Loader } from '@/components/shared/common/loader';
-import ProductGrid from '../../components/products/product-grid';
-import { Button } from '@/components/ui/button';
+import { Loader } from "@/components/shared/common/loader";
+import ProductGrid from "../../components/products/product-grid";
+import { Button } from "@/components/ui/button";
 
-import { useCategories } from '@/hooks/use-categories';
-import { useStorefrontStore } from '@/lib/state/storefront/storefront-store';
-import { useStorefrontCustomer } from '@/hooks/use-storefront-customer';
-import { useStoreSettings } from '@/lib/state/store-settings/store-settings-store';
-import { toast } from 'sonner';
-import { fetchStore } from '@/lib/domains/stores/service';
-import { fetchProducts } from '@/lib/domains/products/service';
-import { ProductData } from '@/lib/domains/products';
-import { StoreData } from '@/lib/domains/stores/types';
-import { Category } from '@/lib/db/schema';
-import { useStorefrontFilters } from '@/hooks/use-storefront-filters';
-import StoreFrontContainer from '../../shared/layout/container';
-import StorefrontControls from '../../shared/modules/storefront-controls';
-import { StoreSettings } from '@/lib/state/store-settings/store-settings-slice';
+import { useCategories } from "@/hooks/use-categories";
+import { useStorefrontStore } from "@/lib/state/storefront/storefront-store";
+import { useStorefrontCustomer } from "@/hooks/use-storefront-customer";
+import { useStoreSettings } from "@/lib/state/store-settings/store-settings-store";
+import { toast } from "sonner";
+import { fetchStore } from "@/lib/domains/stores/service";
+import { fetchProducts } from "@/lib/domains/products/service";
+import { ProductData } from "@/lib/domains/products";
+import { StoreData } from "@/lib/domains/stores/types";
+import { Category } from "@/lib/db/schema";
+import { useStorefrontFilters } from "@/hooks/use-storefront-filters";
+import StoreFrontContainer from "../../shared/layout/container";
+import StorefrontControls from "../../shared/modules/storefront-controls";
+import { StoreSettings } from "@/lib/state/store-settings/store-settings-slice";
 
 interface StorefrontViewProps {
   slug: string;
@@ -43,7 +43,7 @@ export default function StorefrontView({
       selectedCategoryId: state.selectedCategoryId,
       setStoreSlug: state.setStoreSlug,
       setSelectedCategoryId: state.setSelectedCategoryId,
-    })
+    }),
   );
 
   const { customerProfile, addWishlistItem } = useStorefrontCustomer();
@@ -56,13 +56,13 @@ export default function StorefrontView({
   }, [setStoreSlug, slug]);
 
   useEffect(() => {
-    const categoryFromQuery = searchParams.get('category');
+    const categoryFromQuery = searchParams.get("category");
     if (categoryFromQuery) setSelectedCategoryId(categoryFromQuery);
   }, [searchParams, setSelectedCategoryId]);
 
   // --- DATA FETCHING ---
   const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ['store', slug],
+    queryKey: ["store", slug],
     queryFn: () => fetchStore(slug),
     initialData: initialStore,
   });
@@ -75,7 +75,7 @@ export default function StorefrontView({
   }, [store, setStoreSettings]);
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: ['products', slug],
+    queryKey: ["products", slug],
     queryFn: () => fetchProducts(slug),
     enabled: !!store,
     initialData: initialProducts,
@@ -85,27 +85,23 @@ export default function StorefrontView({
     initialData: initialCategories,
   });
 
-  const {
-    filtersFromUrl,
-    filteredProducts,
-    updateFilters,
-    hasActiveFilters,
-  } = useStorefrontFilters({
-    products: products as ProductData[],
-    categories,
-    selectedCategoryId,
-    setSelectedCategoryId,
-  });
+  const { filtersFromUrl, filteredProducts, updateFilters, hasActiveFilters } =
+    useStorefrontFilters({
+      products: products as ProductData[],
+      categories,
+      selectedCategoryId,
+      setSelectedCategoryId,
+    });
 
   const handleAddToWishlist = (product: ProductData) => {
     if (!store) return;
     if (!customerProfile || customerProfile.storeSlug !== store.slug) {
-      toast.info('Sign in to wishlist', {
-        action: { label: 'Sign in', onClick: () => router.push(`/stores/${store.slug}/login`) },
+      toast.info("Sign in to wishlist", {
+        action: { label: "Sign in", onClick: () => router.push(`/stores/${store.slug}/login`) },
       });
       return;
     }
-    const wishPrice = Number.parseFloat(product.price ?? '0');
+    const wishPrice = Number.parseFloat(product.price ?? "0");
     addWishlistItem({
       id: `${product.id}-${product.slug}`,
       storeSlug: store.slug,
@@ -116,17 +112,23 @@ export default function StorefrontView({
       image: product.images?.[0]?.url ?? null,
       addedAt: new Date().toISOString(),
     });
-    toast.success('Saved to wishlist');
+    toast.success("Saved to wishlist");
   };
 
-  if (storeLoading || productsLoading || categoriesLoading) return <Loader text="Loading interface..." className="min-h-screen font-mono uppercase" />;
-  if (!store) return <div className="min-h-screen flex items-center justify-center font-mono">STORE NOT FOUND</div>;
+  if (storeLoading || productsLoading || categoriesLoading) {
+    return (
+      <Loader text="Loading interface..." className="min-h-screen font-mono uppercase" size="lg" />
+    );
+  }
+  if (!store)
+    return (
+      <div className="min-h-screen flex items-center justify-center font-mono">STORE NOT FOUND</div>
+    );
 
   const isLandingView = !hasActiveFilters && !filtersFromUrl.search && !hideHero;
 
   return (
     <div id="products" className="min-h-screen bg-background">
-
       {/* Sticky Control Bar */}
       <StorefrontControls
         productCount={filteredProducts.length}
@@ -144,7 +146,9 @@ export default function StorefrontView({
               products={filteredProducts}
               layout="grid"
               title={isLandingView ? "New Arrivals" : undefined}
-              subtitle={isLandingView ? "Explore our latest collection of premium goods." : undefined}
+              subtitle={
+                isLandingView ? "Explore our latest collection of premium goods." : undefined
+              }
               storeSlug={slug}
               storeCurrency={store.currency}
               onAddToWishlist={handleAddToWishlist}
@@ -159,7 +163,15 @@ export default function StorefrontView({
               <Button
                 variant="outline"
                 className="rounded-none uppercase tracking-widest"
-                onClick={() => updateFilters({ search: '', sort: 'relevance', categories: [], priceRange: [0, 100000], inStockOnly: false })}
+                onClick={() =>
+                  updateFilters({
+                    search: "",
+                    sort: "relevance",
+                    categories: [],
+                    priceRange: [0, 100000],
+                    inStockOnly: false,
+                  })
+                }
               >
                 Clear Filters
               </Button>
@@ -167,7 +179,6 @@ export default function StorefrontView({
           )}
         </div>
       </StoreFrontContainer>
-
     </div>
   );
 }

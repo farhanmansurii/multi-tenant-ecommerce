@@ -31,12 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
 import DashboardLayout from "@/components/shared/layout/dashboard-container";
@@ -49,7 +44,13 @@ import { useSessionContext } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 import { cn, formatDate } from "@/lib/utils";
 
-const ViewSwitcher = ({ viewMode, filteredStores }: { viewMode: "grid" | "list"; filteredStores: StoreData[] }) => {
+const ViewSwitcher = ({
+  viewMode,
+  filteredStores,
+}: {
+  viewMode: "grid" | "list";
+  filteredStores: StoreData[];
+}) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevViewMode = useRef<"grid" | "list">(viewMode);
@@ -113,7 +114,7 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
       gsap.fromTo(
         itemRef.current,
         { opacity: 0, y: 4 },
-        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
+        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
       );
     }
   }, []);
@@ -128,55 +129,49 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
     <Link href={`/dashboard/stores/${store.slug}`} className="block">
       <div
         ref={itemRef}
-        className="group flex items-center justify-between p-6 bg-card/50 backdrop-blur-sm border border-border/50 hover:border-border rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 hover:-translate-y-1 cursor-pointer"
+        className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-card/50 backdrop-blur-sm border border-border/50 hover:border-border rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 hover:-translate-y-1 cursor-pointer gap-4"
       >
-        <div className="flex items-center gap-5 min-w-0 flex-1">
+        <div className="flex items-center gap-3 sm:gap-5 min-w-0 flex-1 w-full">
           {store.logo ? (
-            <div className="relative h-14 w-14 rounded-xl overflow-hidden shrink-0 border-2 border-border/50 bg-muted shadow-md group-hover:shadow-lg transition-shadow">
-              <Image
-                src={store.logo}
-                alt={store.name}
-                fill
-                className="object-cover"
-                sizes="56px"
-              />
+            <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl overflow-hidden shrink-0 border-2 border-border/50 bg-muted shadow-md group-hover:shadow-lg transition-shadow">
+              <Image src={store.logo} alt={store.name} fill className="object-cover" sizes="56px" />
             </div>
           ) : (
             <div
-              className="h-14 w-14 rounded-xl flex items-center justify-center shrink-0 border-2 border-border/50 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center shrink-0 border-2 border-border/50 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
               style={{
                 background: store.primaryColor
                   ? `linear-gradient(135deg, ${store.primaryColor}20, ${store.primaryColor}30)`
                   : "hsl(var(--muted))",
-                borderColor: store.primaryColor
-                  ? `${store.primaryColor}40`
-                  : "hsl(var(--border))"
+                borderColor: store.primaryColor ? `${store.primaryColor}40` : "hsl(var(--border))",
               }}
             >
               <Store
-                className="h-7 w-7"
+                className="h-6 w-6 sm:h-7 sm:w-7"
                 style={{ color: store.primaryColor || "hsl(var(--muted-foreground))" }}
               />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 flex-wrap">
+              <h3 className="font-bold text-base sm:text-lg text-foreground truncate group-hover:text-primary transition-colors">
                 {store.name}
               </h3>
               <Badge
                 variant={statusVariant[store.status as keyof typeof statusVariant] || "secondary"}
-                className="text-[10px] px-2.5 py-1 h-5 font-semibold capitalize shadow-sm"
+                className="text-[10px] px-2 sm:px-2.5 py-0.5 sm:py-1 h-4 sm:h-5 font-semibold capitalize shadow-sm"
               >
                 {store.status}
               </Badge>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Globe className="h-3.5 w-3.5 opacity-70" />
-              <span className="font-mono opacity-80">/{store.slug}</span>
-              <span className="opacity-50">•</span>
-              <span>{formatDate(store.createdAt)}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Globe className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-70" />
+                <span className="font-mono opacity-80 text-[11px] sm:text-xs">/{store.slug}</span>
+              </div>
+              <span className="hidden sm:inline opacity-50">•</span>
+              <span className="text-[11px] sm:text-xs">{formatDate(store.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -198,11 +193,11 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <Button
             size="sm"
             variant="outline"
-            className="hidden md:flex rounded-lg h-9 font-medium"
+            className="hidden sm:flex rounded-lg h-9 font-medium"
             onClick={(e) => {
               e.preventDefault();
               window.location.href = `/dashboard/stores/${store.slug}`;
@@ -246,18 +241,23 @@ import { EmptyState } from "@/components/shared/common/empty-state";
 import Image from "next/image";
 
 const MetricsStrip = ({ stores, totalRevenue }: { stores: StoreData[]; totalRevenue: number }) => {
-  const activeCount = stores.filter(s => s.status === "active").length;
+  const activeCount = stores.filter((s) => s.status === "active").length;
   const totalProducts = stores.reduce((acc, s) => acc + (s.productCount || 0), 0);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <MetricCard label="Total Stores" value={stores.length} icon={Store} color="blue" />
       <MetricCard label="Active Stores" value={activeCount} icon={TrendingUp} color="emerald" />
       <MetricCard label="Total Products" value={totalProducts} icon={Package} color="purple" />
-      <MetricCard label="Total Revenue" value={formatCurrency(totalRevenue, "INR")} icon={Sparkles} color="amber" />
+      <MetricCard
+        label="Total Revenue"
+        value={formatCurrency(totalRevenue, "INR")}
+        icon={Sparkles}
+        color="amber"
+      />
     </div>
-  )
-}
+  );
+};
 
 const getGreeting = (name: string) => {
   const hour = new Date().getHours();
@@ -287,15 +287,18 @@ export default function DashboardPageClient() {
 
   const stores: StoreData[] = data?.stores ?? [];
   const totalRevenue = data?.totalRevenue ?? 0;
-  const storeLimit = data ? {
-    count: data.count,
-    limit: data.limit,
-    canCreateMore: data.canCreateMore,
-  } : null;
+  const storeLimit = data
+    ? {
+        count: data.count,
+        limit: data.limit,
+        canCreateMore: data.canCreateMore,
+      }
+    : null;
 
-  const filteredStores = stores.filter(store =>
-    store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    store.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStores = stores.filter(
+    (store) =>
+      store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      store.slug.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (isPending || isLoading) {
@@ -316,7 +319,9 @@ export default function DashboardPageClient() {
           <h1 className="text-3xl font-bold tracking-tight">Welcome to GumroadClone</h1>
           <p className="text-muted-foreground">Sign in to manage your digital empire.</p>
           <Button asChild size="lg" className="w-full rounded-lg">
-            <Link href="/sign-in">Sign In <ArrowRight className="ml-2 w-4 h-4" /></Link>
+            <Link href="/sign-in">
+              Sign In <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
           </Button>
         </div>
       </div>
@@ -340,21 +345,20 @@ export default function DashboardPageClient() {
       }
     >
       <div className="space-y-8">
-
         {stores.length > 0 && <MetricsStrip stores={stores} totalRevenue={totalRevenue} />}
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between">
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search stores by name or slug..."
+              placeholder="Search stores..."
               className="pl-10 h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:bg-background transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-lg border border-border/50 backdrop-blur-sm">
+          <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-lg border border-border/50 backdrop-blur-sm w-full sm:w-auto">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -363,14 +367,14 @@ export default function DashboardPageClient() {
                     size="sm"
                     onClick={() => setViewMode("list")}
                     className={cn(
-                      "h-8 px-3 rounded-md transition-all duration-200",
+                      "h-8 px-3 rounded-md transition-all duration-200 flex-1 sm:flex-none",
                       viewMode === "list"
                         ? "bg-background text-foreground shadow-sm border border-border/50"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                     )}
                   >
-                    <LayoutList className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs font-medium">List</span>
+                    <LayoutList className="h-4 w-4 sm:mr-1.5" />
+                    <span className="text-xs font-medium hidden sm:inline">List</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>List View</TooltipContent>
@@ -382,14 +386,14 @@ export default function DashboardPageClient() {
                     size="sm"
                     onClick={() => setViewMode("grid")}
                     className={cn(
-                      "h-8 px-3 rounded-md transition-all duration-200",
+                      "h-8 px-3 rounded-md transition-all duration-200 flex-1 sm:flex-none",
                       viewMode === "grid"
                         ? "bg-background text-foreground shadow-sm border border-border/50"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                     )}
                   >
-                    <LayoutGrid className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs font-medium">Grid</span>
+                    <LayoutGrid className="h-4 w-4 sm:mr-1.5" />
+                    <span className="text-xs font-medium hidden sm:inline">Grid</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Grid View</TooltipContent>

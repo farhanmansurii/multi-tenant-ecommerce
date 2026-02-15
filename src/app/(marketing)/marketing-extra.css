@@ -1,250 +1,491 @@
-/* Extra marketing-only styling layered on top of storefront-ui scoped CSS. */
+/* ══════════════════════════════════════════════════════════
+   Landing page – redesigned with preloader, menu, dot matrix
+   Same theme tokens, entirely new layout & motion.
+   ══════════════════════════════════════════════════════════ */
 
-.storefront-scope .mkt-nav {
-  position: fixed;
+/* ── ROOT ── */
+.storefront-scope .lp-root {
+  background: var(--base-100);
+  overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.storefront-scope .lp-hero {
+  position: relative;
+  min-height: 100svh;
+  padding-top: 8rem;
+  padding-bottom: 2rem;
+  overflow: hidden;
+}
+
+.storefront-scope .lp-hero-dot-matrix {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 50;
-  padding: 1.25rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  height: 100%;
+  z-index: 0;
   pointer-events: none;
 }
 
-.storefront-scope .mkt-nav .mkt-nav-inner {
-  width: 100%;
-  max-width: 2000px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  pointer-events: auto;
-}
-
-.storefront-scope .mkt-nav a {
-  color: var(--base-700);
-}
-
-.storefront-scope .mkt-nav .mkt-links {
-  display: flex;
-  gap: 1.25rem;
-  align-items: flex-end;
-}
-
-.storefront-scope .mkt-hero {
-  position: relative;
-  width: 100%;
-  min-height: 100svh;
-  overflow: hidden;
-  padding-top: 7.5rem;
-}
-
-.storefront-scope .mkt-hero-grid {
+.storefront-scope .lp-hero-watermark {
   position: absolute;
-  inset: 0;
-  opacity: 0.12;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
   pointer-events: none;
+  z-index: 0;
 }
 
-.storefront-scope .mkt-hero .container {
+.storefront-scope .lp-hero-watermark h1 {
+  font-size: clamp(18rem, 28vw, 42rem);
+  color: var(--base-700);
+  opacity: 0.025;
+  line-height: 0.75;
+  white-space: nowrap;
+}
+
+.storefront-scope .lp-hero-container {
   position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 2rem;
-  align-items: end;
-}
-
-.storefront-scope .mkt-hero-left {
-  grid-column: span 8;
-}
-
-.storefront-scope .mkt-hero-right {
-  grid-column: span 4;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-.storefront-scope .mkt-kicker {
-  display: inline-flex;
-  gap: 0.75rem;
-  align-items: center;
+.storefront-scope .lp-hero-copy {
+  margin-bottom: 3rem;
 }
 
-.storefront-scope .mkt-kicker .dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  background: var(--base-700);
-  border-radius: 999px;
-}
-
-.storefront-scope .mkt-kicker p {
-  color: var(--base-500);
-}
-
-.storefront-scope .mkt-hero h1 {
-  line-height: 0.82;
-}
-
-.storefront-scope .mkt-hero h1 .mkt-accent {
-  color: var(--storefront-accent, #c5f74f);
-}
-
-.storefront-scope .mkt-panel {
-  border: 1px solid rgba(175, 179, 171, 0.35);
-  background: rgba(237, 241, 232, 0.35);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-.storefront-scope .mkt-panel.dark {
-  background: var(--base-700);
-  color: var(--base-100);
-  border-color: rgba(215, 219, 210, 0.2);
-}
-
-.storefront-scope .mkt-panel.dark p,
-.storefront-scope .mkt-panel.dark a,
-.storefront-scope .mkt-panel.dark span {
-  color: var(--base-200);
-}
-
-.storefront-scope .mkt-panel .row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-end;
-}
-
-.storefront-scope .mkt-stack {
-  position: relative;
-  padding: 8rem 0;
-  background: var(--base-700);
-  color: var(--base-100);
-}
-
-.storefront-scope .mkt-stack .container {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 2rem;
-}
-
-.storefront-scope .mkt-stack .mkt-stack-left {
-  grid-column: span 5;
-  position: sticky;
-  top: 6rem;
-  align-self: start;
-  padding-bottom: 2rem;
-}
-
-.storefront-scope .mkt-stack .mkt-stack-left p {
-  color: var(--base-400);
-}
-
-.storefront-scope .mkt-stack .mkt-stack-right {
-  grid-column: span 7;
+.storefront-scope .lp-hero-headline {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-.storefront-scope .mkt-card {
-  border: 1px solid rgba(215, 219, 210, 0.18);
-  background: rgba(15, 15, 15, 0.25);
-  border-radius: 1rem;
-  padding: 1.75rem;
-  transform: translateZ(0);
+.storefront-scope .lp-hero-line {
+  display: block;
+  overflow: hidden;
+  font-family: var(--font-koulen), sans-serif;
+  font-size: clamp(3.5rem, 10vw, 10rem);
+  line-height: 0.9;
+  letter-spacing: clamp(-0.1rem, -0.5vw, -0.2rem);
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.storefront-scope .lp-hero-line .lp-char {
+  display: inline-block;
   will-change: transform;
 }
 
-.storefront-scope .mkt-card:hover {
-  transform: translateY(-4px);
-  transition: 200ms transform ease;
-}
-
-.storefront-scope .mkt-card p {
-  color: var(--base-400);
-}
-
-.storefront-scope .mkt-card .tag {
-  display: inline-flex;
-  gap: 0.5rem;
-  align-items: center;
-  border: 1px solid rgba(215, 219, 210, 0.18);
-  padding: 0.35rem 0.6rem;
-  border-radius: 999px;
-  color: var(--base-300);
-}
-
-.storefront-scope .mkt-card .tag .dot {
-  width: 0.45rem;
-  height: 0.45rem;
+.storefront-scope .lp-hero-accent {
+  width: clamp(4rem, 12vw, 8rem);
+  height: 3px;
   background: var(--storefront-accent, #c5f74f);
-  border-radius: 999px;
+  margin-top: 2rem;
+  transform-origin: left;
+  will-change: transform;
 }
 
-.storefront-scope .mkt-slice {
-  padding: 7rem 0;
-}
-
-.storefront-scope .mkt-slice .container {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
+.storefront-scope .lp-hero-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 2.75rem;
   gap: 2rem;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
-.storefront-scope .mkt-slice .mkt-slice-copy {
-  grid-column: span 5;
+.storefront-scope .lp-hero-ctas {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
-.storefront-scope .mkt-slice .mkt-slice-media {
-  grid-column: span 7;
-  border-radius: 1.25rem;
+.storefront-scope .lp-hero-media {
+  border-radius: 1rem;
   overflow: hidden;
   border: 1px solid rgba(175, 179, 171, 0.35);
   background: var(--base-200);
+  will-change: clip-path;
 }
 
-.storefront-scope .mkt-slice .mkt-slice-media img {
-  transform: scale(1.05);
+.storefront-scope .lp-hero-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ── PLACEHOLDERS ── */
+.storefront-scope .lp-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--base-200);
+  border: 2px dashed rgba(175, 179, 171, 0.4);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.storefront-scope .lp-placeholder--hero {
+  aspect-ratio: 16 / 9;
+  min-height: 320px;
+}
+
+.storefront-scope .lp-placeholder--feature {
+  aspect-ratio: 4 / 3;
+  min-height: 280px;
+}
+
+.storefront-scope .lp-placeholder-label {
+  font-family: var(--font-dm-mono), monospace;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  color: var(--base-500);
+  line-height: 1.5;
+  max-width: 28rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ── HORIZONTAL STRIP ── */
+.storefront-scope .lp-strip {
+  height: 100svh;
+  overflow: hidden;
+  background: var(--base-700);
+  position: relative;
+}
+
+.storefront-scope .lp-cap-heading {
+  position: absolute;
+  top: 3.5rem;
+  left: 2.5rem;
+  z-index: 2;
+  will-change: transform, opacity;
+}
+
+.storefront-scope .lp-strip-track {
+  display: flex;
+  height: 100%;
   will-change: transform;
 }
 
+.storefront-scope .lp-strip-card {
+  flex: 0 0 clamp(18rem, 28vw, 30rem);
+  height: 100svh;
+  padding: 3.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid rgba(215, 219, 210, 0.1);
+}
+
+.storefront-scope .lp-strip-idx {
+  font-family: var(--font-koulen), sans-serif;
+  font-size: clamp(5rem, 7vw, 8rem);
+  line-height: 0.8;
+  color: rgba(237, 241, 232, 0.05);
+  text-transform: uppercase;
+}
+
+.storefront-scope .lp-strip-card h4 {
+  color: var(--base-100);
+}
+
+.storefront-scope .lp-strip-bar {
+  width: 2rem;
+  height: 3px;
+  background: var(--storefront-accent, #c5f74f);
+  border-radius: 2px;
+}
+
+/* ── FEATURES ── */
+.storefront-scope .lp-feat {
+  position: relative;
+  padding: 9rem 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(175, 179, 171, 0.2);
+}
+
+.storefront-scope .lp-feat-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-koulen), sans-serif;
+  font-size: clamp(18rem, 28vw, 38rem);
+  line-height: 0.8;
+  color: var(--base-700);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  text-transform: uppercase;
+}
+
+.storefront-scope .lp-feat-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.storefront-scope .lp-feat--flip .lp-feat-grid {
+  grid-template-columns: 1fr 1.25fr;
+}
+
+.storefront-scope .lp-feat--flip .lp-feat-media {
+  order: 2;
+}
+
+.storefront-scope .lp-feat--flip .lp-feat-copy {
+  order: 1;
+}
+
+.storefront-scope .lp-feat-media {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(175, 179, 171, 0.35);
+  background: var(--base-200);
+  will-change: clip-path;
+}
+
+.storefront-scope .lp-feat-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.storefront-scope .lp-feat-copy {
+  will-change: transform, opacity;
+}
+
+/* ── STATS ── */
+.storefront-scope .lp-stats {
+  background: var(--base-700);
+  padding: 9rem 0;
+  color: var(--base-100);
+  position: relative;
+  overflow: hidden;
+}
+
+.storefront-scope .lp-stats-dot-matrix {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.storefront-scope .lp-stats .container {
+  position: relative;
+  z-index: 1;
+}
+
+.storefront-scope .lp-stats-head {
+  margin-bottom: 4.5rem;
+}
+
+.storefront-scope .lp-stats-head h3 {
+  color: var(--base-100);
+}
+
+.storefront-scope .lp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.storefront-scope .lp-stat {
+  padding: 3.5rem 2rem;
+  border: 1px solid rgba(215, 219, 210, 0.1);
+  border-radius: 0.75rem;
+  will-change: transform, opacity;
+  background: rgba(15, 15, 15, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.storefront-scope .lp-stat h2 {
+  color: var(--storefront-accent, #c5f74f);
+  line-height: 0.85;
+}
+
+.storefront-scope .lp-stat p {
+  color: var(--base-400);
+}
+
+/* ── CTA ── */
+.storefront-scope .lp-cta {
+  padding: 12rem 0;
+}
+
+.storefront-scope .lp-cta-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.storefront-scope .lp-cta-accent {
+  width: 4.5rem;
+  height: 2px;
+  background: var(--storefront-accent, #c5f74f);
+  margin-bottom: 3rem;
+  transform-origin: left;
+  will-change: transform;
+}
+
+.storefront-scope .lp-accent-btn {
+  background: var(--storefront-accent, #c5f74f) !important;
+  color: var(--base-700) !important;
+  padding: 1.25rem 2.25rem !important;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: var(--font-dm-mono), monospace;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: clamp(0.85rem, 1vw, 0.95rem);
+  cursor: pointer;
+  transition: 300ms all ease-in-out;
+}
+
+.storefront-scope .lp-accent-btn:hover {
+  background: var(--base-700) !important;
+  color: var(--base-100) !important;
+}
+
+/* ── FOOTER ── */
+.storefront-scope .lp-footer {
+  border-top: 1px solid rgba(175, 179, 171, 0.35);
+  padding: 4rem 0 2rem;
+}
+
+.storefront-scope .lp-footer .container {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.storefront-scope .lp-footer-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 4rem;
+}
+
+.storefront-scope .lp-footer-cols {
+  display: flex;
+  gap: 6rem;
+}
+
+.storefront-scope .lp-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.storefront-scope .lp-footer-col a {
+  color: var(--base-700);
+  transition: color 200ms ease;
+}
+
+.storefront-scope .lp-footer-col a:hover {
+  color: var(--storefront-accent, #c5f74f);
+}
+
+.storefront-scope .lp-footer-end {
+  border-top: 1px solid rgba(175, 179, 171, 0.35);
+  padding-top: 1.5rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════════════════════════ */
+
 @media (max-width: 1000px) {
-  .storefront-scope .mkt-nav {
-    padding: 1.25rem 1.5rem;
+  .storefront-scope .lp-hero-bottom {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .storefront-scope .mkt-hero .container {
+  .storefront-scope .lp-feat {
+    padding: 6rem 0;
+  }
+
+  .storefront-scope .lp-feat-grid,
+  .storefront-scope .lp-feat--flip .lp-feat-grid {
     grid-template-columns: 1fr;
+    gap: 2.5rem;
   }
 
-  .storefront-scope .mkt-hero-left,
-  .storefront-scope .mkt-hero-right {
-    grid-column: auto;
+  .storefront-scope .lp-feat--flip .lp-feat-media,
+  .storefront-scope .lp-feat--flip .lp-feat-copy {
+    order: unset;
   }
 
-  .storefront-scope .mkt-stack .container {
-    grid-template-columns: 1fr;
+  .storefront-scope .lp-stats {
+    padding: 6rem 0;
   }
 
-  .storefront-scope .mkt-stack .mkt-stack-left,
-  .storefront-scope .mkt-stack .mkt-stack-right {
-    grid-column: auto;
-    position: static;
+  .storefront-scope .lp-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .storefront-scope .mkt-slice .container {
-    grid-template-columns: 1fr;
+  .storefront-scope .lp-footer-main {
+    flex-direction: column;
   }
 
-  .storefront-scope .mkt-slice .mkt-slice-copy,
-  .storefront-scope .mkt-slice .mkt-slice-media {
-    grid-column: auto;
+  .storefront-scope .lp-strip-card {
+    flex: 0 0 20rem;
+  }
+
+  .storefront-scope .lp-cta {
+    padding: 8rem 0;
+  }
+
+  .storefront-scope .lp-cap-heading {
+    top: 2.5rem;
+    left: 1.5rem;
   }
 }
 
+@media (max-width: 600px) {
+  .storefront-scope .lp-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .storefront-scope .lp-footer-cols {
+    gap: 3rem;
+  }
+
+  .storefront-scope .lp-hero-watermark h1 {
+    font-size: 40vw;
+  }
+
+  .storefront-scope .lp-hero {
+    padding-top: 6rem;
+  }
+
+  .storefront-scope .lp-feat {
+    padding: 4rem 0;
+  }
+
+  .storefront-scope .lp-feat-grid {
+    gap: 2rem;
+  }
+
+  .storefront-scope .lp-cta {
+    padding: 6rem 0;
+  }
+
+  .storefront-scope .lp-placeholder--hero {
+    min-height: 200px;
+  }
+
+  .storefront-scope .lp-placeholder--feature {
+    min-height: 180px;
+  }
+}

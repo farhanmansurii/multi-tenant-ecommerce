@@ -40,3 +40,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vscode/extensions.json
+
+# documentation & planning
+docs/
+openspec/
+
+# ai assistant configs
+.logs/
+.claude/
+.cursor/
+.opencode/
+.codex/

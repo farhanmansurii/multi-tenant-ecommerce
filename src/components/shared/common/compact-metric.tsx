@@ -7,14 +7,14 @@ import { cn } from "@/lib/utils";
 type CompactColor = "blue" | "emerald" | "purple" | "amber" | "red" | "yellow" | "green" | "indigo";
 
 const accentPalette: Record<CompactColor, string> = {
-  blue: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  purple: "border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300",
-  amber: "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300",
-  red: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300",
-  yellow: "border-yellow-500/25 bg-yellow-500/10 text-yellow-800 dark:text-yellow-300",
-  green: "border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-300",
-  indigo: "border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+  blue: "border-border/60 bg-muted/40 text-muted-foreground",
+  emerald: "border-border/60 bg-muted/40 text-muted-foreground",
+  purple: "border-border/60 bg-muted/40 text-muted-foreground",
+  amber: "border-border/60 bg-muted/40 text-muted-foreground",
+  red: "border-border/60 bg-muted/40 text-muted-foreground",
+  yellow: "border-border/60 bg-muted/40 text-muted-foreground",
+  green: "border-border/60 bg-muted/40 text-muted-foreground",
+  indigo: "border-border/60 bg-muted/40 text-muted-foreground",
 };
 
 export interface CompactMetricProps {

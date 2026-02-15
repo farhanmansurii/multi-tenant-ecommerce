@@ -1,533 +1,1020 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-
-import Preloader from "@/components/storefront-ui/Preloader/Preloader";
-import DotMatrix from "@/components/storefront-ui/DotMatrix/DotMatrix";
-import MarqueeBanner from "@/components/storefront-ui/MarqueeBanner/MarqueeBanner";
-import TextBlock from "@/components/storefront-ui/TextBlock/TextBlock";
-import PeelReveal from "@/components/storefront-ui/PeelReveal/PeelReveal";
-import ZoomSection from "@/components/storefront-ui/ZoomSection/ZoomSection";
-import Copy from "@/components/storefront-ui/Copy/Copy";
-import BrandIcon from "@/components/storefront-ui/BrandIcon/BrandIcon";
-
-import { ThemeConfigProvider } from "@/components/storefront-ui/storefront/ThemeConfigProvider";
-import type { StorefrontThemeConfig } from "@/components/storefront-ui/storefront/theme-config";
-import { defaultStorefrontContent } from "@/components/storefront-ui/storefront/storefront-content";
-import { StorefrontEditProvider } from "@/components/storefront-ui/edit/StorefrontEditProvider";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
+import { useGSAP } from "@gsap/react";
+import DotMatrix from "@/components/storefront-ui/DotMatrix/DotMatrix";
 
-const MARKETING_SLUG = "__marketing";
+gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
+/* ────────────────────────────────────────────────────────
+   Preloader (adapted from storefront – no useLenis/useThemeConfig)
+   ──────────────────────────────────────────────────────── */
 
-function marketingTheme(): StorefrontThemeConfig {
-  // Use the existing storefront-ui theme system, but swap in platform copy.
-  // Keep the same media paths so the “storefront-ui” look stays consistent.
-  return {
-    name: "Kiosk",
-    slug: MARKETING_SLUG,
-    logoUrl: null,
-    currency: "USD",
-    accentColor: "#C5F74F",
-    shippingEnabled: false,
-    freeShippingThreshold: null,
-    paymentMethods: ["stripe", "cod"],
-    codEnabled: false,
-    contactEmail: "support@kiosk.app",
-    termsOfService: "",
-    privacyPolicy: "",
-    refundPolicy: "",
-    content: {
-      ...defaultStorefrontContent,
-      hero: {
-        ...defaultStorefrontContent.hero,
-        headline: "Kiosk is multi-tenant commerce with isolation by default.",
-        footerLeftLabel: "RLS Tenant Boundary",
-        footerRightLabel: "Draft to Publish",
-      },
-      about: {
-        ...defaultStorefrontContent.about,
-        eyebrow: "Commerce infrastructure with a storefront and a dashboard.",
-        headline:
-          "Run many stores with confidence. Tenant context is set server-side and enforced at the database layer with Postgres RLS.",
-        footerLabel: "/ Platform Core /",
-      },
-      featured: {
-        ...defaultStorefrontContent.featured,
-        eyebrow: "Shipping today",
-        headlineTop: "Storefront",
-        headlineBottom: "And Ops",
-        leftLabel: "Multi-tenant primitives",
-        rightCtaLabel: "Open Dashboard",
-      },
-      zoomSection: {
-        ...defaultStorefrontContent.zoomSection,
-        enabled: true,
-        imageSource: "static",
-        eyebrow: "Draft workflow",
-        headline: "Preview changes. Publish when ready.",
-        body: "Edit your storefront as a draft, see updates instantly, and publish to your live store when it is ready.",
-      },
-      marquee: {
-        ...defaultStorefrontContent.marquee,
-        badge: "[ Multi-Tenant ]",
-        headline: "RLS-backed isolation across stores",
-        line1: "TENANT CONTEXT SET SERVER-SIDE",
-        line2: "ANALYTICS, DISCOUNTS, CUSTOMERS, CHECKOUT",
-      },
-      textBlock: {
-        ...defaultStorefrontContent.textBlock,
-        headline: "Isolation is not a feature. It is a baseline.",
-        paragraphs: [
-          "Every tenant-scoped table can be protected by Row Level Security, keyed off a server-set store context. Your app stays simpler because enforcement lives in the database.",
-          "Ship a premium storefront, then operate with analytics, orders, customers, and discounts. Draft changes, preview them, and publish when you are ready.",
-        ],
-      },
-      peelReveal: {
-        ...defaultStorefrontContent.peelReveal,
-        headerLeft: "Signal type: Tenant",
-        footerStatus: "Status: Isolated",
-        headline: "Data boundaries that do not leak",
-        introLeft: "RLS",
-        introRight: "Context",
-      },
-      cta: {
-        ...defaultStorefrontContent.cta,
-        sideCopy:
-          "Start with a storefront UI that feels intentional, then scale your operations with the merchant dashboard.",
-        headline: "Deploy a storefront. Operate a platform.",
-        buttonLabel: "Sign in",
-      },
-      pdp: {
-        ...defaultStorefrontContent.pdp,
-        addToBagLabel: "Add",
-        saveItemLabel: "Save",
-      },
-    },
-  };
-}
+let isInitialLoad = true;
 
-export default function MarketingStorefrontLandingClient() {
-  const theme = useMemo(() => marketingTheme(), []);
-  const heroMediaRef = useRef<HTMLDivElement | null>(null);
+function LandingPreloader({ onComplete }: { onComplete: () => void }) {
+  const [showPreloader, setShowPreloader] = useState(isInitialLoad);
+  const [loaderAnimating, setLoaderAnimating] = useState(isInitialLoad);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!heroMediaRef.current) return;
+    return () => {
+      isInitialLoad = false;
+    };
+  }, []);
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        heroMediaRef.current,
-        { y: 120, opacity: 0.7 },
-        { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 0.6 }
-      );
+  useEffect(() => {
+    if (loaderAnimating) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [loaderAnimating]);
 
-      gsap.to(heroMediaRef.current, {
-        y: -90,
-        ease: "none",
-        scrollTrigger: {
-          trigger: heroMediaRef.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
-        },
+  useGSAP(
+    () => {
+      if (!showPreloader) return;
+
+      document.fonts.ready.then(() => {
+        const logoSplit = SplitText.create(".preloader-logo h1", {
+          type: "chars",
+          charsClass: "char",
+          mask: "chars",
+        });
+
+        gsap.set(logoSplit.chars, { x: "110%" });
+        gsap.set(".preloader-logo h1", { opacity: 1 });
+
+        function animateProgress(duration = 4.75) {
+          const tl = gsap.timeline();
+          const counterSteps = 5;
+          let currentProgress = 0;
+
+          for (let i = 0; i < counterSteps; i++) {
+            const finalStep = i === counterSteps - 1;
+            const targetProgress = finalStep
+              ? 1
+              : Math.min(currentProgress + Math.random() * 0.3 + 0.1, 0.9);
+            currentProgress = targetProgress;
+
+            tl.to(".preloader-progress-bar", {
+              scaleX: targetProgress,
+              duration: duration / counterSteps,
+              ease: "power2.out",
+            });
+          }
+
+          return tl;
+        }
+
+        const isMobile = window.innerWidth < 1000;
+        const maskScale = isMobile ? 25 : 15;
+
+        const tl = gsap.timeline({
+          delay: 0.5,
+          onComplete: () => {
+            setLoaderAnimating(false);
+            onComplete();
+            setTimeout(() => {
+              setShowPreloader(false);
+            }, 100);
+          },
+        });
+
+        tl.to(logoSplit.chars, {
+          x: "0%",
+          stagger: 0.05,
+          ease: "power4.out",
+          duration: 1,
+        })
+          .add(animateProgress(), "<")
+          .set(".preloader-progress", { backgroundColor: "#fff" })
+          .to(
+            logoSplit.chars,
+            {
+              x: "-110%",
+              stagger: 0.05,
+              duration: 1,
+              ease: "power4.out",
+            },
+            "-=0.5",
+          )
+          .to(
+            ".preloader-progress",
+            {
+              opacity: 0,
+              duration: 0.5,
+              ease: "power3.out",
+            },
+            "-=0.5",
+          )
+          .to(
+            ".preloader-mask",
+            {
+              scale: maskScale,
+              duration: 1.25,
+              ease: "power3.out",
+            },
+            "<",
+          );
       });
+    },
+    { scope: wrapperRef, dependencies: [showPreloader] },
+  );
 
-      gsap.utils.toArray<HTMLElement>(".mkt-card").forEach((el) => {
+  if (!showPreloader) return null;
+
+  return (
+    <div className="preloader-wrapper" ref={wrapperRef}>
+      <div className="preloader-progress">
+        <div className="preloader-progress-bar"></div>
+        <div className="preloader-logo">
+          <h1>Kiosk</h1>
+        </div>
+      </div>
+      <div className="preloader-mask"></div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   Menu (adapted from storefront – no useStoreSlug/useThemeConfig)
+   ──────────────────────────────────────────────────────── */
+
+function LandingMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const menuRef = useRef<HTMLElement>(null);
+  const menuOverlayRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLDivElement>(null);
+  const splitTextsRef = useRef<ReturnType<typeof SplitText.create>[]>([]);
+  const mainLinkSplitsRef = useRef<ReturnType<typeof SplitText.create>[]>([]);
+  const lastScrollY = useRef(0);
+
+  const scrambleText = (elements: Element[], duration = 0.4) => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+
+    elements.forEach((char) => {
+      const originalText = char.textContent;
+      let iterations = 0;
+      const maxIterations = Math.floor(Math.random() * 6) + 3;
+
+      gsap.set(char, { opacity: 1 });
+
+      const scrambleInterval = setInterval(() => {
+        char.textContent = chars[Math.floor(Math.random() * chars.length)];
+        iterations++;
+
+        if (iterations >= maxIterations) {
+          clearInterval(scrambleInterval);
+          char.textContent = originalText;
+        }
+      }, 25);
+
+      setTimeout(() => {
+        clearInterval(scrambleInterval);
+        char.textContent = originalText;
+      }, duration * 1000);
+    });
+  };
+
+  const openMenu = () => {
+    setIsOpen(true);
+    setIsAnimating(true);
+
+    if (hamburgerRef.current) {
+      hamburgerRef.current.classList.add("open");
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => setIsAnimating(false),
+    });
+
+    tl.to(menuOverlayRef.current, {
+      duration: 0.75,
+      scaleY: 1,
+      ease: "power4.out",
+    });
+
+    const allWords = mainLinkSplitsRef.current.reduce(
+      (acc: Element[], split) => acc.concat(split.words),
+      [],
+    );
+
+    tl.to(
+      allWords,
+      {
+        duration: 0.75,
+        yPercent: 0,
+        stagger: 0.1,
+        ease: "power4.out",
+      },
+      "-=0.5",
+    );
+
+    const subCols = menuOverlayRef.current?.querySelectorAll(".menu-overlay-sub-col") ?? [];
+    subCols.forEach((col) => {
+      const links = col.querySelectorAll(".menu-sub-links a");
+      tl.to(
+        links,
+        {
+          duration: 0.75,
+          y: 0,
+          opacity: 1,
+          stagger: 0.05,
+          ease: "power4.out",
+        },
+        "<",
+      );
+    });
+
+    tl.add(() => {
+      splitTextsRef.current.forEach((split) => {
+        split.chars.forEach((char: Element, index: number) => {
+          setTimeout(() => {
+            scrambleText([char], 0.4);
+          }, index * 30);
+        });
+      });
+    }, "<");
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    setIsAnimating(true);
+
+    if (hamburgerRef.current) {
+      hamburgerRef.current.classList.remove("open");
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => setIsAnimating(false),
+    });
+
+    tl.add(() => {
+      const allChars = splitTextsRef.current.reduce(
+        (acc: Element[], split) => acc.concat(split.chars),
+        [],
+      );
+      gsap.to(allChars, { opacity: 0, duration: 0.2 });
+    });
+
+    const subCols = menuOverlayRef.current?.querySelectorAll(".menu-overlay-sub-col") ?? [];
+    subCols.forEach((col) => {
+      const links = col.querySelectorAll(".menu-sub-links a");
+      tl.to(
+        links,
+        {
+          duration: 0.3,
+          y: 50,
+          opacity: 0,
+          stagger: -0.05,
+          ease: "power3.in",
+        },
+        "<",
+      );
+    });
+
+    const allWords = mainLinkSplitsRef.current.reduce(
+      (acc: Element[], split) => acc.concat(split.words),
+      [],
+    );
+
+    tl.to(
+      allWords,
+      {
+        duration: 0.3,
+        yPercent: 120,
+        stagger: -0.05,
+        ease: "power3.in",
+      },
+      "<",
+    );
+
+    tl.to(
+      menuOverlayRef.current,
+      {
+        duration: 0.5,
+        scaleY: 0,
+        ease: "power3.inOut",
+      },
+      "-=0.1",
+    );
+  };
+
+  const toggleMenu = () => {
+    if (isAnimating) return;
+    if (isOpen) closeMenu();
+    else openMenu();
+  };
+
+  const handleLinkClick = () => {
+    if (isOpen) {
+      setTimeout(() => closeMenu(), 500);
+    }
+  };
+
+  useEffect(() => {
+    if (!menuOverlayRef.current) return;
+
+    gsap.set(menuOverlayRef.current, {
+      scaleY: 0,
+      transformOrigin: "top center",
+    });
+
+    const scrambleElements = menuOverlayRef.current.querySelectorAll(
+      ".menu-items-header p, .menu-social a",
+    );
+
+    splitTextsRef.current = [];
+    scrambleElements.forEach((element) => {
+      const split = SplitText.create(element, { type: "chars" });
+      splitTextsRef.current.push(split);
+      gsap.set(split.chars, { opacity: 0 });
+    });
+
+    const mainLinks = menuOverlayRef.current.querySelectorAll(".menu-main-link h4");
+    mainLinkSplitsRef.current = [];
+    mainLinks.forEach((element) => {
+      const split = SplitText.create(element, {
+        type: "words",
+        mask: "words",
+      });
+      mainLinkSplitsRef.current.push(split);
+      gsap.set(split.words, { yPercent: 120 });
+    });
+
+    const subLinks = menuOverlayRef.current.querySelectorAll(".menu-sub-links a");
+    gsap.set(subLinks, { y: 50, opacity: 0 });
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1000);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      if (menuRef.current && !isMenuVisible) {
+        menuRef.current.classList.remove("hidden");
+        setIsMenuVisible(true);
+      }
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        if (isOpen) closeMenu();
+        if (isMenuVisible && menuRef.current) {
+          menuRef.current.classList.add("hidden");
+          setIsMenuVisible(false);
+        }
+      } else if (currentScrollY < lastScrollY.current) {
+        if (!isMenuVisible && menuRef.current) {
+          menuRef.current.classList.remove("hidden");
+          setIsMenuVisible(true);
+        }
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isOpen, isMenuVisible, isMobile]);
+
+  return (
+    <nav className="menu" ref={menuRef}>
+      <div className="menu-header" onClick={toggleMenu}>
+        <h4 className="menu-logo">Kiosk</h4>
+        <button className="menu-toggle" aria-label="Toggle menu">
+          <div className="menu-hamburger-icon" ref={hamburgerRef}>
+            <span className="menu-item"></span>
+            <span className="menu-item"></span>
+          </div>
+        </button>
+      </div>
+
+      <div className="menu-overlay" ref={menuOverlayRef}>
+        <div className="menu-overlay-items">
+          <div className="menu-overlay-col menu-overlay-col-sm">
+            <div className="menu-items-header">
+              <p>Navigation</p>
+            </div>
+            <div className="menu-main-links">
+              <Link href="/" className="menu-main-link" onClick={handleLinkClick}>
+                <h4>Home</h4>
+              </Link>
+              <Link href="/dashboard" className="menu-main-link" onClick={handleLinkClick}>
+                <h4>Dashboard</h4>
+              </Link>
+              <Link href="/sign-in" className="menu-main-link" onClick={handleLinkClick}>
+                <h4>Get Started</h4>
+              </Link>
+            </div>
+          </div>
+          <div className="menu-overlay-col menu-overlay-col-lg">
+            <div className="menu-overlay-sub-col">
+              <div className="menu-items-header">
+                <p>Platform</p>
+              </div>
+              <div className="menu-sub-links">
+                <a href="#capabilities" onClick={handleLinkClick}>
+                  Capabilities
+                </a>
+                <a href="#features" onClick={handleLinkClick}>
+                  Features
+                </a>
+                <a href="#numbers" onClick={handleLinkClick}>
+                  Numbers
+                </a>
+              </div>
+            </div>
+            <div className="menu-overlay-sub-col">
+              <div className="menu-items-header">
+                <p>Resources</p>
+              </div>
+              <div className="menu-sub-links menu-product-links">
+                <Link href="/dashboard" onClick={handleLinkClick}>
+                  Merchant Dashboard
+                </Link>
+                <Link href="/sign-in" onClick={handleLinkClick}>
+                  Sign In
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="menu-overlay-footer">
+          <div className="menu-social">
+            <a href="#features" onClick={handleLinkClick}>
+              Features
+            </a>
+          </div>
+          <div className="menu-social">
+            <a href="#numbers" onClick={handleLinkClick}>
+              Numbers
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   Scroll counter – counts up when scrolled into view
+   ──────────────────────────────────────────────────────── */
+
+function ScrollCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const counted = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !counted.current) {
+          counted.current = true;
+          const obj = { val: 0 };
+          gsap.to(obj, {
+            val: target,
+            duration: 1.8,
+            ease: "power2.out",
+            onUpdate: () => {
+              el.textContent = Math.round(obj.val) + suffix;
+            },
+          });
+        }
+      },
+      { threshold: 0.3 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, suffix]);
+
+  return <span ref={ref}>0{suffix}</span>;
+}
+
+/* ────────────────────────────────────────────────────────
+   Data
+   ──────────────────────────────────────────────────────── */
+
+const STRIP_ITEMS = [
+  {
+    title: "ROW LEVEL SECURITY",
+    desc: "Database-enforced tenant boundaries on every query",
+  },
+  {
+    title: "ANALYTICS",
+    desc: "Revenue, conversions, and growth metrics in real time",
+  },
+  {
+    title: "STOREFRONT",
+    desc: "Cart, checkout, wishlists, and customer accounts",
+  },
+  {
+    title: "DISCOUNTS",
+    desc: "Codes, percentage off, fixed amount, usage limits",
+  },
+  {
+    title: "ORDERS",
+    desc: "Full lifecycle tracking from pending to delivered",
+  },
+  {
+    title: "CUSTOMERS",
+    desc: "Profiles, purchase history, and segmentation",
+  },
+  {
+    title: "PAYMENTS",
+    desc: "Stripe, PayPal, UPI, COD, and bank transfer",
+  },
+  {
+    title: "INVENTORY",
+    desc: "Real-time stock tracking with variant support",
+  },
+];
+
+const FEATURES = [
+  {
+    num: "01",
+    title: "TENANT ISOLATION",
+    body: "Row Level Security at the database layer. Every query scoped to the active store. Every table protected. Zero data leakage between tenants.",
+    placeholder: "Screenshot of Postgres RLS policy configuration or database security diagram",
+  },
+  {
+    num: "02",
+    title: "MERCHANT DASHBOARD",
+    body: "Revenue analytics, order management, customer profiles, discount engine, and inventory tracking. Everything a merchant needs in one interface.",
+    placeholder:
+      "Screenshot of the merchant dashboard showing analytics overview with charts and metrics",
+  },
+  {
+    num: "03",
+    title: "STOREFRONT ENGINE",
+    body: "A premium customer-facing shopping experience with cart management, multi-step checkout, wishlists, saved addresses, and account management.",
+    placeholder: "Screenshot of a live storefront product page with cart and checkout flow",
+  },
+];
+
+const STATS = [
+  { value: 100, suffix: "%", label: "TENANT ISOLATED" },
+  { value: 6, suffix: "+", label: "PAYMENT GATEWAYS" },
+  { value: 12, suffix: "+", label: "API ENDPOINTS" },
+  { value: 0, suffix: "", label: "VENDOR LOCK-IN", display: "ZERO" },
+];
+
+/* ────────────────────────────────────────────────────────
+   Component
+   ──────────────────────────────────────────────────────── */
+
+export default function MarketingStorefrontLandingClient() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [preloaderDone, setPreloaderDone] = useState(!isInitialLoad);
+
+  useGSAP(
+    () => {
+      if (!preloaderDone) return;
+
+      /* 1 ── Hero headline: masked char reveal with SplitText ── */
+      document.fonts.ready.then(() => {
+        const heroLines = document.querySelectorAll(".lp-hero-line");
+        heroLines.forEach((line, lineIdx) => {
+          const split = SplitText.create(line, {
+            type: "chars",
+            charsClass: "lp-char",
+            mask: "chars",
+          });
+
+          gsap.fromTo(
+            split.chars,
+            { yPercent: 110 },
+            {
+              yPercent: 0,
+              duration: 1.2,
+              ease: "expo.out",
+              stagger: 0.03,
+              delay: 0.15 + lineIdx * 0.18,
+            },
+          );
+        });
+
+        /* 2 ── Hero subtitle + CTAs fade-up ── */
         gsap.fromTo(
-          el,
-          { y: 40, opacity: 0 },
+          ".lp-sub",
+          { y: 50, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 0.7,
+            duration: 1,
             ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 85%" },
-          }
+            delay: 0.9,
+          },
+        );
+
+        /* 3 ── Hero media – diagonal wipe ── */
+        gsap.fromTo(
+          ".lp-hero-media",
+          { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" },
+          {
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            duration: 1.4,
+            ease: "power4.inOut",
+            delay: 0.7,
+          },
+        );
+
+        /* Accent line under hero */
+        gsap.fromTo(
+          ".lp-hero-accent",
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            duration: 1.6,
+            ease: "power4.inOut",
+            delay: 1.1,
+          },
         );
       });
 
-      gsap.utils.toArray<HTMLElement>(".mkt-slice-media img").forEach((img) => {
-        gsap.to(img, {
-          scale: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: img,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true,
+      /* 4 ── Capabilities section heading reveal ── */
+      const capHead = document.querySelector(".lp-cap-heading");
+      if (capHead) {
+        gsap.fromTo(
+          capHead,
+          { y: 60, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: { trigger: capHead, start: "top 85%" },
           },
-        });
-      });
-    });
+        );
+      }
 
-    return () => ctx.revert();
-  }, []);
+      /* 5 ── Horizontal scroll strip (pinned) ── */
+      const stripTrack = document.querySelector(".lp-strip-track") as HTMLElement | null;
+      if (stripTrack) {
+        const scrollAmount = stripTrack.scrollWidth - window.innerWidth;
+        if (scrollAmount > 0) {
+          gsap.to(".lp-strip-track", {
+            x: -scrollAmount,
+            ease: "none",
+            scrollTrigger: {
+              trigger: ".lp-strip",
+              start: "top top",
+              end: () => `+=${scrollAmount}`,
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+            },
+          });
+        }
+      }
+
+      /* 6 ── Feature sections ── */
+      document.querySelectorAll(".lp-feat").forEach((section) => {
+        const bgNum = section.querySelector(".lp-feat-bg");
+        const media = section.querySelector(".lp-feat-media");
+        const textChildren = section.querySelector(".lp-feat-copy")?.children;
+
+        if (bgNum) {
+          gsap.fromTo(
+            bgNum,
+            { scale: 0.6, opacity: 0 },
+            {
+              scale: 1,
+              opacity: 0.04,
+              duration: 1.2,
+              ease: "power2.out",
+              scrollTrigger: { trigger: section, start: "top 75%" },
+            },
+          );
+        }
+
+        if (media) {
+          gsap.fromTo(
+            media,
+            { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" },
+            {
+              clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+              duration: 1.2,
+              ease: "power3.inOut",
+              scrollTrigger: { trigger: section, start: "top 65%" },
+            },
+          );
+        }
+
+        if (textChildren) {
+          gsap.fromTo(
+            textChildren,
+            { y: 40, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.9,
+              ease: "power3.out",
+              stagger: 0.12,
+              scrollTrigger: { trigger: section, start: "top 65%" },
+            },
+          );
+        }
+      });
+
+      /* 7 ── Stats – scale + rotate reveal ── */
+      document.querySelectorAll(".lp-stat").forEach((stat, i) => {
+        gsap.fromTo(
+          stat,
+          { scale: 0.8, opacity: 0, rotate: i % 2 === 0 ? -4 : 4 },
+          {
+            scale: 1,
+            opacity: 1,
+            rotate: 0,
+            duration: 0.9,
+            ease: "back.out(1.4)",
+            scrollTrigger: { trigger: stat, start: "top 85%" },
+          },
+        );
+      });
+
+      /* 8 ── CTA – line draw + heading rise ── */
+      gsap.fromTo(
+        ".lp-cta-accent",
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          duration: 1.3,
+          ease: "power4.inOut",
+          scrollTrigger: { trigger: ".lp-cta-accent", start: "top 80%" },
+        },
+      );
+
+      gsap.fromTo(
+        ".lp-cta-content h2",
+        { y: 80, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 1.1,
+          ease: "expo.out",
+          scrollTrigger: { trigger: ".lp-cta-content h2", start: "top 85%" },
+        },
+      );
+    },
+    { scope: rootRef, dependencies: [preloaderDone] },
+  );
+
+  /* ── Render ── */
 
   return (
-    <StorefrontEditProvider slug={MARKETING_SLUG} initialOverrides={{}}>
-      <ThemeConfigProvider value={theme}>
-        <Preloader />
+    <div ref={rootRef} className="lp-root">
+      {/* ── PRELOADER ── */}
+      <LandingPreloader onComplete={() => setPreloaderDone(true)} />
 
-        <div className="mkt-nav">
-          <div className="mkt-nav-inner">
-            <Copy type="flicker" animateOnScroll={false} delay={2.25}>
-              <p className="md">Kiosk</p>
-            </Copy>
-            <div className="mkt-links">
-              <Copy type="flicker" animateOnScroll={false} delay={2.3}>
-                <a href="#stack">
-                  <span className="md">Stack</span>
-                </a>
-              </Copy>
-              <Copy type="flicker" animateOnScroll={false} delay={2.35}>
-                <a href="#motion">
-                  <span className="md">Motion</span>
-                </a>
-              </Copy>
-              <Copy type="flicker" animateOnScroll={false} delay={2.4}>
-                <Link href="/dashboard">
-                  <span className="md">Dashboard</span>
-                </Link>
-              </Copy>
-              <Copy type="flicker" animateOnScroll={false} delay={2.45}>
-                <Link href="/sign-in">
-                  <span className="md">Sign in</span>
-                </Link>
-              </Copy>
-            </div>
-          </div>
+      {/* ── MENU ── */}
+      <LandingMenu />
+
+      {/* ── HERO ── */}
+      <section className="lp-hero">
+        <div className="lp-hero-dot-matrix">
+          <DotMatrix
+            color="#c5f74f"
+            delay={0}
+            speed={0.01}
+            dotSize={2}
+            spacing={5}
+            opacity={0.35}
+          />
         </div>
 
-        <section className="mkt-hero" id="top">
-          <div className="mkt-hero-grid" aria-hidden="true">
-            <DotMatrix color="#969992" dotSize={2} spacing={5} opacity={0.9} delay={2.6} />
-          </div>
+        <div className="lp-hero-watermark" aria-hidden="true">
+          <h1>KIOSK</h1>
+        </div>
 
-          <div className="container">
-            <div className="mkt-hero-left">
-              <div className="mkt-kicker">
-                <span className="dot" />
-                <Copy type="flicker" animateOnScroll={false} delay={2.65}>
-                  <p className="md">Multi-tenant commerce, brutal by design</p>
-                </Copy>
-              </div>
+        <div className="container lp-hero-container">
+          <div className="lp-hero-copy">
+            <div className="lp-hero-headline">
+              <h1 className="lp-hero-line">MULTI-TENANT</h1>
+              <h1 className="lp-hero-line">COMMERCE,</h1>
+              <h1 className="lp-hero-line">BUILT DIFFERENT.</h1>
+            </div>
 
-              <Copy animateOnScroll={false} delay={2.2}>
-                <h1>
-                  ISOLATE <span className="mkt-accent">TENANTS</span>
-                  <br />
-                  SHIP STORES
-                  <br />
-                  OPERATE FAST
-                </h1>
-              </Copy>
+            <div className="lp-hero-accent" style={{ transform: "scaleX(0)" }} />
 
-              <div style={{ marginTop: "2.25rem", maxWidth: "52rem" }}>
-                <Copy>
-                  <p className="bodyCopy lg">
-                    Kiosk is a multi-tenant commerce stack with a premium storefront UI and an
-                    operations dashboard: analytics, orders, customers, and discounts. Isolation is
-                    enforced at the database layer with Postgres RLS.
-                  </p>
-                </Copy>
-              </div>
-
-              <div style={{ marginTop: "2.25rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <Copy type="flicker">
+            <div className="lp-sub" style={{ opacity: 0 }}>
+              <div className="lp-hero-bottom">
+                <p className="bodyCopy lg" style={{ maxWidth: "36rem", color: "var(--base-500)" }}>
+                  Launch isolated storefronts with Postgres RLS, a merchant dashboard for analytics
+                  and operations, and a premium customer experience out of the box.
+                </p>
+                <div className="lp-hero-ctas">
                   <Link href="/dashboard">
                     <button className="primary">Open dashboard</button>
                   </Link>
-                </Copy>
-                <Copy type="flicker">
                   <Link href="/sign-in">
                     <button className="secondary">Sign in</button>
                   </Link>
-                </Copy>
-                <Copy type="flicker">
-                  <a href="#stack">
-                    <button>See the stack</button>
-                  </a>
-                </Copy>
-              </div>
-            </div>
-
-            <div className="mkt-hero-right">
-              <div className="mkt-panel dark">
-                <div className="row">
-                  <Copy type="flicker">
-                    <p className="md">TENANCY</p>
-                  </Copy>
-                  <Copy type="flicker">
-                    <p className="md">ACTIVE</p>
-                  </Copy>
                 </div>
-                <Copy>
-                  <p className="bodyCopy md" style={{ marginTop: "0.9rem" }}>
-                    Tenant context is resolved from subdomain or slug routing, then enforced via
-                    RLS policies. No “best effort” filters.
-                  </p>
-                </Copy>
-              </div>
-
-              <div className="mkt-panel">
-                <div className="row">
-                  <Copy type="flicker">
-                    <p className="md">WORKFLOW</p>
-                  </Copy>
-                  <Copy type="flicker">
-                    <p className="md">DRAFT</p>
-                  </Copy>
-                </div>
-                <Copy>
-                  <p className="bodyCopy md" style={{ marginTop: "0.9rem" }}>
-                    Draft, preview, publish. Iterate fast without breaking a live store.
-                  </p>
-                </Copy>
-              </div>
-
-              <div className="mkt-panel">
-                <div className="row">
-                  <Copy type="flicker">
-                    <p className="md">OPS</p>
-                  </Copy>
-                  <Copy type="flicker">
-                    <p className="md">LIVE</p>
-                  </Copy>
-                </div>
-                <Copy>
-                  <p className="bodyCopy md" style={{ marginTop: "0.9rem" }}>
-                    Analytics, orders, customers, discounts, and inventory controls.
-                  </p>
-                </Copy>
               </div>
             </div>
           </div>
 
-          <div className="hero-img" ref={heroMediaRef}>
-            <img src={theme.content.hero.imageUrl} alt="" />
-          </div>
-
-          <div className="section-footer">
-            <Copy type="flicker" delay={3.6} animateOnScroll={false}>
-              <p>{theme.content.hero.footerLeftLabel}</p>
-            </Copy>
-            <Copy type="flicker" delay={3.6} animateOnScroll={false}>
-              <p>{theme.content.hero.footerRightLabel}</p>
-            </Copy>
-          </div>
-        </section>
-
-        <section className="mkt-stack" id="stack">
-          <div className="container">
-            <div className="mkt-stack-left">
-              <Copy type="flicker">
-                <p className="md">STACK</p>
-              </Copy>
-              <Copy>
-                <h3>
-                  {theme.content.featured.headlineTop} <br /> {theme.content.featured.headlineBottom}
-                </h3>
-              </Copy>
-              <div style={{ marginTop: "1.75rem" }}>
-                <Copy>
-                  <p className="bodyCopy md">
-                    A platform workflow: isolate data at the DB layer, ship a storefront UI, then
-                    run operations from the dashboard.
-                  </p>
-                </Copy>
-              </div>
-              <div style={{ marginTop: "1.75rem" }}>
-                <Copy type="flicker">
-                  <p>{theme.content.featured.leftLabel}</p>
-                </Copy>
-              </div>
-            </div>
-
-            <div className="mkt-stack-right">
-              {[
-                {
-                  tag: "TENANCY",
-                  title: "RLS-backed isolation",
-                  body: "Every tenant-scoped table is protected by policies keyed off a server-set store context.",
-                },
-                {
-                  tag: "PUBLISHING",
-                  title: "Draft, preview, publish",
-                  body: "Edit storefront content as a draft, preview changes live, and publish when ready.",
-                },
-                {
-                  tag: "OPS",
-                  title: "Analytics and tooling",
-                  body: "Revenue, activity, orders, customers, and discounts. Tight feedback loops for commerce.",
-                },
-                {
-                  tag: "ROUTING",
-                  title: "Slug or subdomain",
-                  body: "Tenant context can resolve from subdomain or /stores/{slug}, keeping tenancy flexible.",
-                },
-              ].map((x) => (
-                <div key={x.title} className="mkt-card">
-                  <Copy type="flicker">
-                    <span className="tag">
-                      <span className="dot" />
-                      {x.tag}
-                    </span>
-                  </Copy>
-                  <div style={{ marginTop: "1.25rem" }}>
-                    <Copy>
-                      <h4>{x.title}</h4>
-                    </Copy>
-                  </div>
-                  <div style={{ marginTop: "0.9rem" }}>
-                    <Copy>
-                      <p className="bodyCopy md">{x.body}</p>
-                    </Copy>
-                  </div>
-                </div>
-              ))}
+          <div className="lp-hero-media" style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}>
+            <div className="lp-placeholder lp-placeholder--hero">
+              <span className="lp-placeholder-label">
+                Hero image — Full-width screenshot of the merchant dashboard overview showing
+                revenue charts, recent orders, and store metrics
+              </span>
             </div>
           </div>
-        </section>
-
-        <ZoomSection
-          imageUrl={theme.content.zoomSection.imageUrl}
-          eyebrow={theme.content.zoomSection.eyebrow}
-          headline={theme.content.zoomSection.headline}
-          body={theme.content.zoomSection.body}
-        />
-
-        <div id="motion">
-          <MarqueeBanner />
         </div>
+      </section>
 
-        <section className="mkt-slice">
-          <div className="container">
-            <div className="mkt-slice-copy">
-              <Copy type="flicker">
-                <p className="md">STORE UI</p>
-              </Copy>
-              <Copy>
-                <h3>Brutal, kinetic, and editable.</h3>
-              </Copy>
-              <div style={{ marginTop: "1.25rem" }}>
-                <Copy>
-                  <p className="bodyCopy md">
-                    Keep the storefront aesthetic consistent while you change the words, images,
-                    and modules. Motion is intentional, not decorative.
+      {/* ── CAPABILITIES – HORIZONTAL STRIP ── */}
+      <section className="lp-strip" id="capabilities">
+        <div className="lp-cap-heading">
+          <p className="md" style={{ color: "var(--storefront-accent, #c5f74f)" }}>
+            WHAT&apos;S INSIDE
+          </p>
+          <h3 style={{ marginTop: "0.75rem", color: "var(--base-100)" }}>
+            PLATFORM
+            <br />
+            CAPABILITIES
+          </h3>
+        </div>
+        <div className="lp-strip-track">
+          {STRIP_ITEMS.map((item, i) => (
+            <div key={item.title} className="lp-strip-card">
+              <span className="lp-strip-idx">{String(i + 1).padStart(2, "0")}</span>
+              <div className="lp-strip-body">
+                <h4>{item.title}</h4>
+                <p className="bodyCopy" style={{ marginTop: "0.75rem", color: "var(--base-400)" }}>
+                  {item.desc}
+                </p>
+              </div>
+              <div className="lp-strip-bar" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <div id="features">
+        {FEATURES.map((feat, i) => (
+          <section key={feat.num} className={`lp-feat ${i % 2 !== 0 ? "lp-feat--flip" : ""}`}>
+            <div className="container">
+              <span className="lp-feat-bg" aria-hidden="true">
+                {feat.num}
+              </span>
+              <div className="lp-feat-grid">
+                <div className="lp-feat-media">
+                  <div className="lp-placeholder lp-placeholder--feature">
+                    <span className="lp-placeholder-label">{feat.placeholder}</span>
+                  </div>
+                </div>
+                <div className="lp-feat-copy">
+                  <p className="md" style={{ color: "var(--storefront-accent, #c5f74f)" }}>
+                    {feat.num}
                   </p>
-                </Copy>
-              </div>
-              <div style={{ marginTop: "1.75rem" }}>
-                <Copy type="flicker">
-                  <a href="#start">
-                    <button className="primary">Start</button>
-                  </a>
-                </Copy>
-              </div>
-            </div>
-            <div className="mkt-slice-media">
-              <img src="/storefront/lookbook/lookbook_img_02.jpg" alt="" />
-            </div>
-          </div>
-        </section>
-
-        <TextBlock />
-        <PeelReveal />
-
-        <section className="cta" id="start">
-          <div className="container">
-            <div className="cta-col">
-              <Copy type="flicker">
-                <p>{theme.content.cta.sideCopy}</p>
-              </Copy>
-              <div className="cta-side-img">
-                <img src={theme.content.cta.sideImageLeftUrl} alt="" />
-              </div>
-            </div>
-
-            <div className="cta-col">
-              <div className="cta-header">
-                <Copy type="flicker">
-                  <p className="md">Start</p>
-                </Copy>
-                <Copy>
-                  <h3>{theme.content.cta.headline}</h3>
-                </Copy>
-              </div>
-              <div className="cta-main-img">
-                <img src={theme.content.cta.mainImageUrl} alt="" />
-              </div>
-              <div className="btn">
-                <Link href="/sign-in">
-                  <span>{theme.content.cta.buttonLabel}</span>
-                </Link>
-              </div>
-            </div>
-
-            <div className="cta-col">
-              <div className="cta-side-img">
-                <img src={theme.content.cta.sideImageRightUrl} alt="" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <footer>
-          <div className="container">
-            <div className="footer-row">
-              <div className="footer-col">
-                <div className="footer-col-header">
-                  <Copy type="flicker">
-                    <p>Kiosk</p>
-                  </Copy>
-                </div>
-                <div className="footer-col-links">
-                  <Copy type="flicker">
-                    <Link href="/dashboard">Dashboard</Link>
-                  </Copy>
-                  <Copy type="flicker">
-                    <Link href="/sign-in">Sign in</Link>
-                  </Copy>
-                </div>
-              </div>
-
-              <div className="footer-col">
-                <div className="footer-col-header">
-                  <Copy type="flicker">
-                    <p>Product</p>
-                  </Copy>
-                </div>
-                <div className="footer-col-links">
-                  <Copy type="flicker">
-                    <a href="#features">Features</a>
-                  </Copy>
-                  <Copy type="flicker">
-                    <a href="#start">Start</a>
-                  </Copy>
-                </div>
-              </div>
-            </div>
-
-            <div className="footer-row">
-              <div className="footer-copyright">
-                <Copy type="flicker">
-                  <p>© {new Date().getFullYear()} Kiosk</p>
-                </Copy>
-                <Copy type="flicker">
-                  <p className="bodyCopy">
-                    Multi-tenant commerce. Tenant isolation by design.
+                  <h3 style={{ marginTop: "0.75rem" }}>{feat.title}</h3>
+                  <p
+                    className="bodyCopy lg"
+                    style={{
+                      marginTop: "1.5rem",
+                      color: "var(--base-400)",
+                    }}
+                  >
+                    {feat.body}
                   </p>
-                </Copy>
+                  <div style={{ marginTop: "2rem" }}>
+                    <Link href="/dashboard">
+                      <button className="primary">Explore</button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* ── STATS ── */}
+      <section className="lp-stats" id="numbers">
+        <div className="lp-stats-dot-matrix">
+          <DotMatrix
+            color="#c5f74f"
+            delay={0.5}
+            speed={0.008}
+            dotSize={2}
+            spacing={6}
+            opacity={0.15}
+          />
+        </div>
+        <div className="container">
+          <div className="lp-stats-head">
+            <p className="md" style={{ color: "var(--storefront-accent, #c5f74f)" }}>
+              BY THE NUMBERS
+            </p>
+            <h3 style={{ marginTop: "0.75rem" }}>
+              WHAT SHIPS
+              <br />
+              OUT OF THE BOX
+            </h3>
+          </div>
+          <div className="lp-stats-grid">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="lp-stat">
+                <h2>
+                  {stat.display ? (
+                    stat.display
+                  ) : (
+                    <ScrollCounter target={stat.value} suffix={stat.suffix} />
+                  )}
+                </h2>
+                <p className="md" style={{ marginTop: "1rem" }}>
+                  {stat.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="lp-cta">
+        <div className="container lp-cta-content">
+          <div className="lp-cta-accent" />
+          <h2>START BUILDING</h2>
+          <p
+            className="bodyCopy lg"
+            style={{
+              marginTop: "1.75rem",
+              maxWidth: "34rem",
+              color: "var(--base-400)",
+            }}
+          >
+            Spin up a store, configure your catalog, and go live. Tenant isolation is handled for
+            you at the database layer.
+          </p>
+          <div style={{ marginTop: "2.5rem" }}>
+            <Link href="/sign-in">
+              <button className="lp-accent-btn">Get started free</button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <div className="lp-footer">
+        <div className="container">
+          <div className="lp-footer-main">
+            <div className="lp-footer-brand">
+              <h5>KIOSK</h5>
+              <p className="bodyCopy" style={{ marginTop: "0.5rem", color: "var(--base-400)" }}>
+                Multi-tenant commerce.
+                <br />
+                Tenant isolation by design.
+              </p>
+            </div>
+            <div className="lp-footer-cols">
+              <div className="lp-footer-col">
+                <p style={{ color: "var(--storefront-accent, #c5f74f)", marginBottom: "1rem" }}>
+                  PRODUCT
+                </p>
+                <Link href="/dashboard">Dashboard</Link>
+                <a href="#capabilities">Capabilities</a>
+                <a href="#features">Features</a>
+                <a href="#numbers">Numbers</a>
+              </div>
+              <div className="lp-footer-col">
+                <p style={{ color: "var(--storefront-accent, #c5f74f)", marginBottom: "1rem" }}>
+                  ACCOUNT
+                </p>
+                <Link href="/sign-in">Sign in</Link>
+                <Link href="/dashboard">Get started</Link>
               </div>
             </div>
           </div>
-        </footer>
-      </ThemeConfigProvider>
-    </StorefrontEditProvider>
+          <div className="lp-footer-end">
+            <p style={{ color: "var(--base-500)" }}>&copy; {new Date().getFullYear()} Kiosk</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

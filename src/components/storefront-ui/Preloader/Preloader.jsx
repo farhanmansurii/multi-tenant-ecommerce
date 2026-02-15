@@ -1,4 +1,5 @@
 "use client";
+import "./Preloader.css";
 import { useEffect, useState, useRef } from "react";
 import { useLenis } from "lenis/react";
 import gsap from "gsap";
@@ -98,7 +99,7 @@ const Preloader = () => {
               duration: 1,
               ease: "power4.out",
             },
-            "-=0.5"
+            "-=0.5",
           )
           .to(
             ".preloader-progress",
@@ -107,7 +108,7 @@ const Preloader = () => {
               duration: 0.5,
               ease: "power3.out",
             },
-            "-=0.5"
+            "-=0.5",
           )
           .to(
             ".preloader-mask",
@@ -116,11 +117,11 @@ const Preloader = () => {
               duration: 1.25,
               ease: "power3.out",
             },
-            "<"
+            "<",
           );
       });
     },
-    { scope: wrapperRef, dependencies: [showPreloader] }
+    { scope: wrapperRef, dependencies: [showPreloader] },
   );
 
   if (!showPreloader) return null;
