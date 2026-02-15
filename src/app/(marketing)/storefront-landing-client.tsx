@@ -6,157 +6,87 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
+import Lenis from "lenis";
 import DotMatrix from "@/components/storefront-ui/DotMatrix/DotMatrix";
+import Preloader, { isInitialLoad } from "@/components/marketing/preloader";
+import Copy from "@/components/marketing/copy";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
 
-/* ────────────────────────────────────────────────────────
-   Preloader (adapted from storefront – no useLenis/useThemeConfig)
-   ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   MAGNETIC BUTTON – cursor-reactive CTA
+   ════════════════════════════════════════════════════════════ */
 
-let isInitialLoad = true;
-
-function LandingPreloader({ onComplete }: { onComplete: () => void }) {
-  const [showPreloader, setShowPreloader] = useState(isInitialLoad);
-  const [loaderAnimating, setLoaderAnimating] = useState(isInitialLoad);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+function MagneticButton({
+  children,
+  className = "",
+  href,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  href: string;
+}) {
+  const btnRef = useRef<HTMLAnchorElement>(null);
+  const innerRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    const btn = btnRef.current;
+    const inner = innerRef.current;
+    if (!btn || !inner) return;
+
+    const xTo = gsap.quickTo(btn, "x", { duration: 0.6, ease: "elastic.out(1, 0.4)" });
+    const yTo = gsap.quickTo(btn, "y", { duration: 0.6, ease: "elastic.out(1, 0.4)" });
+    const innerXTo = gsap.quickTo(inner, "x", { duration: 0.6, ease: "elastic.out(1, 0.4)" });
+    const innerYTo = gsap.quickTo(inner, "y", { duration: 0.6, ease: "elastic.out(1, 0.4)" });
+
+    const handleMove = (e: MouseEvent) => {
+      const { left, top, width, height } = btn.getBoundingClientRect();
+      const cx = left + width / 2;
+      const cy = top + height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      xTo(dx * 0.35);
+      yTo(dy * 0.35);
+      innerXTo(dx * 0.15);
+      innerYTo(dy * 0.15);
+    };
+
+    const handleLeave = () => {
+      xTo(0);
+      yTo(0);
+      innerXTo(0);
+      innerYTo(0);
+    };
+
+    btn.addEventListener("mousemove", handleMove);
+    btn.addEventListener("mouseleave", handleLeave);
     return () => {
-      isInitialLoad = false;
+      btn.removeEventListener("mousemove", handleMove);
+      btn.removeEventListener("mouseleave", handleLeave);
     };
   }, []);
 
-  useEffect(() => {
-    if (loaderAnimating) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [loaderAnimating]);
-
-  useGSAP(
-    () => {
-      if (!showPreloader) return;
-
-      document.fonts.ready.then(() => {
-        const logoSplit = SplitText.create(".preloader-logo h1", {
-          type: "chars",
-          charsClass: "char",
-          mask: "chars",
-        });
-
-        gsap.set(logoSplit.chars, { x: "110%" });
-        gsap.set(".preloader-logo h1", { opacity: 1 });
-
-        function animateProgress(duration = 4.75) {
-          const tl = gsap.timeline();
-          const counterSteps = 5;
-          let currentProgress = 0;
-
-          for (let i = 0; i < counterSteps; i++) {
-            const finalStep = i === counterSteps - 1;
-            const targetProgress = finalStep
-              ? 1
-              : Math.min(currentProgress + Math.random() * 0.3 + 0.1, 0.9);
-            currentProgress = targetProgress;
-
-            tl.to(".preloader-progress-bar", {
-              scaleX: targetProgress,
-              duration: duration / counterSteps,
-              ease: "power2.out",
-            });
-          }
-
-          return tl;
-        }
-
-        const isMobile = window.innerWidth < 1000;
-        const maskScale = isMobile ? 25 : 15;
-
-        const tl = gsap.timeline({
-          delay: 0.5,
-          onComplete: () => {
-            setLoaderAnimating(false);
-            onComplete();
-            setTimeout(() => {
-              setShowPreloader(false);
-            }, 100);
-          },
-        });
-
-        tl.to(logoSplit.chars, {
-          x: "0%",
-          stagger: 0.05,
-          ease: "power4.out",
-          duration: 1,
-        })
-          .add(animateProgress(), "<")
-          .set(".preloader-progress", { backgroundColor: "#fff" })
-          .to(
-            logoSplit.chars,
-            {
-              x: "-110%",
-              stagger: 0.05,
-              duration: 1,
-              ease: "power4.out",
-            },
-            "-=0.5",
-          )
-          .to(
-            ".preloader-progress",
-            {
-              opacity: 0,
-              duration: 0.5,
-              ease: "power3.out",
-            },
-            "-=0.5",
-          )
-          .to(
-            ".preloader-mask",
-            {
-              scale: maskScale,
-              duration: 1.25,
-              ease: "power3.out",
-            },
-            "<",
-          );
-      });
-    },
-    { scope: wrapperRef, dependencies: [showPreloader] },
-  );
-
-  if (!showPreloader) return null;
-
   return (
-    <div className="preloader-wrapper" ref={wrapperRef}>
-      <div className="preloader-progress">
-        <div className="preloader-progress-bar"></div>
-        <div className="preloader-logo">
-          <h1>Kiosk</h1>
-        </div>
-      </div>
-      <div className="preloader-mask"></div>
-    </div>
+    <Link href={href} ref={btnRef} className={`lp-magnetic-btn ${className}`}>
+      <span ref={innerRef} className="lp-magnetic-btn-inner">
+        {children}
+      </span>
+    </Link>
   );
 }
 
-/* ────────────────────────────────────────────────────────
-   Menu (adapted from storefront – no useStoreSlug/useThemeConfig)
-   ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   MENU – industrial nav with scramble text + scroll hide
+   ════════════════════════════════════════════════════════════ */
 
 function LandingMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isMenuVisible, setIsMenuVisible] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-
   const menuRef = useRef<HTMLElement>(null);
   const menuOverlayRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLDivElement>(null);
   const splitTextsRef = useRef<ReturnType<typeof SplitText.create>[]>([]);
   const mainLinkSplitsRef = useRef<ReturnType<typeof SplitText.create>[]>([]);
-  const lastScrollY = useRef(0);
 
   const scrambleText = (elements: Element[], duration = 0.4) => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
@@ -355,55 +285,6 @@ function LandingMenu() {
     gsap.set(subLinks, { y: 50, opacity: 0 });
   }, []);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1000);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      if (menuRef.current && !isMenuVisible) {
-        menuRef.current.classList.remove("hidden");
-        setIsMenuVisible(true);
-      }
-      return;
-    }
-
-    let ticking = false;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        if (isOpen) closeMenu();
-        if (isMenuVisible && menuRef.current) {
-          menuRef.current.classList.add("hidden");
-          setIsMenuVisible(false);
-        }
-      } else if (currentScrollY < lastScrollY.current) {
-        if (!isMenuVisible && menuRef.current) {
-          menuRef.current.classList.remove("hidden");
-          setIsMenuVisible(true);
-        }
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    const scrollListener = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        handleScroll();
-        ticking = false;
-      });
-    };
-
-    window.addEventListener("scroll", scrollListener);
-    return () => window.removeEventListener("scroll", scrollListener);
-  }, [isOpen, isMenuVisible, isMobile]);
 
   return (
     <nav className="menu" ref={menuRef}>
@@ -484,9 +365,9 @@ function LandingMenu() {
   );
 }
 
-/* ────────────────────────────────────────────────────────
-   Scroll counter – counts up when scrolled into view
-   ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   SCROLL COUNTER – counts up when scrolled into view
+   ════════════════════════════════════════════════════════════ */
 
 function ScrollCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -521,9 +402,9 @@ function ScrollCounter({ target, suffix = "" }: { target: number; suffix?: strin
   return <span ref={ref}>0{suffix}</span>;
 }
 
-/* ────────────────────────────────────────────────────────
-   Data
-   ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   DATA
+   ════════════════════════════════════════════════════════════ */
 
 const STRIP_ITEMS = [
   {
@@ -589,274 +470,416 @@ const STATS = [
   { value: 0, suffix: "", label: "VENDOR LOCK-IN", display: "ZERO" },
 ];
 
-/* ────────────────────────────────────────────────────────
-   Component
-   ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ════════════════════════════════════════════════════════════ */
 
 export default function MarketingStorefrontLandingClient() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [preloaderDone, setPreloaderDone] = useState(!isInitialLoad);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const heroHeadlineRef = useRef<HTMLDivElement>(null);
+  const heroVisualRef = useRef<HTMLDivElement>(null);
+  const heroRightRef = useRef<HTMLDivElement>(null);
+  const lenisRef = useRef<Lenis | null>(null);
 
+  // Initialize Lenis smooth scroll
+  useEffect(() => {
+    const lenis = new Lenis({
+      lerp: 0.1,
+      smoothWheel: true,
+    });
+
+    lenisRef.current = lenis;
+
+    lenis.on("scroll", ScrollTrigger.update);
+
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, []);
+
+  // Main GSAP animation orchestration
   useGSAP(
     () => {
-      if (!preloaderDone) return;
+      const root = rootRef.current;
+      if (!root || !preloaderDone) return;
 
-      /* 1 ── Hero headline: masked char reveal with SplitText ── */
-      document.fonts.ready.then(() => {
-        const heroLines = document.querySelectorAll(".lp-hero-line");
-        heroLines.forEach((line, lineIdx) => {
-          const split = SplitText.create(line, {
-            type: "chars",
-            charsClass: "lp-char",
-            mask: "chars",
+      const baseDelay = isInitialLoad ? 5.5 : 0.3;
+
+      const ctx = gsap.context(() => {
+        /* ─── HERO ENTRANCE TIMELINE ─── */
+        const heroTl = gsap.timeline({ delay: baseDelay });
+
+        // Hero headline – dramatic reveal
+        if (heroHeadlineRef.current) {
+          const headlineLines = heroHeadlineRef.current.querySelectorAll(".lp-hero-line");
+          gsap.set(headlineLines, { y: "110%", opacity: 0 });
+
+          heroTl.to(headlineLines, {
+            y: "0%",
+            opacity: 1,
+            duration: 1.4,
+            stagger: 0.12,
+            ease: "expo.out",
+          });
+        }
+
+        // Hero right panel – stagger cards in
+        if (heroRightRef.current) {
+          const cards = heroRightRef.current.querySelectorAll(".lp-hero-stat-card");
+          gsap.set(cards, { x: 60, opacity: 0 });
+
+          heroTl.to(
+            cards,
+            {
+              x: 0,
+              opacity: 1,
+              duration: 1,
+              stagger: 0.15,
+              ease: "expo.out",
+            },
+            "-=0.8",
+          );
+        }
+
+        // Hero visual – perspective rise
+        if (heroVisualRef.current) {
+          gsap.set(heroVisualRef.current, {
+            y: 200,
+            opacity: 0,
+            rotateX: 8,
           });
 
-          gsap.fromTo(
-            split.chars,
-            { yPercent: 110 },
+          heroTl.to(
+            heroVisualRef.current,
             {
-              yPercent: 0,
-              duration: 1.2,
+              y: 0,
+              opacity: 1,
+              rotateX: 0,
+              duration: 1.4,
               ease: "expo.out",
-              stagger: 0.03,
-              delay: 0.15 + lineIdx * 0.18,
+            },
+            "-=0.6",
+          );
+        }
+
+        /* ─── HERO SCROLL PARALLAX ─── */
+        if (heroHeadlineRef.current && heroSectionRef.current) {
+          gsap.to(heroHeadlineRef.current, {
+            y: 200,
+            ease: "none",
+            scrollTrigger: {
+              trigger: heroSectionRef.current,
+              start: "top top",
+              end: "bottom top",
+              scrub: true,
+            },
+          });
+        }
+
+        // Visual parallax – moves slower for depth
+        if (heroVisualRef.current && heroSectionRef.current) {
+          gsap.to(heroVisualRef.current, {
+            y: -80,
+            ease: "none",
+            scrollTrigger: {
+              trigger: heroSectionRef.current,
+              start: "60% center",
+              end: "bottom top",
+              scrub: true,
+            },
+          });
+        }
+
+        /* ─── CAPABILITIES STRIP ─── */
+        const capHead = root.querySelector(".lp-cap-heading");
+        if (capHead) {
+          gsap.fromTo(
+            capHead,
+            { y: 60, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: { trigger: capHead, start: "top 85%" },
+            },
+          );
+        }
+
+        const stripTrack = root.querySelector(".lp-strip-track");
+        const stripSection = root.querySelector(".lp-strip");
+        if (stripTrack && stripSection) {
+          const scrollAmount = stripTrack.scrollWidth - window.innerWidth;
+          if (scrollAmount > 0) {
+            gsap.to(stripTrack, {
+              x: -scrollAmount,
+              ease: "none",
+              scrollTrigger: {
+                trigger: stripSection,
+                start: "top top",
+                end: () => `+=${scrollAmount}`,
+                scrub: 1,
+                pin: true,
+                anticipatePin: 1,
+              },
+            });
+          }
+        }
+
+        /* ─── FEATURE SECTIONS ─── */
+        root.querySelectorAll(".lp-feat").forEach((section) => {
+          const bgNum = section.querySelector(".lp-feat-bg");
+          const media = section.querySelector(".lp-feat-media");
+          const textChildren = section.querySelector(".lp-feat-copy")?.children;
+
+          if (bgNum) {
+            gsap.fromTo(
+              bgNum,
+              { scale: 0.6, opacity: 0 },
+              {
+                scale: 1,
+                opacity: 0.04,
+                duration: 1.2,
+                ease: "power2.out",
+                scrollTrigger: { trigger: section, start: "top 75%" },
+              },
+            );
+          }
+
+          if (media) {
+            gsap.fromTo(
+              media,
+              { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" },
+              {
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+                duration: 1.2,
+                ease: "power3.inOut",
+                scrollTrigger: { trigger: section, start: "top 65%" },
+              },
+            );
+          }
+
+          if (textChildren) {
+            gsap.fromTo(
+              textChildren,
+              { y: 40, opacity: 0 },
+              {
+                y: 0,
+                opacity: 1,
+                duration: 0.9,
+                ease: "power3.out",
+                stagger: 0.12,
+                scrollTrigger: { trigger: section, start: "top 65%" },
+              },
+            );
+          }
+        });
+
+        /* ─── STATS ─── */
+        root.querySelectorAll(".lp-stat").forEach((stat, i) => {
+          gsap.fromTo(
+            stat,
+            { y: 60, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 1,
+              ease: "expo.out",
+              delay: i * 0.1,
+              scrollTrigger: { trigger: stat, start: "top 85%" },
             },
           );
         });
 
-        /* 2 ── Hero subtitle + CTAs fade-up ── */
-        gsap.fromTo(
-          ".lp-sub",
-          { y: 50, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            delay: 0.9,
-          },
-        );
-
-        /* 3 ── Hero media – diagonal wipe ── */
-        gsap.fromTo(
-          ".lp-hero-media",
-          { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" },
-          {
-            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-            duration: 1.4,
-            ease: "power4.inOut",
-            delay: 0.7,
-          },
-        );
-
-        /* Accent line under hero */
-        gsap.fromTo(
-          ".lp-hero-accent",
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 1.6,
-            ease: "power4.inOut",
-            delay: 1.1,
-          },
-        );
-      });
-
-      /* 4 ── Capabilities section heading reveal ── */
-      const capHead = document.querySelector(".lp-cap-heading");
-      if (capHead) {
-        gsap.fromTo(
-          capHead,
-          { y: 60, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: capHead, start: "top 85%" },
-          },
-        );
-      }
-
-      /* 5 ── Horizontal scroll strip (pinned) ── */
-      const stripTrack = document.querySelector(".lp-strip-track") as HTMLElement | null;
-      if (stripTrack) {
-        const scrollAmount = stripTrack.scrollWidth - window.innerWidth;
-        if (scrollAmount > 0) {
-          gsap.to(".lp-strip-track", {
-            x: -scrollAmount,
-            ease: "none",
-            scrollTrigger: {
-              trigger: ".lp-strip",
-              start: "top top",
-              end: () => `+=${scrollAmount}`,
-              scrub: 1,
-              pin: true,
-              anticipatePin: 1,
-            },
-          });
-        }
-      }
-
-      /* 6 ── Feature sections ── */
-      document.querySelectorAll(".lp-feat").forEach((section) => {
-        const bgNum = section.querySelector(".lp-feat-bg");
-        const media = section.querySelector(".lp-feat-media");
-        const textChildren = section.querySelector(".lp-feat-copy")?.children;
-
-        if (bgNum) {
+        /* ─── CTA ─── */
+        const ctaAccent = root.querySelector(".lp-cta-accent");
+        if (ctaAccent) {
           gsap.fromTo(
-            bgNum,
-            { scale: 0.6, opacity: 0 },
+            ctaAccent,
+            { scaleX: 0 },
             {
-              scale: 1,
-              opacity: 0.04,
-              duration: 1.2,
-              ease: "power2.out",
-              scrollTrigger: { trigger: section, start: "top 75%" },
+              scaleX: 1,
+              duration: 1.3,
+              ease: "power4.inOut",
+              scrollTrigger: { trigger: ctaAccent, start: "top 80%" },
             },
           );
         }
 
-        if (media) {
+        const ctaHeading = root.querySelector(".lp-cta-content h2");
+        if (ctaHeading) {
           gsap.fromTo(
-            media,
-            { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" },
-            {
-              clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-              duration: 1.2,
-              ease: "power3.inOut",
-              scrollTrigger: { trigger: section, start: "top 65%" },
-            },
-          );
-        }
-
-        if (textChildren) {
-          gsap.fromTo(
-            textChildren,
-            { y: 40, opacity: 0 },
+            ctaHeading,
+            { y: 80, opacity: 0 },
             {
               y: 0,
               opacity: 1,
-              duration: 0.9,
-              ease: "power3.out",
-              stagger: 0.12,
-              scrollTrigger: { trigger: section, start: "top 65%" },
+              duration: 1.1,
+              ease: "expo.out",
+              scrollTrigger: { trigger: ctaHeading, start: "top 85%" },
             },
           );
         }
-      });
 
-      /* 7 ── Stats – scale + rotate reveal ── */
-      document.querySelectorAll(".lp-stat").forEach((stat, i) => {
-        gsap.fromTo(
-          stat,
-          { scale: 0.8, opacity: 0, rotate: i % 2 === 0 ? -4 : 4 },
-          {
-            scale: 1,
-            opacity: 1,
-            rotate: 0,
-            duration: 0.9,
-            ease: "back.out(1.4)",
-            scrollTrigger: { trigger: stat, start: "top 85%" },
-          },
-        );
-      });
+        /* ─── NAVBAR THEME PER SECTION ─── */
+        const menu = root.querySelector(".menu") as HTMLElement | null;
+        if (menu) {
+          // Dark sections: strip, stats → navbar gets "menu--light" class
+          const darkSections = root.querySelectorAll(".lp-strip, .lp-stats");
+          darkSections.forEach((section) => {
+            ScrollTrigger.create({
+              trigger: section,
+              start: "top top+=60",
+              end: "bottom top+=60",
+              onEnter: () => menu.classList.add("menu--light"),
+              onLeave: () => menu.classList.remove("menu--light"),
+              onEnterBack: () => menu.classList.add("menu--light"),
+              onLeaveBack: () => menu.classList.remove("menu--light"),
+            });
+          });
+        }
+      }, root);
 
-      /* 8 ── CTA – line draw + heading rise ── */
-      gsap.fromTo(
-        ".lp-cta-accent",
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          duration: 1.3,
-          ease: "power4.inOut",
-          scrollTrigger: { trigger: ".lp-cta-accent", start: "top 80%" },
-        },
-      );
-
-      gsap.fromTo(
-        ".lp-cta-content h2",
-        { y: 80, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1.1,
-          ease: "expo.out",
-          scrollTrigger: { trigger: ".lp-cta-content h2", start: "top 85%" },
-        },
-      );
+      return () => ctx.revert();
     },
     { scope: rootRef, dependencies: [preloaderDone] },
   );
 
-  /* ── Render ── */
-
   return (
     <div ref={rootRef} className="lp-root">
+      {/* Noise grain overlay */}
+      <div className="lp-grain" aria-hidden="true" />
+
       {/* ── PRELOADER ── */}
-      <LandingPreloader onComplete={() => setPreloaderDone(true)} />
+      <Preloader onAnimationComplete={() => setPreloaderDone(true)} />
 
       {/* ── MENU ── */}
       <LandingMenu />
 
-      {/* ── HERO ── */}
-      <section className="lp-hero">
-        <div className="lp-hero-dot-matrix">
+      {/* ═══════════════════════════════════════════════
+          HERO – AWWWARDS-LEVEL EDITORIAL
+          ═══════════════════════════════════════════════ */}
+      <section className="lp-hero" ref={heroSectionRef}>
+        {/* Dot matrix background */}
+        <div className="lp-hero-bg-matrix">
           <DotMatrix
-            color="#c5f74f"
-            delay={0}
-            speed={0.01}
+            color="#969992"
             dotSize={2}
             spacing={5}
-            opacity={0.35}
+            opacity={0.9}
+            delay={isInitialLoad ? 6 : 1.125}
           />
         </div>
 
-        <div className="lp-hero-watermark" aria-hidden="true">
-          <h1>KIOSK</h1>
+        {/* Grid lines background */}
+        <div className="lp-hero-gridlines" aria-hidden="true">
+          <div className="lp-gridline lp-gridline--v" style={{ left: "25%" }} />
+          <div className="lp-gridline lp-gridline--v" style={{ left: "50%" }} />
+          <div className="lp-gridline lp-gridline--v" style={{ left: "75%" }} />
         </div>
 
-        <div className="container lp-hero-container">
-          <div className="lp-hero-copy">
-            <div className="lp-hero-headline">
-              <h1 className="lp-hero-line">MULTI-TENANT</h1>
-              <h1 className="lp-hero-line">COMMERCE,</h1>
-              <h1 className="lp-hero-line">BUILT DIFFERENT.</h1>
+        {/* Top bar – meta info */}
+        <div className="lp-hero-topbar">
+          <div className="lp-hero-topbar-inner">
+            <Copy type="flicker" delay={isInitialLoad ? 5.2 : 0.2} animateOnScroll={false}>
+              <span className="lp-hero-tag">Multi-Tenant Commerce Platform</span>
+            </Copy>
+            <Copy type="flicker" delay={isInitialLoad ? 5.4 : 0.3} animateOnScroll={false}>
+              <span className="lp-hero-tag">
+                <span className="lp-hero-pulse" />
+                Production Ready
+              </span>
+            </Copy>
+          </div>
+        </div>
+
+        {/* Main hero content grid */}
+        <div className="lp-hero-content">
+          <div className="lp-hero-main">
+            {/* Massive headline */}
+            <div className="lp-hero-headline" ref={heroHeadlineRef}>
+              <div className="lp-hero-line-wrap">
+                <div className="lp-hero-line">MULTI-TENANT</div>
+              </div>
+              <div className="lp-hero-line-wrap">
+                <div className="lp-hero-line lp-hero-line--indent">COMMERCE</div>
+              </div>
+              <div className="lp-hero-line-wrap">
+                <div className="lp-hero-line">
+                  PLATFORM<span className="lp-hero-line-accent">.</span>
+                </div>
+              </div>
             </div>
 
-            <div className="lp-hero-accent" style={{ transform: "scaleX(0)" }} />
-
-            <div className="lp-sub" style={{ opacity: 0 }}>
-              <div className="lp-hero-bottom">
-                <p className="bodyCopy lg" style={{ maxWidth: "36rem", color: "var(--base-500)" }}>
-                  Launch isolated storefronts with Postgres RLS, a merchant dashboard for analytics
-                  and operations, and a premium customer experience out of the box.
-                </p>
-                <div className="lp-hero-ctas">
-                  <Link href="/dashboard">
-                    <button className="primary">Open dashboard</button>
-                  </Link>
-                  <Link href="/sign-in">
-                    <button className="secondary">Sign in</button>
-                  </Link>
-                </div>
+            {/* Description + CTA row */}
+            <div className="lp-hero-bottom">
+              <div className="lp-hero-description">
+                <div className="lp-hero-desc-rule" />
+                <Copy animateOnScroll={false} delay={isInitialLoad ? 6.4 : 1.0}>
+                  <p className="lp-hero-desc-text">
+                    Database-enforced tenant isolation with Postgres RLS. Merchant analytics.
+                    Premium storefronts. Ship your platform today.
+                  </p>
+                </Copy>
+              </div>
+              <div className="lp-hero-cta-group">
+                <MagneticButton href="/sign-in" className="lp-hero-cta-primary">
+                  <span className="lp-hero-cta-label">Get Started</span>
+                  <span className="lp-hero-cta-arrow">&#8599;</span>
+                </MagneticButton>
+                <MagneticButton href="/dashboard" className="lp-hero-cta-secondary">
+                  <span className="lp-hero-cta-label">View Dashboard</span>
+                </MagneticButton>
               </div>
             </div>
           </div>
 
-          <div className="lp-hero-media" style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}>
+          {/* Right rail – stat cards */}
+          <div className="lp-hero-rail" ref={heroRightRef}>
+            <div className="lp-hero-stat-card">
+              <span className="lp-hero-stat-label">TENANT ISOLATION</span>
+              <span className="lp-hero-stat-value">100%</span>
+              <span className="lp-hero-stat-sub">Postgres RLS enforced</span>
+            </div>
+            <div className="lp-hero-stat-card">
+              <span className="lp-hero-stat-label">READY TO SHIP</span>
+              <span className="lp-hero-stat-value">NOW</span>
+              <span className="lp-hero-stat-sub">Full-stack platform</span>
+            </div>
+            <div className="lp-hero-stat-card lp-hero-stat-card--dark">
+              <span className="lp-hero-stat-label">STATUS</span>
+              <span className="lp-hero-stat-value lp-hero-stat-live">
+                <span className="lp-hero-pulse" />
+                LIVE
+              </span>
+              <span className="lp-hero-stat-sub">Production deployment</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero visual – dashboard preview */}
+        <div className="lp-hero-visual" ref={heroVisualRef} style={{ perspective: "1200px" }}>
+          <div className="lp-hero-visual-inner">
             <div className="lp-placeholder lp-placeholder--hero">
               <span className="lp-placeholder-label">
-                Hero image — Full-width screenshot of the merchant dashboard overview showing
-                revenue charts, recent orders, and store metrics
+                Dashboard Preview — Analytics, Orders, Revenue Metrics
               </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CAPABILITIES – HORIZONTAL STRIP ── */}
+      {/* ═══════════════════════════════════════════════
+          CAPABILITIES – HORIZONTAL STRIP
+          ═══════════════════════════════════════════════ */}
       <section className="lp-strip" id="capabilities">
         <div className="lp-cap-heading">
           <p className="md" style={{ color: "var(--storefront-accent, #c5f74f)" }}>
@@ -884,7 +907,9 @@ export default function MarketingStorefrontLandingClient() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
+      {/* ═══════════════════════════════════════════════
+          FEATURES
+          ═══════════════════════════════════════════════ */}
       <div id="features">
         {FEATURES.map((feat, i) => (
           <section key={feat.num} className={`lp-feat ${i % 2 !== 0 ? "lp-feat--flip" : ""}`}>
@@ -924,7 +949,9 @@ export default function MarketingStorefrontLandingClient() {
         ))}
       </div>
 
-      {/* ── STATS ── */}
+      {/* ═══════════════════════════════════════════════
+          STATS
+          ═══════════════════════════════════════════════ */}
       <section className="lp-stats" id="numbers">
         <div className="lp-stats-dot-matrix">
           <DotMatrix
@@ -966,7 +993,9 @@ export default function MarketingStorefrontLandingClient() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ═══════════════════════════════════════════════
+          CTA
+          ═══════════════════════════════════════════════ */}
       <section className="lp-cta">
         <div className="container lp-cta-content">
           <div className="lp-cta-accent" />
@@ -983,14 +1012,16 @@ export default function MarketingStorefrontLandingClient() {
             you at the database layer.
           </p>
           <div style={{ marginTop: "2.5rem" }}>
-            <Link href="/sign-in">
-              <button className="lp-accent-btn">Get started free</button>
-            </Link>
+            <MagneticButton href="/sign-in" className="lp-accent-btn-wrap">
+              Get started free
+            </MagneticButton>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* ═══════════════════════════════════════════════
+          FOOTER
+          ═══════════════════════════════════════════════ */}
       <div className="lp-footer">
         <div className="container">
           <div className="lp-footer-main">
