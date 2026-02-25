@@ -223,6 +223,11 @@ export const commonMetadata = {
     description: "Sign in to your account to manage your stores and products",
   }),
 
+  signUp: generateBaseMetadata({
+    title: "Sign Up",
+    description: "Create an account to start building and managing your stores",
+  }),
+
   notFound: generateBaseMetadata({
     title: "Page Not Found",
     description: "The page you're looking for doesn't exist",
