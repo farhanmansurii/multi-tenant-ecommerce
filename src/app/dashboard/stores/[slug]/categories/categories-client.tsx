@@ -377,7 +377,7 @@ export function StoreCategoriesClient({ slug, initialStore }: StoreCategoriesCli
                                   <Edit className="w-4 h-4 mr-2" /> Edit Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
+                                  variant="destructive"
                                   onClick={() => setDeleteId(category.id)}
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" /> Delete

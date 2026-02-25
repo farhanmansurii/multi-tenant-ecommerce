@@ -5,14 +5,12 @@ import { useLenis } from "lenis/react";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
-import { useThemeConfig } from "@/components/storefront-ui/storefront/ThemeConfigProvider";
 
 gsap.registerPlugin(SplitText);
 
 let isInitialLoad = true;
 
 const Preloader = () => {
-  const config = useThemeConfig();
   const [showPreloader, setShowPreloader] = useState(isInitialLoad);
   const [loaderAnimating, setLoaderAnimating] = useState(isInitialLoad);
   const wrapperRef = useRef(null);
@@ -42,11 +40,9 @@ const Preloader = () => {
         const logoSplit = SplitText.create(".preloader-logo h1", {
           type: "chars",
           charsClass: "char",
-          mask: "chars",
         });
 
-        gsap.set(logoSplit.chars, { x: "110%" });
-        gsap.set(".preloader-logo h1", { opacity: 1 });
+        gsap.set(logoSplit.chars, { x: "110%", opacity: 1 });
 
         function animateProgress(duration = 4.75) {
           const tl = gsap.timeline();
@@ -131,7 +127,7 @@ const Preloader = () => {
       <div className="preloader-progress">
         <div className="preloader-progress-bar"></div>
         <div className="preloader-logo">
-          <h1>{config?.name || "Store"}</h1>
+          <h1>Nrmlss</h1>
         </div>
       </div>
       <div className="preloader-mask"></div>

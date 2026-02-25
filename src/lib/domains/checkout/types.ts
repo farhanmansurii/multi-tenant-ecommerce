@@ -1,10 +1,12 @@
 import type { Order } from "@/lib/domains/orders/types";
 import type { Cart } from "@/lib/domains/cart/types";
 import { orderPaymentStatusEnum } from "../../db/schema/ecommerce/orders";
+import type { orders } from "../../db/schema/ecommerce/orders";
 
 export type CheckoutStatus = "pending" | "processing" | "completed" | "failed";
 
-export type PaymentStatus = (typeof orderPaymentStatusEnum)["enumValues"][number];
+type OrderRow = typeof orders.$inferSelect;
+export type PaymentStatus = OrderRow["paymentStatus"] | (typeof orderPaymentStatusEnum)["enumValues"][number];
 
 export interface CheckoutSession {
   orderId: string;

@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orderItems, orders } from "@/lib/db/schema/ecommerce/orders";
+import { carts } from "@/lib/db/schema/ecommerce/cart";
 import { products } from "@/lib/db/schema/ecommerce/products";
 import type {
   Order,
@@ -58,6 +59,7 @@ export interface OrderRepository {
     status: OrderStatus,
     options?: RepositoryOptions,
   ): Promise<Order | null>;
+  markCartAsConverted(cartId: string, options?: RepositoryOptions): Promise<void>;
   cancel(storeId: string, orderId: string, options?: RepositoryOptions): Promise<boolean>;
 }
 
@@ -233,6 +235,14 @@ export class DrizzleOrderRepository implements OrderRepository {
     if (result.length === 0) return null;
 
     return this.findByIdWithItems(storeId, orderId, options);
+  }
+
+  async markCartAsConverted(cartId: string, options?: RepositoryOptions): Promise<void> {
+    const executor = this.resolveExecutor(options);
+    await executor
+      .update(carts)
+      .set({ status: "converted", updatedAt: new Date() })
+      .where(eq(carts.id, cartId));
   }
 
   async cancel(storeId: string, orderId: string, options?: RepositoryOptions): Promise<boolean> {

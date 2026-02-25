@@ -8,9 +8,9 @@ import {
   apiContextMiddleware,
   validationMiddleware,
   withErrorCapture,
-  MiddlewareContext,
   type ApiMiddleware,
 } from "@/lib/api/middleware/pipeline";
+import type { MiddlewareContext } from "@/lib/api/middleware/pipeline";
 import type { ApiContext } from "@/lib/api/context";
 import {
   getOrderById,
@@ -18,7 +18,9 @@ import {
   cancelOrder,
   updateOrderStatusSchema,
 } from "@/lib/domains/orders";
-import { z } from "zod";
+import type { z } from "zod";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateOrderCache } from "@/lib/api/cache-revalidation";
 
 type HandlerParams = { slug: string; orderId: string };
 type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Ha
       return pipelineResult;
     }
 
-    const { orderId } = pipelineResult.params;
+    const { orderId, slug } = pipelineResult.params;
     const apiContext = extractApiContext(pipelineResult);
 
     const order = await getOrderById(apiContext.storeId, orderId);
@@ -84,7 +86,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Ha
       return notFound("Order not found");
     }
 
-    return ok({ order });
+    const response = ok(
+      { order },
+      {
+        headers: {
+          "Cache-Control": CACHE_CONFIG.ORDERS.cacheControl,
+        },
+      },
+    );
+    response.headers.set("Cache-Tag", CACHE_CONFIG.ORDERS.tags(slug).join(", "));
+    return response;
   });
 }
 
@@ -95,7 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return pipelineResult;
     }
 
-    const { orderId } = pipelineResult.params;
+    const { orderId, slug } = pipelineResult.params;
     const apiContext = extractApiContext(pipelineResult);
     const validatedBody = pipelineResult.data.validatedBody as UpdateOrderStatusInput;
 
@@ -104,7 +115,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return notFound("Order not found");
     }
 
-    return ok({ order });
+    revalidateOrderCache(slug);
+    return ok(
+      { order },
+      {
+        headers: {
+          "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      },
+    );
   });
 }
 
@@ -115,7 +134,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return pipelineResult;
     }
 
-    const { orderId } = pipelineResult.params;
+    const { orderId, slug } = pipelineResult.params;
     const apiContext = extractApiContext(pipelineResult);
 
     const success = await cancelOrder(apiContext.storeId, orderId);
@@ -123,6 +142,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return notFound("Order not found or cannot be cancelled");
     }
 
-    return ok({ success: true, message: "Order cancelled" });
+    revalidateOrderCache(slug);
+    return ok(
+      { success: true, message: "Order cancelled" },
+      {
+        headers: {
+          "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      },
+    );
   });
 }

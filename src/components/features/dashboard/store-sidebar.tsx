@@ -9,12 +9,12 @@ import {
   Users,
   Percent,
   Boxes,
-  Settings,
   ClipboardList,
   Tags,
   ArrowLeft,
   Store,
   BarChart3,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -191,28 +191,41 @@ export function StoreSidebar({ slug, storeName, storeLogo, className }: StoreSid
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={pathname === `/dashboard/stores/${slug}/settings`}
+              isActive={pathname === `/dashboard/stores/${slug}/configure`}
               className={cn(
                 "rounded-xl transition-colors",
-                pathname === `/dashboard/stores/${slug}/settings` && [
-                  "bg-muted/50 text-foreground",
-                ],
-                pathname !== `/dashboard/stores/${slug}/settings` && "hover:bg-muted/40",
+                pathname === `/dashboard/stores/${slug}/configure` && "bg-muted/50 text-foreground",
+                pathname !== `/dashboard/stores/${slug}/configure` && "hover:bg-muted/40",
               )}
             >
               <Link
-                href={`/dashboard/stores/${slug}/settings`}
+                href={`/dashboard/stores/${slug}/configure`}
                 onClick={() => {
                   if (isMobile && setOpenMobile) {
-                    setTimeout(() => {
-                      setOpenMobile(false);
-                    }, 100);
+                    setTimeout(() => setOpenMobile(false), 100);
                   }
                 }}
                 className="flex items-center gap-2.5"
               >
-                <Settings className="h-4 w-4 shrink-0" />
-                <span className="text-sm">Settings</span>
+                <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                <span className="text-sm">Configure</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="rounded-xl transition-colors hover:bg-muted/40">
+              <Link
+                href={`/stores/${slug}`}
+                target="_blank"
+                onClick={() => {
+                  if (isMobile && setOpenMobile) {
+                    setTimeout(() => setOpenMobile(false), 100);
+                  }
+                }}
+                className="flex items-center gap-2.5"
+              >
+                <Store className="h-4 w-4 shrink-0" />
+                <span className="text-sm">View storefront</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

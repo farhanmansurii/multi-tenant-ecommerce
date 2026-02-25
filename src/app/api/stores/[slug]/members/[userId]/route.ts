@@ -1,9 +1,12 @@
-import { NextRequest } from "next/server";
-import { z } from "zod";
+import type { NextRequest } from "next/server";
 
 import { storeHelpers } from "@/lib/domains/stores";
-import { requireAuthOrNull } from "@/lib/session/helpers";
-import { ok, unauthorized, notFound, forbidden, badRequest } from "@/lib/api/responses";
+import { getApiContext } from "@/lib/api/context";
+import { ok, forbidden, badRequest } from "@/lib/api/responses";
+import { parseJson } from "@/lib/api/validation";
+import { updateStoreMemberRoleBodySchema } from "@/lib/schemas/store";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
 
 interface RouteParams {
   params: Promise<{
@@ -12,56 +15,58 @@ interface RouteParams {
   }>;
 }
 
-const updateRoleSchema = z.object({
-  role: z.enum(["admin", "member"]).optional(),
-});
-
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const session = await requireAuthOrNull();
-  if (!session) return unauthorized();
-
   const { slug, userId } = await params;
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return notFound("Store not found");
+  const ctx = await getApiContext(request, slug, { requireAuth: true });
+  if (ctx instanceof Response) return ctx;
 
-  const actorRole = await storeHelpers.getUserRole(store.id, session.user.id);
+  const actorRole = await storeHelpers.getUserRole(ctx.storeId, ctx.userId);
   if (actorRole !== "owner" && actorRole !== "admin") {
     return forbidden();
   }
 
-  if (userId === session.user.id) {
+  if (userId === ctx.userId) {
     return badRequest("Cannot modify your own membership");
   }
 
-  const payload = await request.json().catch(() => null);
-  const parsed = updateRoleSchema.safeParse(payload);
-  if (!parsed.success || !parsed.data.role) {
-    return badRequest("Invalid payload");
-  }
+  const body = await parseJson(request, updateStoreMemberRoleBodySchema);
+  if (body instanceof Response) return body;
 
-  const updated = await storeHelpers.updateStoreMemberRole(store.id, userId, parsed.data.role);
-  return ok({ member: updated });
+  const updated = await storeHelpers.updateStoreMemberRole(ctx.storeId, userId, body.role);
+  revalidateStoreCache(slug);
+  return ok(
+    { member: updated },
+    {
+      headers: {
+        "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+      },
+    },
+  );
 }
 
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const session = await requireAuthOrNull();
-  if (!session) return unauthorized();
-
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { slug, userId } = await params;
-  const store = await storeHelpers.getStoreBySlug(slug);
-  if (!store) return notFound("Store not found");
+  const ctx = await getApiContext(request, slug, { requireAuth: true });
+  if (ctx instanceof Response) return ctx;
 
-  const actorRole = await storeHelpers.getUserRole(store.id, session.user.id);
+  const actorRole = await storeHelpers.getUserRole(ctx.storeId, ctx.userId);
   if (actorRole !== "owner" && actorRole !== "admin") {
     return forbidden();
   }
 
-  if (userId === session.user.id) {
+  if (userId === ctx.userId) {
     return badRequest("Cannot remove yourself");
   }
 
-  const deleted = await storeHelpers.removeStoreMember(store.id, userId);
-  return ok({ member: deleted });
+  const deleted = await storeHelpers.removeStoreMember(ctx.storeId, userId);
+  revalidateStoreCache(slug);
+  return ok(
+    { member: deleted },
+    {
+      headers: {
+        "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+      },
+    },
+  );
 }
-
 

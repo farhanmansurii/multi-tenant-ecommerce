@@ -41,13 +41,6 @@ yarn-error.log*
 next-env.d.ts
 .vscode/extensions.json
 
-# documentation & planning
-docs/
-openspec/
 
-# ai assistant configs
+# local logs
 .logs/
-.claude/
-.cursor/
-.opencode/
-.codex/

@@ -47,11 +47,14 @@ interface ProductTableProps {
   onView?: (product: ProductData) => void;
 }
 
-const statusConfig: Record<string, { label: string; className: string; dotColor: string }> = {
-  active: { label: "Active", className: "bg-emerald-500/10 text-emerald-600 border-emerald-200", dotColor: "bg-emerald-500" },
-  draft: { label: "Draft", className: "bg-amber-500/10 text-amber-600 border-amber-200", dotColor: "bg-amber-500" },
-  inactive: { label: "Inactive", className: "bg-slate-500/10 text-slate-600 border-slate-200", dotColor: "bg-slate-400" },
-  out_of_stock: { label: "Out of Stock", className: "bg-red-500/10 text-red-600 border-red-200", dotColor: "bg-red-500" },
+const statusConfig: Record<
+  string,
+  { label: string; variant: "success" | "warning" | "secondary" | "destructive"; dotColor: string }
+> = {
+  active: { label: "Active", variant: "success", dotColor: "bg-success" },
+  draft: { label: "Draft", variant: "warning", dotColor: "bg-warning" },
+  inactive: { label: "Inactive", variant: "secondary", dotColor: "bg-muted-foreground" },
+  out_of_stock: { label: "Out of Stock", variant: "destructive", dotColor: "bg-destructive" },
 };
 
 
@@ -103,7 +106,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={status.className}>
+                    <Badge variant={status.variant}>
                       <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor} mr-1.5`} />
                       {status.label}
                     </Badge>
@@ -114,12 +117,12 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       {Number(product.quantity) <= 5 && Number(product.quantity) > 0 && (
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                       )}
                       <span
                         className={
                           Number(product.quantity) === 0
-                            ? "text-red-500 font-medium"
+                            ? "text-destructive font-medium"
                             : ""
                         }
                       >
@@ -152,7 +155,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => onDelete?.(product.id)}
-                            className="text-destructive focus:text-destructive"
+                            variant="destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" /> Delete
                           </DropdownMenuItem>
@@ -192,7 +195,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                       <p className="text-xs text-muted-foreground mt-0.5">SKU: {product.sku}</p>
                     )}
                   </div>
-                  <Badge variant="outline" className={status.className}>
+                  <Badge variant={status.variant}>
                     <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor} mr-1.5`} />
                     {status.label}
                   </Badge>
@@ -206,12 +209,12 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     <div className="text-muted-foreground">Stock</div>
                     <div className="flex items-center gap-1 mt-1">
                       {Number(product.quantity) <= 5 && Number(product.quantity) > 0 && (
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                       )}
                       <span
                         className={
                           Number(product.quantity) === 0
-                            ? "text-red-500 font-medium"
+                            ? "text-destructive font-medium"
                             : "font-medium"
                         }
                       >
@@ -250,7 +253,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() => onDelete?.(product.id)}
-                        className="text-destructive focus:text-destructive"
+                        variant="destructive"
                       >
                         <Trash2 className="h-4 w-4 mr-2" /> Delete
                       </DropdownMenuItem>
@@ -291,7 +294,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
-          <Badge variant="outline" className={`text-xs ${status.className}`}>
+          <Badge variant={status.variant} className="text-xs">
             <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor} mr-1`} />
             {status.label}
           </Badge>
@@ -366,9 +369,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div
             className={`text-xs font-medium flex items-center gap-1 ${
               Number(product.quantity) === 0
-                ? "text-red-500"
+                ? "text-destructive"
                 : Number(product.quantity) <= 5
-                  ? "text-amber-500"
+                  ? "text-warning"
                   : "text-muted-foreground"
             }`}
           >
@@ -410,7 +413,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => onDelete?.(product.id)}
-              className="text-destructive focus:text-destructive"
+              variant="destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" /> Delete
             </DropdownMenuItem>

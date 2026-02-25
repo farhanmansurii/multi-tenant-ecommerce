@@ -2,6 +2,7 @@
 
 import { withBaseUrl } from '@/lib/utils/url';
 import type { StoreData } from '@/lib/domains/stores/types';
+import { parseApiResponse } from '@/lib/query/api-response';
 
 export async function updateStorefrontContent(
   storeSlug: string,
@@ -16,12 +17,9 @@ export async function updateStorefrontContent(
     body: JSON.stringify(input),
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => null);
-    throw new Error(err?.error || err?.message || 'Failed to update storefront content');
-  }
-
-  const data = await response.json();
-  return data.store as StoreData;
+  const data = await parseApiResponse<{ store: StoreData }>(
+    response,
+    'Failed to update storefront content',
+  );
+  return data.store;
 }
-

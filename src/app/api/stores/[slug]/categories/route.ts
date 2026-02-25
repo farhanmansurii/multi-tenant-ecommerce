@@ -1,13 +1,19 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
-import { ok, created, badRequest, notFound, serverError, logRouteError } from '@/lib/api/responses';
+import { ok, created, notFound, serverError, logRouteError } from '@/lib/api/responses';
 import { CACHE_CONFIG } from '@/lib/api/cache-config';
 import { revalidateCategoryCache } from '@/lib/api/cache-revalidation';
+import { parseJson, parseQuery } from '@/lib/api/validation';
+import {
+	createCategoryBodySchema,
+	updateCategoryBodySchema,
+	deleteCategoryQuerySchema,
+} from '@/lib/schemas/category';
 
 interface RouteParams {
 	params: Promise<{
@@ -50,12 +56,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	if (ctx instanceof Response) return ctx;
 
 	try {
-		const body = await request.json();
+		const body = await parseJson(request, createCategoryBodySchema);
+		if (body instanceof Response) return body;
 		const { name, description, image, color, sortOrder } = body;
-
-		if (!name || typeof name !== 'string' || !name.trim()) {
-			return badRequest('Category name is required');
-		}
 
 		const categorySlug = name
 			.toLowerCase()
@@ -105,16 +108,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 	if (ctx instanceof Response) return ctx;
 
 	try {
-		const body = await request.json();
+		const body = await parseJson(request, updateCategoryBodySchema);
+		if (body instanceof Response) return body;
 		const { id, name, description, image, color, sortOrder } = body;
-
-		if (!id) {
-			return badRequest('Category ID is required');
-		}
-
-		if (!name || typeof name !== 'string' || !name.trim()) {
-			return badRequest('Category name is required');
-		}
 
 		const [existing] = await db
 			.select()
@@ -166,12 +162,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	if (ctx instanceof Response) return ctx;
 
 	try {
-		const url = new URL(request.url);
-		const categoryId = url.searchParams.get('id');
-
-		if (!categoryId) {
-			return badRequest('Category ID is required');
-		}
+		const query = parseQuery(request, deleteCategoryQuerySchema);
+		if (query instanceof Response) return query;
+		const categoryId = query.id;
 
 		// Verify category belongs to this store
 		const [existing] = await db
@@ -203,4 +196,3 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		return serverError('Failed to delete category');
 	}
 }
-

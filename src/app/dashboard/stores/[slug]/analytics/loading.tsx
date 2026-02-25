@@ -10,6 +10,7 @@ export default function Loading() {
       icon={<BarChart3 />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Analytics" },
       ]}
       disableAnimation={true}

@@ -1,5 +1,6 @@
 import { withBaseUrl } from "@/lib/utils/url";
 import type { Order, OrderSummary } from "./types";
+import { parseApiResponse } from "@/lib/query/api-response";
 
 export interface OrdersResponse {
   orders: OrderSummary[];
@@ -28,14 +29,10 @@ export async function fetchOrders(
 
   const url = `/api/stores/${storeSlug}/orders${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
   const response = await fetch(withBaseUrl(url));
-
-  if (!response.ok) {
-    throw new Error(
-      response.status === 404 ? "Orders not found" : "Failed to load orders"
-    );
-  }
-
-  return response.json();
+  return parseApiResponse<OrdersResponse>(
+    response,
+    response.status === 404 ? "Orders not found" : "Failed to load orders",
+  );
 }
 
 export async function fetchOrder(
@@ -45,13 +42,9 @@ export async function fetchOrder(
   const response = await fetch(
     withBaseUrl(`/api/stores/${storeSlug}/orders/${orderId}`)
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.status === 404 ? "Order not found" : "Failed to load order"
-    );
-  }
-
-  const data = await response.json();
+  const data = await parseApiResponse<{ order: Order }>(
+    response,
+    response.status === 404 ? "Order not found" : "Failed to load order",
+  );
   return data.order;
 }

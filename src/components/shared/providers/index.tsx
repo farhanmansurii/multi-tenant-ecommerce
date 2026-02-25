@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "@/lib/session/context";
 import { AppProgressBar as ProgressBar } from 'next-nprogress-bar';
 import { createQueryClient } from "@/lib/query/config";
+import { Toaster } from "@/components/ui/sonner";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => createQueryClient());
@@ -16,6 +17,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
 
+          <Toaster position="top-right" richColors closeButton />
 
           <ProgressBar
             height="3px"

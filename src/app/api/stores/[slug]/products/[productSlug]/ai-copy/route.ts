@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema/ecommerce/products";
-import { stores } from "@/lib/db/schema/core/stores";
-import { requireAuthOrNull } from "@/lib/session/helpers";
 import { aiService } from "@/lib/ai/openai";
-import { unauthorized, notFound, badRequest, serverError, ok } from "@/lib/api/responses";
+import { notFound, serverError, ok, logRouteError } from "@/lib/api/responses";
 import { rateLimit } from "@/lib/api/rate-limit";
+import { getApiContext } from "@/lib/api/context";
+import { parseJson } from "@/lib/api/validation";
+import { aiCopyApplyBodySchema, aiCopySuggestionBodySchema } from "@/lib/schemas/product";
+import { revalidateProductCache } from "@/lib/api/cache-revalidation";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
 
 // Rate limiter: 10 requests per minute per user for AI endpoints
 const aiRateLimit = rateLimit({
@@ -25,33 +28,23 @@ export async function POST(
   }
 
   try {
-    const session = await requireAuthOrNull();
-    if (!session) {
-      return unauthorized();
-    }
-
     const { slug, productSlug } = await params;
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
 
-    // Verify store ownership
-    const store = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
-
-    if (!store[0] || store[0].ownerUserId !== session.user.id) {
-      return notFound("Store not found or access denied");
-    }
-
-    // Get the product
     const targetProduct = await db
       .select()
       .from(products)
-      .where(and(eq(products.storeId, store[0].id), eq(products.slug, productSlug)))
+      .where(and(eq(products.storeId, ctx.storeId), eq(products.slug, productSlug)))
       .limit(1);
 
     if (!targetProduct[0]) {
       return notFound("Product not found");
     }
 
-    const body = await request.json();
-    const { targetAudience = "general consumers" } = body;
+    const body = await parseJson(request, aiCopySuggestionBodySchema);
+    if (body instanceof Response) return body;
+    const { targetAudience } = body;
 
     // Generate improved copy
     const suggestion = await aiService.improveProductCopy(
@@ -66,7 +59,7 @@ export async function POST(
 
     return ok({ suggestion });
   } catch (error) {
-    console.error("Error generating AI copy suggestions:", error);
+    await logRouteError("Error generating AI copy suggestions", error, params);
     return serverError();
   }
 }
@@ -82,26 +75,13 @@ export async function PATCH(
   }
 
   try {
-    const session = await requireAuthOrNull();
-    if (!session) {
-      return unauthorized();
-    }
-
     const { slug, productSlug } = await params;
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
 
-    // Verify store ownership
-    const store = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
-
-    if (!store[0] || store[0].ownerUserId !== session.user.id) {
-      return notFound("Store not found or access denied");
-    }
-
-    const body = await request.json();
+    const body = await parseJson(request, aiCopyApplyBodySchema);
+    if (body instanceof Response) return body;
     const { improvedDescription } = body;
-
-    if (!improvedDescription) {
-      return badRequest("Improved description is required");
-    }
 
     // Update the product description
     await db
@@ -110,11 +90,19 @@ export async function PATCH(
         description: improvedDescription,
         updatedAt: new Date(),
       })
-      .where(and(eq(products.storeId, store[0].id), eq(products.slug, productSlug)));
+      .where(and(eq(products.storeId, ctx.storeId), eq(products.slug, productSlug)));
 
-    return ok({ success: true, message: "Product description updated" });
+    revalidateProductCache(slug, productSlug);
+    return ok(
+      { success: true, message: "Product description updated" },
+      {
+        headers: {
+          "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+        },
+      },
+    );
   } catch (error) {
-    console.error("Error updating product description:", error);
+    await logRouteError("Error updating product description", error, params);
     return serverError();
   }
 }

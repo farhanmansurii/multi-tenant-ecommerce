@@ -1,8 +1,9 @@
-import { eq, and, desc, like, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import "server-only";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
 import { setTenantContext } from "@/lib/middleware/tenant";
+import { productsService } from "./products-service";
 
 export interface CreateProductData {
   name: string;
@@ -56,27 +57,7 @@ export interface ProductFilters {
  * Create a new product
  */
 export async function createProduct(storeId: string, data: CreateProductData) {
-  const [product] = await db
-    .insert(products)
-    .values({
-      id: crypto.randomUUID(),
-      storeId,
-      ...data,
-      type: data.type || "physical",
-      status: data.status || "draft",
-      trackQuantity: data.trackQuantity ?? true,
-      quantity: data.quantity || "0",
-      allowBackorder: data.allowBackorder ?? false,
-      images: data.images || [],
-      categories: data.categories || [],
-      tags: data.tags || [],
-      featured: data.featured ?? false,
-      requiresShipping: data.requiresShipping ?? true,
-      taxable: data.taxable ?? true,
-    })
-    .returning();
-
-  return product;
+  return productsService.createProduct(storeId, data);
 }
 
 /**
@@ -114,75 +95,32 @@ export async function getProductBySlug(storeId: string, slug: string) {
  * Update product
  */
 export async function updateProduct(id: string, data: Partial<CreateProductData>) {
-  const { storeId, slug, ...updateData } = data as any;
-
-  const [updatedProduct] = await db
-    .update(products)
-    .set({
-      ...updateData,
-      updatedAt: new Date(),
-    })
-    .where(eq(products.id, id))
-    .returning();
-
-  if (!updatedProduct) {
-    throw new Error('Product not found or update failed');
-  }
-
-  return updatedProduct;
+  return productsService.updateProduct(id, data);
 }
 
 /**
  * Delete product
  */
 export async function deleteProduct(id: string) {
-  await db.delete(products).where(eq(products.id, id));
+  await productsService.deleteProduct(id);
 }
 
 /**
  * List products with filters
  */
 export async function listProducts(storeId: string, filters: ProductFilters = {}) {
-  // For now, just return basic products list
-  // TODO: Implement proper filtering when Drizzle types are fixed
-  return await db
-    .select()
-    .from(products)
-    .where(eq(products.storeId, storeId))
-    .orderBy(desc(products.createdAt))
-    .limit(filters.limit || 50);
+  const products = await productsService.listForStore(storeId);
+  if (filters.limit) {
+    return products.slice(0, filters.limit);
+  }
+  return products;
 }
 
 /**
  * Get product count
  */
 export async function getProductCount(storeId: string, filters: ProductFilters = {}) {
-  // Build conditions array
-  const conditions = [eq(products.storeId, storeId)];
-
-  // Apply same filters as list method
-  if (filters.status && filters.status.length > 0) {
-    conditions.push(inArray(products.status, filters.status as ("draft" | "active" | "inactive" | "out_of_stock")[]));
-  }
-
-  if (filters.type && filters.type.length > 0) {
-    conditions.push(inArray(products.type, filters.type as ("physical" | "digital" | "service")[]));
-  }
-
-  if (filters.featured !== undefined) {
-    conditions.push(eq(products.featured, filters.featured));
-  }
-
-  if (filters.search) {
-    conditions.push(like(products.name, `%${filters.search}%`));
-  }
-
-  const result = await db
-    .select({ count: products.id })
-    .from(products)
-    .where(and(...conditions));
-
-  return result.length;
+  return productsService.countForStore(storeId, filters);
 }
 
 /**

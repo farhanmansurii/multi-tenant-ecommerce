@@ -8,11 +8,22 @@ export type ProductInsertInput = typeof products.$inferInsert;
 
 export interface ProductRepository {
   listForStore(storeId: string, options?: RepositoryOptions): Promise<ProductRecord[]>;
+  findBySlug(
+    storeId: string,
+    slug: string,
+    options?: RepositoryOptions,
+  ): Promise<ProductRecord | null>;
   findById(
     storeId: string,
     productId: string,
     options?: RepositoryOptions,
   ): Promise<ProductRecord | null>;
+  updateById(
+    id: string,
+    data: Partial<ProductInsertInput>,
+    options?: RepositoryOptions,
+  ): Promise<ProductRecord | null>;
+  deleteById(id: string, options?: RepositoryOptions): Promise<void>;
   insert(product: ProductInsertInput, options?: RepositoryOptions): Promise<void>;
 }
 
@@ -44,6 +55,42 @@ export class DrizzleProductRepository implements ProductRepository {
       .where(and(eq(products.storeId, storeId), eq(products.id, productId)))
       .limit(1);
     return product ?? null;
+  }
+
+  async findBySlug(
+    storeId: string,
+    slug: string,
+    options?: RepositoryOptions,
+  ): Promise<ProductRecord | null> {
+    const executor = this.resolveExecutor(options);
+    const [product] = await executor
+      .select()
+      .from(products)
+      .where(and(eq(products.storeId, storeId), eq(products.slug, slug)))
+      .limit(1);
+    return product ?? null;
+  }
+
+  async updateById(
+    id: string,
+    data: Partial<ProductInsertInput>,
+    options?: RepositoryOptions,
+  ): Promise<ProductRecord | null> {
+    const executor = this.resolveExecutor(options);
+    const [updated] = await executor
+      .update(products)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, id))
+      .returning();
+    return updated ?? null;
+  }
+
+  async deleteById(id: string, options?: RepositoryOptions): Promise<void> {
+    const executor = this.resolveExecutor(options);
+    await executor.delete(products).where(eq(products.id, id));
   }
 
   async insert(product: ProductInsertInput, options?: RepositoryOptions): Promise<void> {

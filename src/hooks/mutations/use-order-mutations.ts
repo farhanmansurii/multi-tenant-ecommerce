@@ -4,6 +4,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { invalidateOrderQueries } from "@/lib/query/utils";
 import type { Order, OrderStatus } from "@/lib/domains/orders/types";
 import { withBaseUrl } from "@/lib/utils/url";
+import { parseApiResponse } from "@/lib/query/api-response";
 
 export function useUpdateOrderStatus(storeSlug: string) {
   const queryClient = useQueryClient();
@@ -16,13 +17,8 @@ export function useUpdateOrderStatus(storeSlug: string) {
         body: JSON.stringify({ status }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || "Failed to update order status");
-      }
-
-      const data = await response.json();
-      return data.order as Order;
+      const data = await parseApiResponse<{ order: Order }>(response, "Failed to update order status");
+      return data.order;
     },
     onMutate: async ({ orderId, status }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.orders.detail(storeSlug, orderId) });
@@ -43,7 +39,7 @@ export function useUpdateOrderStatus(storeSlug: string) {
     onSuccess: (order, { orderId }) => {
       queryClient.setQueryData(queryKeys.orders.detail(storeSlug, orderId), order);
       invalidateOrderQueries(queryClient, storeSlug, orderId);
-      queryClient.refetchQueries({ queryKey: queryKeys.orders.all(storeSlug) });
+      void queryClient.refetchQueries({ queryKey: queryKeys.orders.all(storeSlug) });
       toast.success("Order status updated");
     },
     onError: (error: Error, _, context) => {

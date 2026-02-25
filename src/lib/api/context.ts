@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { cache } from "react";
 import { auth } from "@/lib/auth/server";
 import { storeHelpers } from "@/lib/domains/stores";
@@ -81,7 +81,7 @@ export async function getApiContextOrNull(
   ]);
 
   if (!store) {
-    return notFound("Store not found");
+    return null;
   }
 
   await setTenantContext(store.id);

@@ -2,15 +2,12 @@
 import React, { useMemo } from "react";
 
 import { DottedShader } from "./shaders";
+import "./DotMatrix.css";
 
 const hexToRgb = (hex) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
-    ? [
-        parseInt(result[1], 16),
-        parseInt(result[2], 16),
-        parseInt(result[3], 16),
-      ]
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
     : [97, 218, 251];
 };
 
@@ -36,15 +33,8 @@ const DotMatrix = ({
   }, [delay, speed]);
 
   const opacityLayers = useMemo(
-    () => [
-      opacity * 0.4,
-      opacity * 0.4,
-      opacity * 0.65,
-      opacity * 0.65,
-      opacity * 0.95,
-      opacity,
-    ],
-    [opacity]
+    () => [opacity * 0.4, opacity * 0.4, opacity * 0.65, opacity * 0.65, opacity * 0.95, opacity],
+    [opacity],
   );
 
   return (

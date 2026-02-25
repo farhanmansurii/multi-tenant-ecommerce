@@ -1,14 +1,16 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 import {
 	listOrders,
 	createOrder,
-	createOrderSchema,
-	orderQuerySchema,
 } from "@/lib/domains/orders";
 import { getCustomerByUserId } from "@/lib/domains/customers";
 import { getApiContextOrNull } from "@/lib/api/context";
 import { ok, created, badRequest, notFound } from "@/lib/api/responses";
+import { parseJson, parseQuery } from "@/lib/api/validation";
+import { createStoreOrderBodySchema, orderListQuerySchema } from "@/lib/schemas/order";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateOrderCache } from "@/lib/api/cache-revalidation";
 
 interface RouteParams {
 	params: Promise<{
@@ -24,45 +26,62 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 	if (ctx instanceof Response) return ctx;
 	if (!ctx) return notFound("Store not found");
 
-	const url = new URL(request.url);
-	const queryUserId = url.searchParams.get("userId") || undefined;
-	let customerId = url.searchParams.get("customerId") || undefined;
+	const query = parseQuery(request, orderListQuerySchema);
+	if (query instanceof Response) return query;
+	const page = query.page ?? 1;
+	const limit = query.limit ?? 20;
+
+	const queryUserId = query.userId;
+	let customerId = query.customerId;
 	if (queryUserId && !customerId) {
 		const customer = await getCustomerByUserId(ctx.storeId, queryUserId);
 		if (customer) {
 			customerId = customer.id;
 		} else {
-			return ok({
-				orders: [],
-				total: 0,
-				page: 1,
-				limit: 20,
-				totalPages: 0,
-			});
+			const response = ok(
+				{
+					orders: [],
+					total: 0,
+					page: 1,
+					limit: 20,
+					totalPages: 0,
+				},
+				{
+					headers: {
+						"Cache-Control": CACHE_CONFIG.ORDERS.cacheControl,
+					},
+				},
+			);
+			response.headers.set("Cache-Tag", CACHE_CONFIG.ORDERS.tags(slug).join(", "));
+			return response;
 		}
 	}
 
 	const queryParams = {
-		page: url.searchParams.get("page") || "1",
-		limit: url.searchParams.get("limit") || "20",
-		status: url.searchParams.get("status") || undefined,
+		page,
+		limit,
+		status: query.status,
 		customerId,
 	};
 
-	const parseResult = orderQuerySchema.safeParse(queryParams);
-	if (!parseResult.success) {
-		return badRequest("Invalid query parameters");
-	}
+	const result = await listOrders(ctx.storeId, queryParams);
 
-	const result = await listOrders(ctx.storeId, parseResult.data);
-
-	return ok({
-		orders: result.orders,
-		total: result.total,
-		page: parseResult.data.page,
-		limit: parseResult.data.limit,
-		totalPages: Math.ceil(result.total / parseResult.data.limit),
-	});
+	const response = ok(
+		{
+			orders: result.orders,
+			total: result.total,
+			page: queryParams.page,
+			limit: queryParams.limit,
+			totalPages: Math.ceil(result.total / queryParams.limit),
+		},
+		{
+			headers: {
+				"Cache-Control": CACHE_CONFIG.ORDERS.cacheControl,
+			},
+		},
+	);
+	response.headers.set("Cache-Tag", CACHE_CONFIG.ORDERS.tags(slug).join(", "));
+	return response;
 }
 
 // POST /api/stores/[slug]/orders - Create order from cart
@@ -73,16 +92,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 	if (ctx instanceof Response) return ctx;
 	if (!ctx) return notFound("Store not found");
 
-	const body = await request.json();
-	const parseResult = createOrderSchema.safeParse(body);
-
-	if (!parseResult.success) {
-		return badRequest("Invalid input");
-	}
+	const body = await parseJson(request, createStoreOrderBodySchema);
+	if (body instanceof Response) return body;
 
 	try {
-		const order = await createOrder(ctx.storeId, parseResult.data);
-		return created({ order });
+		const order = await createOrder(ctx.storeId, body);
+		revalidateOrderCache(slug);
+		return created(
+			{ order },
+			{
+				headers: {
+					"Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+				},
+			},
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Failed to create order";
 		return badRequest(message);

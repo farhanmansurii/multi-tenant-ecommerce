@@ -38,10 +38,10 @@ const variantStyles = {
     containerBg: "bg-gradient-to-br from-card/50 to-card/30",
   },
   success: {
-    iconBg: "bg-gradient-to-br from-emerald-500/10 to-emerald-500/5",
-    iconBorder: "border-emerald-500/20",
-    iconColor: "text-emerald-500/60",
-    containerBg: "bg-gradient-to-br from-emerald-500/5 to-emerald-500/2",
+    iconBg: "bg-gradient-to-br from-success/15 to-success/5",
+    iconBorder: "border-success/25",
+    iconColor: "text-success/70",
+    containerBg: "bg-gradient-to-br from-success/5 to-success/2",
   },
 };
 

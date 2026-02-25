@@ -11,6 +11,7 @@ export default function Loading() {
       icon={<ClipboardList />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Orders" },
       ]}
       headerActions={

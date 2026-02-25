@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
   Package,
   ExternalLink,
-  Settings,
+  SlidersHorizontal,
   TrendingUp,
   AlertCircle,
   Sparkles,
@@ -218,8 +218,8 @@ const StoreListItem = ({ store }: { store: StoreData }) => {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/stores/${store.slug}/settings`} className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" /> Settings
+                <Link href={`/dashboard/stores/${store.slug}/configure`} className="cursor-pointer">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" /> Configure
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

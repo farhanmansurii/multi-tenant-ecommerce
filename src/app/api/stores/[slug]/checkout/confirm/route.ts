@@ -1,11 +1,16 @@
 import { NextRequest } from "next/server";
 
-import { storeHelpers } from "@/lib/domains/stores";
+import { ok, badRequest } from "@/lib/api/responses";
+import { confirmCheckoutSchema, type ConfirmCheckoutInput } from "@/lib/domains/checkout";
+import { createCheckoutService } from "@/lib/domains/services";
 import {
-	confirmCheckout,
-	confirmCheckoutSchema,
-} from "@/lib/domains/checkout";
-import { ok, notFound, badRequest } from "@/lib/api/responses";
+  composeMiddleware,
+  apiContextMiddleware,
+  rateLimitMiddleware,
+  validationMiddleware,
+  withErrorCapture,
+  type MiddlewareContext,
+} from "@/lib/api/middleware/pipeline";
 
 interface RouteParams {
 	params: Promise<{
@@ -13,42 +18,56 @@ interface RouteParams {
 	}>;
 }
 
+const checkoutService = createCheckoutService();
+const checkoutConfirmPipeline = composeMiddleware([
+  apiContextMiddleware(),
+  rateLimitMiddleware(),
+  validationMiddleware(confirmCheckoutSchema),
+]);
+
 // POST /api/stores/[slug]/checkout/confirm - Confirm checkout and process payment
 export async function POST(request: NextRequest, { params }: RouteParams) {
-	const { slug } = await params;
+  return withErrorCapture(async () => {
+    const { slug } = await params;
+    const context: MiddlewareContext = {
+      request,
+      slug,
+      params: { slug },
+      data: {},
+    };
 
-	const store = await storeHelpers.getStoreBySlug(slug);
-	if (!store) {
-		return notFound("Store not found");
-	}
+    const pipelineResult = await checkoutConfirmPipeline(context);
+    if (pipelineResult instanceof Response) {
+      return pipelineResult;
+    }
 
-	const body = await request.json();
-	const parseResult = confirmCheckoutSchema.safeParse(body);
+    const apiContext = pipelineResult.data.apiContext as { storeId: string };
+    const body = pipelineResult.data.validatedBody as ConfirmCheckoutInput;
 
-	if (!parseResult.success) {
-		return badRequest("Invalid input");
-	}
+    try {
+      const result = await checkoutService.confirmCheckout(apiContext.storeId, body);
 
-	try {
-		const result = await confirmCheckout(store.id, parseResult.data);
+      if (result.success) {
+        return ok({
+          success: true,
+          order: result.order,
+          paymentStatus: result.paymentStatus,
+          message: result.message,
+        });
+      }
 
-		if (result.success) {
-			return ok({
-				success: true,
-				order: result.order,
-				paymentStatus: result.paymentStatus,
-				message: result.message,
-			});
-		} else {
-			return ok({
-				success: false,
-				order: result.order,
-				paymentStatus: result.paymentStatus,
-				message: result.message,
-			}, { status: 402 }); // Payment Required
-		}
-	} catch (error) {
-		const message = error instanceof Error ? error.message : "Failed to confirm checkout";
-		return badRequest(message);
-	}
+      return ok(
+        {
+          success: false,
+          order: result.order,
+          paymentStatus: result.paymentStatus,
+          message: result.message,
+        },
+        { status: 402 },
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to confirm checkout";
+      return badRequest(message);
+    }
+  });
 }

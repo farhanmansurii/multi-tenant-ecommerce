@@ -1,14 +1,16 @@
-import { NextRequest } from 'next/server';
-import { unstable_cache } from 'next/cache';
+import type { NextRequest } from 'next/server';
 
 import { productHelpers } from '@/lib/domains/products';
+import type { CreateProductData } from '@/lib/domains/products/helpers';
 import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
 import { db } from '@/lib/db';
 import { products as productsTable, categories as categoriesTable } from '@/lib/db/schema';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
-import { ok, notFound, created, badRequest, serverError, logRouteError } from '@/lib/api/responses';
+import { ok, notFound, created, serverError, logRouteError } from '@/lib/api/responses';
 import { CACHE_CONFIG } from '@/lib/api/cache-config';
 import { revalidateProductCache } from '@/lib/api/cache-revalidation';
+import { parseJson, parseQuery } from '@/lib/api/validation';
+import { createProductBodySchema, productListQuerySchema } from '@/lib/schemas/product';
 
 interface RouteParams {
 	params: Promise<{
@@ -18,13 +20,37 @@ interface RouteParams {
 
 export const revalidate = 60;
 
+function normalizeProductNumericFields(input: Record<string, unknown>): Record<string, unknown> {
+	const numericKeys = [
+		'price',
+		'compareAtPrice',
+		'costPrice',
+		'quantity',
+		'weight',
+		'length',
+		'width',
+		'height',
+		'downloadExpiry',
+	] as const;
+
+	const normalized: Record<string, unknown> = { ...input };
+	for (const key of numericKeys) {
+		const value = normalized[key];
+		if (typeof value === 'number') {
+			normalized[key] = String(value);
+		}
+	}
+
+	return normalized;
+}
+
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	try {
 		const { slug } = await params;
-		const url = new URL(request.url);
-
-		const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-		const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
+		const query = parseQuery(request, productListQuerySchema);
+		if (query instanceof Response) return query;
+		const page = query.page ?? 1;
+		const limit = query.limit ?? 50;
 		const offset = (page - 1) * limit;
 
 		const ctx = await getApiContextOrNull(request, slug);
@@ -85,13 +111,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 		const enrichedProducts = products.map((p) => ({
 			...p,
-			categories: Array.isArray(p.categories)
-				? p.categories.map((id) => ({
-						id: id as string,
-						name: categoryMap.get(id as string) || 'Unknown',
-				  }))
-				: [],
-		}));
+				categories: Array.isArray(p.categories)
+					? p.categories
+							.filter((id): id is string => typeof id === 'string')
+							.map((id) => ({
+								id,
+								name: categoryMap.get(id) || 'Unknown',
+							}))
+					: [],
+			}));
 
 		const response = ok(
 			{
@@ -126,7 +154,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 		storeId = ctx.storeId;
 
-		const body = await request.json();
+		const parsedBody = await parseJson(request, createProductBodySchema);
+		if (parsedBody instanceof Response) return parsedBody;
+		const body = parsedBody;
 
 		function toSlug(input: string): string {
 			return input
@@ -155,7 +185,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			finalSlug = unique;
 		}
 
-		const product = await productHelpers.createProduct(ctx.storeId, { ...body, slug: finalSlug });
+			const normalizedBody = normalizeProductNumericFields(body) as Partial<CreateProductData>;
+			const product = await productHelpers.createProduct(ctx.storeId, {
+				...normalizedBody,
+				name: body.name,
+				description: body.description,
+				price: String(body.price),
+				slug: finalSlug,
+			});
 
 		revalidateProductCache(slug);
 

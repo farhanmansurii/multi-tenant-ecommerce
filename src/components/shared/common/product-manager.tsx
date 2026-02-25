@@ -5,14 +5,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
 import ProductCard, { ProductTable } from "./product-manager/product-card";
-import ProductEmptyState from "./product-manager/product-empty-state";
-import ProductToolbar from "./product-manager/product-toolbar";
 import { ProductData, ProductViewMode } from "./product-manager/types";
 import { QueryListSkeleton } from "@/lib/ui/query-skeleton";
 import { useProducts } from "@/hooks/queries/use-products";
 import { useDeleteProduct } from "@/hooks/mutations/use-product-mutations";
 
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/shared/common/empty-state";
-import { Search } from "lucide-react";
+import { Filter, Grid3X3, List, Plus, Search } from "lucide-react";
 import type { ProductData as DomainProductData } from "@/lib/domains/products/types";
 
 interface ProductManagerProps {
@@ -156,99 +163,146 @@ const ProductManager = ({ storeSlug, onProductsChange }: ProductManagerProps) =>
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Products</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {products.length === 0
-              ? "No products yet"
-              : `${filteredProducts.length} of ${products.length} product${products.length !== 1 ? "s" : ""}`}
-          </p>
+      <div className="rounded-xl border border-border/60 bg-card/80 p-4 sm:p-5">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Catalog</h2>
+              <p className="text-sm text-muted-foreground">
+                {products.length === 0
+                  ? "No products yet"
+                  : `${filteredProducts.length} of ${products.length} product${products.length !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => router.push(`/dashboard/stores/${storeSlug}/products/new`)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search products by name, SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[190px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Filter status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="inline-flex w-full overflow-hidden rounded-md border bg-background sm:w-auto">
+                <Button
+                  size="sm"
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  className="rounded-none"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  className="rounded-none"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="p-4 sm:p-6 border-b">
-          <ProductToolbar
-            productCount={products.length}
-            viewMode={viewMode}
-            searchQuery={searchQuery}
-            statusFilter={statusFilter}
-            onViewModeChange={setViewMode}
-            onSearchChange={setSearchQuery}
-            onStatusFilterChange={setStatusFilter}
-            onCreateProduct={() =>
-              router.push(`/dashboard/stores/${storeSlug}/products/new`)
+      <div className="min-h-[380px] rounded-xl border border-border/60 bg-card/70 p-4 sm:p-6">
+        {products.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No products yet"
+            description="Start building your catalog with your first product."
+            action={{
+              label: "Create First Product",
+              onClick: () => router.push(`/dashboard/stores/${storeSlug}/products/new`),
+              icon: Plus,
+            }}
+          />
+        ) : filteredProducts.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No products found"
+            description="Try adjusting your search or filter criteria."
+            variant="search"
+            secondaryAction={
+              searchQuery || statusFilter !== "all"
+                ? {
+                    label: "Clear filters",
+                    onClick: () => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                    },
+                  }
+                : undefined
             }
           />
-        </div>
+        ) : viewMode === "list" ? (
+          <ProductTable
+            products={filteredProducts}
+            onEdit={(p: ProductData) =>
+              router.push(
+                `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
+              )
+            }
+            onDelete={handleDeleteProduct}
+            onView={(p: ProductData) => {
+              router.push(`/stores/${storeSlug}/products/${p.slug}`);
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6">
+            {filteredProducts.map((p: ProductData) => {
+              if (!p || typeof p !== "object" || !p.id) {
+                console.error("Invalid product data:", p);
+                return null;
+              }
 
-        <div className="p-4 sm:p-6 min-h-[400px]">
-          {products.length === 0 ? (
-            <ProductEmptyState
-              onCreateProduct={() =>
-                router.push(`/dashboard/stores/${storeSlug}/products/new`)
-              }
-            />
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState
-              icon={Search}
-              title="No products found"
-              description="Try adjusting your search or filter criteria."
-              variant="search"
-              secondaryAction={
-                searchQuery || statusFilter !== "all"
-                  ? {
-                      label: "Clear filters",
-                      onClick: () => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                      },
-                    }
-                  : undefined
-              }
-            />
-          ) : viewMode === "list" ? (
-            <ProductTable
-              products={filteredProducts}
-              onEdit={(p: ProductData) =>
-                router.push(
-                  `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
-                )
-              }
-              onDelete={handleDeleteProduct}
-              onView={(p: ProductData) => {
-                router.push(`/stores/${storeSlug}/products/${p.slug}`);
-              }}
-            />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {filteredProducts.map((p: ProductData) => {
-                if (!p || typeof p !== "object" || !p.id) {
-                  console.error("Invalid product data:", p);
-                  return null;
-                }
-
-                return (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    viewMode={viewMode}
-                    onEdit={() =>
-                      router.push(
-                        `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
-                      )
-                    }
-                    onDelete={handleDeleteProduct}
-                    onView={(cur: ProductData) => {
-                      router.push(`/stores/${storeSlug}/products/${cur.slug}`);
-                    }}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
+              return (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  viewMode={viewMode}
+                  onEdit={() =>
+                    router.push(
+                      `/dashboard/stores/${storeSlug}/products/${p.slug || p.id}/edit`
+                    )
+                  }
+                  onDelete={handleDeleteProduct}
+                  onView={(cur: ProductData) => {
+                    router.push(`/stores/${storeSlug}/products/${cur.slug}`);
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>

@@ -40,11 +40,11 @@ export function NotFoundState({
         transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         className="relative mb-6"
       >
-        <div className="absolute inset-0 bg-red-500/10 rounded-full blur-2xl" />
-        <div className="relative h-24 w-24 rounded-3xl bg-background border border-border/50 shadow-xl shadow-red-500/5 flex items-center justify-center">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/10 to-orange-500/10 opacity-50" />
-          <Icon className="h-10 w-10 text-red-500/80" />
-          <div className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+        <div className="absolute inset-0 bg-destructive/10 rounded-full blur-2xl" />
+        <div className="relative h-24 w-24 rounded-3xl bg-background border border-border/50 shadow-xl shadow-destructive/10 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-destructive/15 to-warning/10 opacity-60" />
+          <Icon className="h-10 w-10 text-destructive/80" />
+          <div className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive border-2 border-background animate-pulse" />
         </div>
       </motion.div>
 

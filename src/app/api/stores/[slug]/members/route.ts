@@ -1,20 +1,18 @@
-import { NextRequest } from "next/server";
-import { z } from "zod";
+import type { NextRequest } from "next/server";
 
 import { storeHelpers } from "@/lib/domains/stores";
 import { getApiContext, getApiContextOrNull } from "@/lib/api/context";
 import { ok, created, notFound, forbidden, badRequest } from "@/lib/api/responses";
+import { parseJson } from "@/lib/api/validation";
+import { addStoreMemberBodySchema } from "@/lib/schemas/store";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
 
 interface RouteParams {
   params: Promise<{
     slug: string;
   }>;
 }
-
-const addMemberSchema = z.object({
-  userId: z.string().min(1),
-  role: z.enum(["admin", "member"]).default("member"),
-});
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
@@ -36,20 +34,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return forbidden();
   }
 
-  const payload = await request.json().catch(() => null);
-  const parsed = addMemberSchema.safeParse(payload);
-  if (!parsed.success) {
-    return badRequest("Invalid payload");
-  }
-
-  const { userId, role } = parsed.data;
+  const body = await parseJson(request, addStoreMemberBodySchema);
+  if (body instanceof Response) return body;
+  const userId = body.userId;
+  const role = body.role ?? "member";
 
   if (userId === ctx.userId) {
     return badRequest("Cannot add yourself");
   }
 
   const createdMember = await storeHelpers.addStoreMember(ctx.storeId, userId, role);
-  return created({ member: createdMember });
+  revalidateStoreCache(slug);
+  return created(
+    { member: createdMember },
+    {
+      headers: {
+        "Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+      },
+    },
+  );
 }
-
-

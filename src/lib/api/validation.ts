@@ -1,11 +1,24 @@
-import { z } from "zod";
+import type { ZodSchema } from "zod";
 import { badRequest } from "./responses";
 import { randomUUID } from "crypto";
 
 const MAX_JSON_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_PARSE_TIME = 5000; // 5 seconds
 
-export async function parseJson<T>(request: Request, schema: z.ZodSchema<T>) {
+function parseWithSchema<T>(value: unknown, schema: ZodSchema<T>, requestId: string) {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    return badRequest("Invalid payload", {
+      requestId,
+      code: "VALIDATION_ERROR",
+      details: result.error.flatten(),
+    });
+  }
+
+  return result.data;
+}
+
+export async function parseJson<T>(request: Request, schema: ZodSchema<T>) {
   const requestId = randomUUID();
 
   // Check content length
@@ -43,16 +56,18 @@ export async function parseJson<T>(request: Request, schema: z.ZodSchema<T>) {
     });
   }
 
-  const result = schema.safeParse(json);
-  if (!result.success) {
-    return badRequest("Invalid payload", {
-      requestId,
-      code: "VALIDATION_ERROR",
-      details: result.error.flatten(),
-    });
-  }
-
-  return result.data;
+  return parseWithSchema(json, schema, requestId);
 }
 
+export function parseQuery<T>(request: Request, schema: ZodSchema<T>) {
+  const requestId = randomUUID();
+  const url = new URL(request.url);
+  const rawParams = Object.fromEntries(url.searchParams.entries());
 
+  return parseWithSchema(rawParams, schema, requestId);
+}
+
+export function parseParams<T>(params: Record<string, string>, schema: ZodSchema<T>) {
+  const requestId = randomUUID();
+  return parseWithSchema(params, schema, requestId);
+}

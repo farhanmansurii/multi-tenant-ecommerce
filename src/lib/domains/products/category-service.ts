@@ -1,15 +1,10 @@
-import { Category, Tag } from "@/lib/db/schema";
+import type { Category, Tag } from "@/lib/db/schema";
 import { withBaseUrl } from "@/lib/utils/url";
+import { parseApiResponse } from "@/lib/query/api-response";
 
 export const fetchCategories = async (storeSlug: string): Promise<Category[]> => {
   const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/categories`));
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to fetch categories");
-  }
-
-  const result = await response.json();
+  const result = await parseApiResponse<{ categories: Category[] }>(response, "Failed to fetch categories");
   return result.categories;
 };
 
@@ -23,34 +18,26 @@ export const createCategory = async (
     sortOrder?: number;
   }
 ): Promise<Category> => {
-  const response = await fetch(`/api/stores/${storeSlug}/categories`, {
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/categories`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to create category");
-  }
-
-  const result = await response.json();
+  const result = await parseApiResponse<{ category: Category }>(response, "Failed to create category");
   return result.category;
 };
 
 export const fetchTags = async (storeSlug: string): Promise<Tag[]> => {
-  const response = await fetch(`/api/stores/${storeSlug}/tags`);
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/tags`));
 
   if (!response.ok) {
     if (response.status === 404) {
       return [];
     }
-
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to fetch tags");
+    await parseApiResponse<never>(response, "Failed to fetch tags");
   }
 
-  const result = await response.json();
+  const result = await parseApiResponse<{ tags: Tag[] }>(response, "Failed to fetch tags");
   return result.tags;
 };
 
@@ -61,18 +48,12 @@ export const createTag = async (
     color?: string;
   }
 ): Promise<Tag> => {
-  const response = await fetch(`/api/stores/${storeSlug}/tags`, {
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/tags`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to create tag");
-  }
-
-  const result = await response.json();
+  const result = await parseApiResponse<{ tag: Tag }>(response, "Failed to create tag");
   return result.tag;
 };
 
@@ -87,18 +68,12 @@ export const updateCategory = async (
     sortOrder?: number;
   }
 ): Promise<Category> => {
-  const response = await fetch(`/api/stores/${storeSlug}/categories`, {
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/categories`), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: categoryId, ...data }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to update category");
-  }
-
-  const result = await response.json();
+  const result = await parseApiResponse<{ category: Category }>(response, "Failed to update category");
   return result.category;
 };
 
@@ -106,12 +81,11 @@ export const deleteCategory = async (
   storeSlug: string,
   categoryId: string
 ): Promise<void> => {
-  const response = await fetch(`/api/stores/${storeSlug}/categories?id=${categoryId}`, {
+  const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/categories?id=${categoryId}`), {
     method: "DELETE",
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Failed to delete category");
+    await parseApiResponse<never>(response, "Failed to delete category");
   }
 };

@@ -1,4 +1,4 @@
-
+import type { stores } from "@/lib/db/schema/core/stores";
 export type StoreBusinessType = 'individual' | 'business' | 'nonprofit';
 
 export interface StoreShippingRate {
@@ -7,47 +7,32 @@ export interface StoreShippingRate {
   estimatedDays: string;
 }
 
-export interface StoreSettings {
+type StoreRow = typeof stores.$inferSelect;
+type PersistedStoreSettings = NonNullable<StoreRow["settings"]>;
+
+export type StoreSettings = Partial<PersistedStoreSettings> & {
   storefrontContentMode?: 'defaults' | 'store' | 'custom';
   storefrontContent?: Record<string, unknown>;
   // Draft content is used for dashboard preview + staged publishing.
   storefrontDraftContent?: Record<string, unknown>;
   storefrontDraftMode?: 'defaults' | 'store' | 'custom';
   storefrontDraftUpdatedAt?: string;
-  paymentMethods?: Array<'stripe' | 'cod'>;
-  codEnabled?: boolean;
-  shippingEnabled?: boolean;
-  freeShippingThreshold?: number | null;
-  termsOfService?: string;
-  privacyPolicy?: string;
-  refundPolicy?: string;
-}
+};
 
-export interface StoreData {
+export type StoreData = Omit<StoreRow, "settings" | "createdAt" | "updatedAt"> & {
   codEnabled: boolean;
   productCount: number;
-  id: string;
-  ownerUserId: string;
-  name: string;
-  slug: string;
-  description: string;
-  contactEmail: string;
-  primaryColor: string;
-  currency: string;
   paymentMethods: Array<'stripe' | 'cod'>;
   shippingEnabled: boolean;
   freeShippingThreshold?: string | number | null;
   termsOfService: string;
   privacyPolicy: string;
   refundPolicy: string;
-  status: 'draft' | 'active' | 'suspended';
-  featured: boolean;
-  logo?: string | null;
   settings?: StoreSettings | null;
   createdAt: string;
   updatedAt: string;
   currentUserRole?: 'owner' | 'admin' | 'member' | 'customer' | null;
-}
+};
 
 export interface StoreFormPayload {
   storeName: string;

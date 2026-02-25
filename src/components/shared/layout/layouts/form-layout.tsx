@@ -72,7 +72,7 @@ export function FormLayout({
           type="submit"
           form="form-layout-form"
           disabled={isSaving}
-          className={showSuccess ? "bg-green-600 hover:bg-green-700" : ""}
+          className={showSuccess ? "bg-success text-success-foreground hover:bg-success/90" : ""}
           onClick={onSubmit}
         >
           {isSaving ? (
@@ -99,8 +99,8 @@ export function FormLayout({
   return (
     <PageContainer className={className}>
       {showSuccess && showSavedMessage && (
-        <div className="sticky top-0 z-30 bg-green-50 border-b border-green-200 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3">
-          <div className="flex items-center gap-2 text-green-800">
+        <div className="sticky top-0 z-30 bg-success/15 border-b border-success/35 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3">
+          <div className="flex items-center gap-2 text-success-foreground">
             <Check className="w-5 h-5" />
             <span className="font-medium">Changes saved successfully!</span>
           </div>

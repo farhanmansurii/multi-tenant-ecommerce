@@ -16,7 +16,7 @@ import {
   ExternalLink,
   Package,
   PauseCircle,
-  Settings,
+  SlidersHorizontal,
   Slash,
   Store,
   ArrowRight,
@@ -69,10 +69,10 @@ export default function StoreCard({ store }: StoreCardProps) {
 
   const primaryColor = store.primaryColor || "#6366f1"; // Default Indigo
 
-  const handleSettingsClick = (e: React.MouseEvent) => {
+  const handleConfigureClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/dashboard/stores/${store.slug}/settings`);
+    router.push(`/dashboard/stores/${store.slug}/configure`);
   };
 
   const handleExternalClick = (e: React.MouseEvent) => {
@@ -179,13 +179,13 @@ export default function StoreCard({ store }: StoreCardProps) {
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-lg hover:bg-muted hover:text-foreground border-border/50"
-                    onClick={handleSettingsClick}
+                    onClick={handleConfigureClick}
                   >
-                    <Settings className="h-4 w-4" />
-                    <span className="sr-only">Settings</span>
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Configure</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Settings</TooltipContent>
+                <TooltipContent>Configure Store</TooltipContent>
               </Tooltip>
 
               <Tooltip>

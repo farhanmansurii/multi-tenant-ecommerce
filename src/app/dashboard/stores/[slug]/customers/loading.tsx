@@ -11,6 +11,7 @@ export default function Loading() {
       icon={<Users />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Customers" },
       ]}
       disableAnimation={true}

@@ -1,6 +1,8 @@
 import { orderStatusEnum } from "../../db/schema/ecommerce/orders";
+import type { orders } from "../../db/schema/ecommerce/orders";
 
 export type OrderStatus = (typeof orderStatusEnum)["enumValues"][number];
+type OrderRow = typeof orders.$inferSelect;
 
 export interface CustomerData {
   name?: string;
@@ -29,12 +31,12 @@ export interface WishlistItem {
 
 export interface CustomerOrderSummary {
   id: string;
-  orderNumber: number;
-  status: OrderStatus;
+  orderNumber: OrderRow["orderNumber"];
+  status: OrderRow["status"];
   totalAmount: number;
-  currency: string;
+  currency: OrderRow["currency"];
   items: number;
-  placedAt: string;
+  placedAt: OrderRow["createdAt"];
 }
 
 export interface Customer {

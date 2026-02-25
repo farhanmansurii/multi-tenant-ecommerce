@@ -10,6 +10,7 @@ import {
   tags,
   orders,
   orderItems,
+  payments,
   storeCustomers,
 } from "./schema";
 
@@ -39,6 +40,7 @@ export const storeRelations = relations(stores, ({ many }) => ({
   categories: many(categories),
   tags: many(tags),
   orders: many(orders),
+  payments: many(payments),
 }));
 
 export const productRelations = relations(products, ({ one, many }) => ({
@@ -84,6 +86,7 @@ export const orderRelations = relations(orders, ({ one, many }) => ({
     references: [storeCustomers.id],
   }),
   items: many(orderItems),
+  payments: many(payments),
 }));
 
 export const orderItemRelations = relations(orderItems, ({ one }) => ({
@@ -103,4 +106,15 @@ export const storeCustomerRelations = relations(storeCustomers, ({ one, many }) 
     references: [stores.id],
   }),
   orders: many(orders),
+}));
+
+export const paymentRelations = relations(payments, ({ one }) => ({
+  order: one(orders, {
+    fields: [payments.orderId],
+    references: [orders.id],
+  }),
+  store: one(stores, {
+    fields: [payments.storeId],
+    references: [stores.id],
+  }),
 }));

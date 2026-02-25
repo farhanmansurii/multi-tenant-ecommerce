@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
@@ -10,6 +10,9 @@ import { storeSchema } from "@/lib/domains/stores/validation";
 import { storeFormValuesToPayload } from "@/lib/domains/stores/form";
 import { ok, created, unauthorized, badRequest, serverError, conflict } from "@/lib/api/responses";
 import { logger } from "@/lib/api/logger";
+import { parseJson } from "@/lib/api/validation";
+import { CACHE_CONFIG } from "@/lib/api/cache-config";
+import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
 
 const MAX_STORES_PER_USER = 3;
 const CACHE_DURATION = 30;
@@ -30,9 +33,9 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const payload = await request.json();
-		const data = storeSchema.parse(payload);
-		const formPayload = storeFormValuesToPayload(data);
+			const data = await parseJson(request, storeSchema);
+			if (data instanceof Response) return data;
+			const formPayload = storeFormValuesToPayload(data);
 
 		const createdStore = await storeHelpers.createStore({
 			ownerUserId: session.user.id,
@@ -53,7 +56,15 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		return created({ store: createdStore });
+			revalidateStoreCache(createdStore.slug);
+			return created(
+				{ store: createdStore },
+				{
+					headers: {
+						"Cache-Control": CACHE_CONFIG.MUTATION.cacheControl,
+					},
+				}
+			);
 	} catch (error) {
 		logger.error("Failed to create store", error, {
 			userId: session.user.id,
@@ -78,11 +89,11 @@ export async function GET() {
 	try {
 		const userStores = await storeHelpers.getStoresByOwner(session.user.id);
 
-		if (userStores.length === 0) {
-			return ok(
-				{
-					stores: [],
-					count: 0,
+			if (userStores.length === 0) {
+				const response = ok(
+					{
+						stores: [],
+						count: 0,
 					limit: MAX_STORES_PER_USER,
 					canCreateMore: true,
 					totalRevenue: 0,
@@ -91,9 +102,11 @@ export async function GET() {
 					headers: {
 						"Cache-Control": `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`,
 					},
-				}
-			);
-		}
+					}
+				);
+				response.headers.set("Cache-Tag", "stores");
+				return response;
+			}
 
 		const storeIds = userStores.map((s) => s.id);
 
@@ -129,9 +142,9 @@ export async function GET() {
 			revenue: revenueMap.get(store.id) || 0,
 		}));
 
-		return ok(
-			{
-				stores: storesWithData,
+			const response = ok(
+				{
+					stores: storesWithData,
 				count: userStores.length,
 				limit: MAX_STORES_PER_USER,
 				canCreateMore: userStores.length < MAX_STORES_PER_USER,
@@ -141,8 +154,10 @@ export async function GET() {
 				headers: {
 					"Cache-Control": `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`,
 				},
-			}
-		);
+				}
+			);
+			response.headers.set("Cache-Tag", "stores");
+			return response;
 	} catch (error) {
 		logger.error("Failed to fetch stores", error, {
 			userId: session.user.id,

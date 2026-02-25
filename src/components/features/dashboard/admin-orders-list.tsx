@@ -268,7 +268,7 @@ export default function AdminOrdersList({ storeSlug, currency = "INR" }: AdminOr
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => updateOrderStatus(order.id, "cancelled")}
-                              className="text-destructive focus:text-destructive"
+                              variant="destructive"
                               disabled={updateOrderStatusMutation.isPending}
                             >
                               Cancel Order
@@ -365,7 +365,7 @@ export default function AdminOrdersList({ storeSlug, currency = "INR" }: AdminOr
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => updateOrderStatus(order.id, "cancelled")}
-                                  className="text-destructive focus:text-destructive"
+                                  variant="destructive"
                                   disabled={updateOrderStatusMutation.isPending}
                                 >
                                   Cancel Order

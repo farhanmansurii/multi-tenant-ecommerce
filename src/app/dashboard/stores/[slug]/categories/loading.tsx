@@ -10,6 +10,7 @@ export default function Loading() {
       icon={<Tags />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Categories" },
       ]}
       headerActions={

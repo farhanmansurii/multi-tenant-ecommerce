@@ -1,12 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema/ecommerce/products";
-import { stores } from "@/lib/db/schema/core/stores";
 import { aiService } from "@/lib/ai/openai";
-import { requireAuthOrNull } from "@/lib/session/helpers";
-import { unauthorized, notFound, serverError, ok } from "@/lib/api/responses";
+import { notFound, serverError, ok, logRouteError } from "@/lib/api/responses";
 import { rateLimit } from "@/lib/api/rate-limit";
+import { getApiContext } from "@/lib/api/context";
 
 // Rate limiter: 10 requests per minute per user for AI endpoints
 const aiRateLimit = rateLimit({
@@ -25,25 +24,15 @@ export async function POST(
   }
 
   try {
-    const session = await requireAuthOrNull();
-    if (!session) {
-      return unauthorized();
-    }
-
     const { slug, productSlug } = await params;
-
-    // Verify store ownership
-    const store = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
-
-    if (!store[0] || store[0].ownerUserId !== session.user.id) {
-      return notFound("Store not found or access denied");
-    }
+    const ctx = await getApiContext(request, slug, { requireOwner: true });
+    if (ctx instanceof Response) return ctx;
 
     // Get the target product
     const targetProduct = await db
       .select()
       .from(products)
-      .where(and(eq(products.storeId, store[0].id), eq(products.slug, productSlug)))
+      .where(and(eq(products.storeId, ctx.storeId), eq(products.slug, productSlug)))
       .limit(1);
 
     if (!targetProduct[0]) {
@@ -60,7 +49,7 @@ export async function POST(
         tags: products.tags,
       })
       .from(products)
-      .where(and(eq(products.storeId, store[0].id), eq(products.status, "active")));
+      .where(and(eq(products.storeId, ctx.storeId), eq(products.status, "active")));
 
     const otherProducts = storeProducts.filter((p) => p.id !== targetProduct[0].id);
 
@@ -106,7 +95,7 @@ export async function POST(
 
     return ok({ recommendations: recommendedProducts });
   } catch (error) {
-    console.error("Error generating AI recommendations:", error);
+    await logRouteError("Error generating AI recommendations", error, params);
     return serverError();
   }
 }

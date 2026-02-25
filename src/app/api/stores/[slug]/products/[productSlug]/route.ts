@@ -1,12 +1,15 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { productHelpers } from '@/lib/domains/products';
+import type { CreateProductData } from '@/lib/domains/products/helpers';
 import { getApiContextOrNull, getApiContext } from '@/lib/api/context';
 import { db } from '@/lib/db';
 import { categories as categoriesTable } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
-import { ok, notFound, badRequest, serverError, logRouteError } from '@/lib/api/responses';
+import { ok, notFound, serverError, logRouteError } from '@/lib/api/responses';
 import { CACHE_CONFIG } from '@/lib/api/cache-config';
 import { revalidateProductCache } from '@/lib/api/cache-revalidation';
+import { parseJson } from '@/lib/api/validation';
+import { updateProductBodySchema } from '@/lib/schemas/product';
 
 interface RouteParams {
   params: Promise<{
@@ -16,6 +19,30 @@ interface RouteParams {
 }
 
 export const revalidate = 120;
+
+function normalizeProductNumericFields(input: Record<string, unknown>): Record<string, unknown> {
+  const numericKeys = [
+    'price',
+    'compareAtPrice',
+    'costPrice',
+    'quantity',
+    'weight',
+    'length',
+    'width',
+    'height',
+    'downloadExpiry',
+  ] as const;
+
+  const normalized: Record<string, unknown> = { ...input };
+  for (const key of numericKeys) {
+    const value = normalized[key];
+    if (typeof value === 'number') {
+      normalized[key] = String(value);
+    }
+  }
+
+  return normalized;
+}
 
 async function getStoreAndProduct(ctx: Awaited<ReturnType<typeof getApiContextOrNull>>, productSlug: string) {
   if (ctx instanceof Response || !ctx) {
@@ -31,11 +58,13 @@ async function getStoreAndProduct(ctx: Awaited<ReturnType<typeof getApiContextOr
   return { store: ctx.store, product };
 }
 
-async function enrichProductCategories(product: any) {
-  let enrichedProduct = { ...product, categories: [] as { id: string; name: string }[] };
+type ProductRecord = NonNullable<Awaited<ReturnType<typeof productHelpers.getProductBySlug>>>;
+
+async function enrichProductCategories(product: ProductRecord) {
+  const enrichedProduct = { ...product, categories: [] as { id: string; name: string }[] };
 
   if (Array.isArray(product.categories) && product.categories.length > 0) {
-    const categoryIds = product.categories.filter((id: any): id is string => typeof id === 'string');
+    const categoryIds = product.categories.filter((id): id is string => typeof id === 'string');
 
     if (categoryIds.length > 0) {
       const cats = await db
@@ -45,7 +74,7 @@ async function enrichProductCategories(product: any) {
 
       const categoryMap = new Map(cats.map((c) => [c.id, c.name]));
 
-      enrichedProduct.categories = categoryIds.map((id: any): { id: string; name: string } => ({
+      enrichedProduct.categories = categoryIds.map((id): { id: string; name: string } => ({
         id,
         name: categoryMap.get(id) || 'Unknown',
       }));
@@ -98,12 +127,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { store, product } = result;
 
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== 'object') {
-      return badRequest('Invalid request body');
-    }
+    const body = await parseJson(request, updateProductBodySchema);
+    if (body instanceof Response) return body;
 
-    const updated = await productHelpers.updateProduct(product.id, body);
+    const normalizedBody = normalizeProductNumericFields(body) as Partial<CreateProductData>;
+    const updated = await productHelpers.updateProduct(product.id, normalizedBody);
 
     if (!updated) {
       return notFound('Product not found or update failed');
@@ -140,7 +168,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const result = await getStoreAndProduct(ctx, productSlug);
     if ('error' in result) return result.error;
 
-    const { store, product } = result;
+    const { store: _store, product } = result;
 
     await productHelpers.deleteProduct(product.id);
 

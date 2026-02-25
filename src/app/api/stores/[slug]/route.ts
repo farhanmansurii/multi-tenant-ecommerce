@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -8,6 +8,8 @@ import { getApiContext, getApiContextOrNull } from "@/lib/api/context";
 import { ok, serverError, logRouteError, notFound } from "@/lib/api/responses";
 import { CACHE_CONFIG } from "@/lib/api/cache-config";
 import { revalidateStoreCache } from "@/lib/api/cache-revalidation";
+import { parseJson } from "@/lib/api/validation";
+import { updateStoreBodySchema } from "@/lib/schemas/store";
 
 interface RouteParams {
   params: Promise<{
@@ -70,7 +72,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     storeId = ctx.storeId;
     const existing = ctx.store;
 
-    const body = await request.json();
+    const parsedBody = await parseJson(request, updateStoreBodySchema);
+    if (parsedBody instanceof Response) return parsedBody;
+    const body = parsedBody;
 
     const currentSettings = (existing.settings as any) || {};
     const newSettings = {

@@ -57,7 +57,8 @@ export default function UserDetailsSidebar() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => signOut()}
-          className="gap-2 text-red-600 focus:text-red-600"
+          variant="destructive"
+          className="gap-2"
         >
           <span>Sign out</span>
         </DropdownMenuItem>

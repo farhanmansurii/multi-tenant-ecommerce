@@ -3,9 +3,10 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, LogOut, Store, User2, Plus } from "lucide-react";
+import { Building2, LogOut, Plus, Store, User2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { signOut } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -20,7 +21,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { signOut } from "@/lib/auth/client";
 import UserDetailsSidebar from "./sidebar-user-details";
 
 interface NavItem {
@@ -37,7 +37,6 @@ const primaryFlow: NavItem[] = [
     title: "Stores",
     url: "/dashboard/stores",
     icon: Building2,
-    exact: false,
   },
 ];
 
@@ -87,9 +86,10 @@ function renderNavItem(
         toast.error("Failed to sign out");
         console.error("Sign out error:", error);
       }
-    } else if (item.onClick) {
-      item.onClick();
+      return;
     }
+
+    item.onClick?.();
   };
 
   const buttonClasses = cn(
@@ -101,9 +101,7 @@ function renderNavItem(
   const innerContent = (
     <div className="flex items-center gap-3">
       <item.icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-      <div className="flex flex-col">
-        <span className="text-sm font-semibold text-foreground">{item.title}</span>
-      </div>
+      <span className="text-sm font-semibold text-foreground">{item.title}</span>
     </div>
   );
 
@@ -131,7 +129,7 @@ function renderNavItem(
   );
 }
 
-export function AppSidebar({ className }: { className: string }) {
+export function AppSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -143,26 +141,31 @@ export function AppSidebar({ className }: { className: string }) {
   }, [pathname, isMobile, setOpenMobile]);
 
   return (
-    <Sidebar variant="floating" side="left" className={className} collapsible="offcanvas">
-      <SidebarHeader>
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-muted flex items-center justify-center">
-              <Store className="h-4 w-4 text-foreground" />
+    <Sidebar
+      variant="floating"
+      side="left"
+      className={cn("border-r border-border/50 bg-card/30", className)}
+      collapsible="offcanvas"
+    >
+      <SidebarHeader className="border-b border-border/40">
+        <div className="px-4 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+              <Store className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex flex-col">
-              <p className="text-sm font-semibold leading-tight text-foreground">Dashboard</p>
-              <p className="text-xs text-muted-foreground">Pick a store to manage</p>
+            <div className="flex min-w-0 flex-col">
+              <p className="text-sm font-bold tracking-tight text-foreground">Dashboard</p>
+              <p className="truncate text-xs text-muted-foreground">Manage your stores</p>
             </div>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-1 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">
+          <SidebarGroupLabel className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
             Workspace
           </SidebarGroupLabel>
-          <SidebarGroupContent className="space-y-2">
+          <SidebarGroupContent className="space-y-1">
             <SidebarMenu>
               {primaryFlow.map((item) =>
                 renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
@@ -172,8 +175,10 @@ export function AppSidebar({ className }: { className: string }) {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">Create</SidebarGroupLabel>
-          <SidebarGroupContent className="space-y-2">
+          <SidebarGroupLabel className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            Create
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-1">
             <SidebarMenu>
               {quickActions.map((item) =>
                 renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
@@ -182,9 +187,11 @@ export function AppSidebar({ className }: { className: string }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/70">Account</SidebarGroupLabel>
-          <SidebarGroupContent className="space-y-2">
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupLabel className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            Account
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-1">
             <SidebarMenu>
               {accountItems.map((item) =>
                 renderNavItem(item, pathname, router, isMobile ? setOpenMobile : undefined),
@@ -193,7 +200,7 @@ export function AppSidebar({ className }: { className: string }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/40 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <UserDetailsSidebar />

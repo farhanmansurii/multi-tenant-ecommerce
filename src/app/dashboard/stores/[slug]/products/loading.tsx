@@ -11,6 +11,7 @@ export default function Loading() {
       icon={<Package />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Products" },
       ]}
       headerActions={

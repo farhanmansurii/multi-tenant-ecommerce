@@ -1,18 +1,19 @@
-import { ProductData, ProductInput } from '@/lib/domains/products/types';
+import type { ProductData, ProductInput } from '@/lib/domains/products/types';
 import type { StoreData } from '@/lib/domains/stores/types';
 import { fetchStore } from '@/lib/domains/stores/service';
 import { withBaseUrl } from '@/lib/utils/url';
 import { normalizeProduct, normalizeProducts } from '@/lib/utils/product-normalizer';
+import { parseApiResponse, unwrapApiData } from '@/lib/query/api-response';
 
 export const fetchProduct = async (
 	storeSlug: string,
 	productSlug: string
 ): Promise<ProductData> => {
 	const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/products/${productSlug}`));
-	if (!response.ok) {
-		throw new Error(response.status === 404 ? 'Product not found' : 'Failed to load product');
-	}
-	const data = await response.json();
+	const data = await parseApiResponse<{ product: ProductData }>(
+		response,
+		response.status === 404 ? 'Product not found' : 'Failed to load product'
+	);
 	return normalizeProduct(data.product);
 };
 
@@ -27,13 +28,12 @@ export const updateProduct = async (
 		body: JSON.stringify(payload),
 	});
 
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => null);
-		throw new Error(errorData?.error || 'Failed to update product');
-	}
-
-	const responseData = await response.json();
-	return normalizeProduct(responseData.product ?? responseData);
+	const responseData = await parseApiResponse<{ product: ProductData } | ProductData>(
+		response,
+		'Failed to update product'
+	);
+	const normalizedProduct = isProductEnvelope(responseData) ? responseData.product : responseData;
+	return normalizeProduct(normalizedProduct);
 };
 
 export const createProduct = async (
@@ -46,13 +46,12 @@ export const createProduct = async (
 		body: JSON.stringify(payload),
 	});
 
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => null);
-		throw new Error(errorData?.error || 'Failed to create product');
-	}
-
-	const result = await response.json();
-	return normalizeProduct(result.product ?? result);
+	const result = await parseApiResponse<{ product: ProductData } | ProductData>(
+		response,
+		'Failed to create product'
+	);
+	const normalizedProduct = isProductEnvelope(result) ? result.product : result;
+	return normalizeProduct(normalizedProduct);
 };
 
 export const deleteProduct = async (storeSlug: string, productSlug: string): Promise<void> => {
@@ -61,16 +60,15 @@ export const deleteProduct = async (storeSlug: string, productSlug: string): Pro
 	});
 
 	if (!response.ok) {
-		const errorData = await response.json().catch(() => null);
-		throw new Error(errorData?.error || 'Failed to delete product');
+		await parseApiResponse<void>(response, 'Failed to delete product');
 	}
 };
 
 export async function fetchProducts(slug: string): Promise<ProductData[]> {
 	const res = await fetch(withBaseUrl(`/api/stores/${slug}/products`));
 	if (!res.ok) return [];
-	const payload = await res.json();
-	return normalizeProducts(payload.products as ProductData[]);
+	const payload = unwrapApiData<{ products: ProductData[] }>(await res.json());
+	return normalizeProducts(payload.products);
 }
 
 export const fetchStoreAndProduct = async (
@@ -91,6 +89,12 @@ export const fetchStoreAndProduct = async (
 export async function fetchRecommendations(storeSlug: string, productSlug: string): Promise<ProductData[]> {
   const response = await fetch(withBaseUrl(`/api/stores/${storeSlug}/products/${productSlug}/recommendations`));
   if (!response.ok) return [];
-  const data = await response.json();
-  return normalizeProducts(data.products as ProductData[]);
+  const data = unwrapApiData<{ products: ProductData[] }>(await response.json());
+  return normalizeProducts(data.products);
+}
+
+function isProductEnvelope(
+	value: { product: ProductData } | ProductData
+): value is { product: ProductData } {
+	return typeof value === 'object' && value !== null && 'product' in value;
 }

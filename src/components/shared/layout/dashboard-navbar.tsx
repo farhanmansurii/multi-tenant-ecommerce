@@ -149,7 +149,8 @@ export const DashboardNavbar = () => {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="flex items-center gap-2 text-destructive"
+                variant="destructive"
+                className="flex items-center gap-2"
                 onSelect={handleSignOut}
               >
                 <LogOut className="h-4 w-4" />

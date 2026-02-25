@@ -11,6 +11,7 @@ export default function Loading() {
       icon={<Percent />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Discounts" },
       ]}
       headerActions={<Skeleton className="h-10 w-36 rounded-full" />}

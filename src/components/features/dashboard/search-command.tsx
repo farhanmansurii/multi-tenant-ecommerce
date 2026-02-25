@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Settings,
   User,
   LayoutDashboard,
   Store,
@@ -12,6 +11,7 @@ import {
   Users,
   ExternalLink,
   ClipboardList,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 
@@ -78,9 +78,9 @@ export function SearchCommand({ open, setOpen }: SearchCommandProps) {
                 <Users className="mr-2 h-4 w-4" />
                 <span>Customers</span>
               </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => router.push(`/dashboard/stores/${slug}/settings`))}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Store Settings</span>
+              <CommandItem onSelect={() => runCommand(() => router.push(`/dashboard/stores/${slug}/configure`))}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                <span>Configure</span>
               </CommandItem>
               <CommandItem onSelect={() => runCommand(() => window.open(`/stores/${slug}`, '_blank'))}>
                 <ExternalLink className="mr-2 h-4 w-4" />

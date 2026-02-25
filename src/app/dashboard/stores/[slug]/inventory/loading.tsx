@@ -11,6 +11,7 @@ export default function Loading() {
       icon={<AlertTriangle />}
       breadcrumbs={[
         { label: "Stores", href: "/dashboard/stores" },
+        { label: "Store" },
         { label: "Inventory" },
       ]}
       disableAnimation={true}

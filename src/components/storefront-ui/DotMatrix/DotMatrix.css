@@ -9,7 +9,7 @@
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  z-index: -1;
+  z-index: 1;
 }
 
 .dot-matrix-wrapper canvas {

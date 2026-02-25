@@ -47,7 +47,7 @@ export default function Loading() {
                 <span>loading_assets... OK</span>
             </div>
             <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-600 italic">
-                <div className="h-1 w-1 rounded-full bg-emerald-500/50" />
+                <div className="h-1 w-1 rounded-full bg-success/60" />
                 <span>auth_handshake... PENDING</span>
             </div>
         </div>
